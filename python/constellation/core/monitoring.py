@@ -4,7 +4,6 @@ SPDX-License-Identifier: EUPL-1.2
 """
 
 import logging
-import logging.handlers
 import os
 import pathlib
 import threading
@@ -12,7 +11,7 @@ import time
 from collections.abc import Callable
 from datetime import datetime
 from functools import wraps
-from logging.handlers import QueueListener
+from logging.handlers import QueueListener, RotatingFileHandler
 from queue import Empty, Queue
 from typing import Any, ParamSpec, TypeVar, cast
 
@@ -97,7 +96,12 @@ class MonitoringSender(BaseSatelliteFrame):
             self.mon_port = mon_port
         # Instantiate CMDP publish transmitter and CMDP log handler
         self._cmdp_transmitter = CMDPPublisher(self.name, cmdp_socket)
-        self._zmq_log_handler = ZeroMQSocketLogHandler(self._cmdp_transmitter)
+        self._zmq_log_handler = ZeroMQSocketLogHandler()
+        for handler in logging.root.handlers:
+            if isinstance(handler, ZeroMQSocketLogHandler):
+                self._zmq_log_handler = handler
+                break
+        self._zmq_log_handler.transmitter = self._cmdp_transmitter
 
         # register all metrics callbacks for CMDP notifications
         for name, details in self._metrics_callbacks.items():
@@ -445,7 +449,7 @@ class FileMonitoringListener(MonitoringListener):
 
         super().__init__(name, group, interface)
 
-        self._file_handler = logging.handlers.RotatingFileHandler(
+        self._file_handler = RotatingFileHandler(
             self.output_path / "logs" / (group + ".log"),
             maxBytes=10**7,
             backupCount=10,

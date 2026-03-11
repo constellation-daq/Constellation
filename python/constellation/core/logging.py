@@ -59,17 +59,19 @@ class ConstellationLogger(logging.Logger):
 class ZeroMQSocketLogHandler(logging.Handler):
     """This handler sends records to a ZMQ socket."""
 
-    def __init__(self, transmitter: CMDPPublisher):
+    def __init__(self, transmitter: CMDPPublisher | None = None):
         super().__init__()
         self.transmitter = transmitter
 
     def emit(self, record: logging.LogRecord) -> None:
-        if self.transmitter.has_log_subscribers(record):
-            self.transmitter.send_log(record)
+        if self.transmitter is not None:
+            if self.transmitter.has_log_subscribers(record):
+                self.transmitter.send_log(record)
 
     def close(self) -> None:
-        if not self.transmitter.closed():
-            self.transmitter.close()
+        if self.transmitter is not None:
+            if not self.transmitter.closed():
+                self.transmitter.close()
 
 
 class ConstellationRichHandler(RichHandler):
@@ -98,7 +100,7 @@ def setup_cli_logging(level: str) -> None:
             "logging.level.critical": "bold red",
         }
     )
-    handler = ConstellationRichHandler(
+    console_handler = ConstellationRichHandler(
         level=levelno,
         console=Console(theme=console_theme),
         show_path=False,
@@ -106,7 +108,8 @@ def setup_cli_logging(level: str) -> None:
         omit_repeated_times=False,
         log_time_format="|%Y-%m-%d %H:%M:%S|",
     )
+    zeromq_handler = ZeroMQSocketLogHandler()  # will be set up properly in MonitoringSender
     # Logging configuration
-    logging.basicConfig(format=logformat, handlers=[handler])
+    logging.basicConfig(format=logformat, handlers=[console_handler, zeromq_handler])
     # Set ConstellationLogger as default logging class
     logging.setLoggerClass(ConstellationLogger)
