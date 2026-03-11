@@ -117,13 +117,13 @@ void MattermostSatellite::log_callback(CMDP1LogMessage msg) {
     card += msg.getLogTopic();
     // Try to send message, on failure go to ERROR state
     try {
-        send_message(std::move(text), priority, msg.getHeader().getSender(), std::move(card));
+        send_message(text, priority, msg.getHeader().getSender(), card);
     } catch(const CommunicationError& error) {
         getFSM().requestFailure(error.what());
     }
 }
 
-void MattermostSatellite::send_message(std::string&& text,
+void MattermostSatellite::send_message(const std::string& text,
                                        Priority priority,
                                        std::string_view username,
                                        std::string_view card) {
