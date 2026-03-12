@@ -154,10 +154,16 @@ class Keithley(Satellite):
             else:
                 voltage_current = voltage_target
 
-            # Set voltage and settle
+            # Set voltage
             self.log.debug(f"Setting output voltage to {voltage_current}V")
             self.device.set_voltage(voltage_current)
-            # TODO(stephan.lachnit): stat metric with current voltage
+            # Send metrics
+            voltage, current, timestamp = self.device.read_output()
+            in_compliance = self.device.in_compliance()
+            self.stat("VOLTAGE", voltage)
+            self.stat("CURRENT", current)
+            self.stat("IN_COMPLIANCE", in_compliance)
+            # Settle
             time.sleep(self.settle_time)
 
         self.log.info(f"Ramped output voltage to {self.device.get_voltage()}V")
@@ -187,19 +193,37 @@ class Keithley(Satellite):
         return self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]
 
     @schedule_metric("V", 5)
-    def VOLTAGE(self) -> Any:
-        if self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]:
+    def VOLTAGE(self) -> float | None:
+        if self.fsm.state in [
+            SatelliteState.INIT,
+            SatelliteState.ORBIT,
+            SatelliteState.starting,
+            SatelliteState.stopping,
+            SatelliteState.RUN,
+        ]:
             return self.device.read_output()[0]
         return None
 
     @schedule_metric("A", 5)
-    def CURRENT(self) -> Any:
-        if self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]:
+    def CURRENT(self) -> float | None:
+        if self.fsm.state in [
+            SatelliteState.INIT,
+            SatelliteState.ORBIT,
+            SatelliteState.starting,
+            SatelliteState.stopping,
+            SatelliteState.RUN,
+        ]:
             return self.device.read_output()[1]
         return None
 
     @schedule_metric("", 5)
-    def IN_COMPLIANCE(self) -> Any:
-        if self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]:
+    def IN_COMPLIANCE(self) -> float | None:
+        if self.fsm.state in [
+            SatelliteState.INIT,
+            SatelliteState.ORBIT,
+            SatelliteState.starting,
+            SatelliteState.stopping,
+            SatelliteState.RUN,
+        ]:
             return self.device.in_compliance()
         return None
