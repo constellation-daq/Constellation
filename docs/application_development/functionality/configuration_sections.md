@@ -154,7 +154,7 @@ for n in range(0, 128):
 
     # Get if channel is enabled, its assigned name and the set voltage with defaults
     enabled  = channel_section.get("enabled", False, return_type=bool)
-    name = channel_section.get("name", f"CHANNEL {n}" return_type=str)
+    name = channel_section.get("name", f"CHANNEL {n}", return_type=str)
     voltage = channel_section.get_num("voltage", 0.0)
 ```
 
