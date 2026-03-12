@@ -70,7 +70,7 @@ auto& channels_section = config.getSection("channels");
 for(auto n : {0, 1}) {
 
   // Get section for channel n
-  auto& channel_section = config.getSection("channel_" + to_string(n));
+  auto& channel_section = channels_section.getSection("channel_" + to_string(n));
 
   // Note that channel_section has the same methods available as config
 
