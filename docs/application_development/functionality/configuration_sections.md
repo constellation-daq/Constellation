@@ -129,7 +129,7 @@ auto& channels_section = config.getSection("channels", {});
 for(auto n : std::views::iota(0, 128)) {
 
   // Get section for channel n
-  auto& channel_section = config.getSection("channel_" + to_string(n), {});
+  auto& channel_section = channels_section.getSection("channel_" + to_string(n), {});
 
   // Get if channel is enabled, its assigned name and the set voltage with defaults
   const auto enabled = channel_section.get<bool>("enabled", false);
@@ -150,7 +150,7 @@ channels_section = config.get_section("channels", {})
 for n in range(0, 128):
 
     # Get section for channel n
-    channel_section = config.get_section(f"channel_{n}", {});
+    channel_section = channels_section.get_section(f"channel_{n}", {});
 
     # Get if channel is enabled, its assigned name and the set voltage with defaults
     enabled  = channel_section.get("enabled", False, return_type=bool)

@@ -183,7 +183,7 @@ channels_section = config.get_section("channels")
 for n in range(2):
 
     # Get section for channel n
-    channel_section = config.get_section(f"channel_{n}")
+    channel_section = channels_section.get_section(f"channel_{n}")
 
     # Note that channel_section has the same methods available as config
 
