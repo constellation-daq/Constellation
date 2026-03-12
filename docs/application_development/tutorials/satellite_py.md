@@ -169,6 +169,8 @@ It is also possible to set a method as return type that takes `Any` and returns 
 Several other `get` methods exists for convenience:
 
 * `get_num`, `get_int`, `get_float`: get an {py:class}`int` or {py:class}`float` with optional limit checks
+* `get_str`: get a {py:class}`str`
+* `get_enum`: get an enum
 * `get_array`: get a {py:class}`list` with homogeneous elements
 * `get_set`: get a {py:class}`set` with homogeneous elements
 * `get_path`: get a {py:class}`pathlib.Path`
