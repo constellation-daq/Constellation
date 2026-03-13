@@ -120,8 +120,6 @@ class MonitoringSender(BaseSatelliteFrame):
 
     def _configure_cmdp_logger(self, logger: ConstellationLogger) -> None:
         """Configure log handler for CMDP messaging via ZMQ."""
-        if self._zmq_log_handler not in logger.handlers:
-            logger.addHandler(self._zmq_log_handler)
         self._cmdp_transmitter.register_log(logger.name, "")
 
     def schedule_metric(
