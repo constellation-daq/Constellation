@@ -395,10 +395,10 @@ BaseSatellite::handle_user_command(std::string_view command, const PayloadBuffer
         return_verb = {CSCP1Message::Type::INCOMPLETE, error.what()};
     } catch(const std::exception& error) {
         LOG(logger_, DEBUG) << "Caught exception while calling user command " << quote(command) << ": " << error.what();
-        return std::nullopt;
+        return_verb = {CSCP1Message::Type::ERROR, std::string("Caught exception while calling command: ") + error.what()};
     } catch(...) {
         LOG(logger_, DEBUG) << "Caught unknown exception while calling user command " << quote(command);
-        return std::nullopt;
+        return_verb = {CSCP1Message::Type::ERROR, "Caught unknown exception while calling command"};
     }
 
     return std::make_pair(return_verb, std::move(return_payload));
