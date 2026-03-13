@@ -44,6 +44,10 @@ def mock_monitoringsender(mock_zmq_context):
             return 42
 
     m = MyStatProducer(name="mock_sender", interface="*", mon_port=DEFAULT_SEND_PORT)
+
+    # since setup_logging was not called, add cmdp log handler manually
+    logging.root.addHandler(m._zmq_log_handler)
+
     m._add_com_thread()
     m._start_com_threads()
     time.sleep(0.1)
@@ -120,7 +124,6 @@ def test_log_monitoring(mock_listener, mock_monitoringsender):
     assert ms._zmq_log_handler, "ZMQ CMDP log handler not properly set up"
     sock.setsockopt_string(zmq.SUBSCRIBE, "LOG/")
     lr = ms.get_logger("mock_sender")
-    assert ms._zmq_log_handler in lr.handlers, "ZMQ handler not present"
     # allow subscription to be picked up
     time.sleep(0.2)
     lr.warning("mock warning before start")
