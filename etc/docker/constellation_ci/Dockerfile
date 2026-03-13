@@ -3,7 +3,12 @@
 
 FROM gitlab.desy.de:5555/constellation/build-images/fedora-clang:latest
 
+# Install pip
+RUN dnf install -y python3-pip
+
 # Set up and build Constellation
+RUN --mount=type=bind,rw,source=.,target=/constellation pip install --break-system-packages \
+    ./constellation[cli,hdf5,influx,lecroy,visa]
 RUN --mount=type=bind,rw,source=.,target=/constellation meson setup build /constellation \
     -Dbuildtype=release \
     -Db_lto=true \
@@ -17,11 +22,13 @@ RUN --mount=type=bind,rw,source=.,target=/constellation meson setup build /const
     && meson compile -C build \
     && meson install -C build
 
-# Remove build artifacts
+# Remove build artifacts and pip
 RUN rm -rf build
+RUN dnf remove -y python3-pip
 
 # Minify image
-RUN rm -rf /var/lib/apt/lists/* /usr/share/man/* /usr/share/lintian/overrides/* /usr/share/info/* /tmp/*
+RUN dnf clean all
+RUN rm -rf /var/cache/dnf/* /usr/share/man/* /tmp/*
 
 # Set entry point to satellite executable
 ENTRYPOINT ["Satellite"]

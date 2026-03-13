@@ -26,7 +26,6 @@
 #include "constellation/satellite/Satellite.hpp"
 
 using namespace constellation::exec;
-using namespace constellation::log;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
@@ -47,8 +46,11 @@ DSOLoader::DSOLoader(const std::string& dso_name, const std::filesystem::path& h
         const auto abs_path = std::filesystem::absolute(path);
         // Check that path is a file
         if(std::filesystem::is_regular_file(abs_path)) {
+            const auto filename = abs_path.filename().string();
+            LOG_IF(TRACE, filename.starts_with(CNSTLN_DSO_PREFIX) && filename.ends_with(CNSTLN_DSO_SUFFIX))
+                << "Found shared library " << quote(filename);
             // Check that file name matches (case-insensitive)
-            if(transform(abs_path.filename().string(), ::tolower) == transform(dso_file_name, ::tolower)) {
+            if(transform(filename, ::tolower) == transform(dso_file_name, ::tolower)) {
                 LOG(TRACE) << "Adding " << quote(abs_path.string()) << " to library lookup";
                 possible_paths.emplace_back(abs_path);
             }
@@ -90,7 +92,7 @@ DSOLoader::DSOLoader(const std::string& dso_name, const std::filesystem::path& h
 
     // Did not find a matching library:
     if(possible_paths.empty()) {
-        throw DSOLoadingError(dso_name, "Could not find " + dso_file_name);
+        throw DSOLoadingError(dso_name, "could not find " + quote(dso_file_name));
     }
 
     // Get found path with highest priority

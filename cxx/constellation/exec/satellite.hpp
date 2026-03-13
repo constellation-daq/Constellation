@@ -15,8 +15,11 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "constellation/build.hpp"
+#include "constellation/core/log/Level.hpp"
+#include "constellation/core/networking/asio_helpers.hpp"
 
 namespace constellation::exec {
 
@@ -29,6 +32,51 @@ namespace constellation::exec {
 
         /** Path to the Dynamic Shared Object (DSO) that contains the satellite */
         std::filesystem::path dso_path;
+    };
+
+    class CNSTLN_API LoadedSatellite {
+    public:
+        LoadedSatellite() = default;
+        virtual ~LoadedSatellite() = default;
+
+        /// @cond doxygen_suppress
+        // No copy/move constructor/assignment
+        LoadedSatellite(const LoadedSatellite& other) = delete;
+        LoadedSatellite& operator=(const LoadedSatellite& other) = delete;
+        LoadedSatellite(LoadedSatellite&& other) = delete;
+        LoadedSatellite& operator=(LoadedSatellite&& other) = delete;
+        /// @endcond
+
+        /**
+         * @brief Start the satellite
+         *
+         * @param group Group to start the satellite in
+         * @param satellite_name Name of the satellite
+         * @param log_level Log level of the satellite
+         * @param interfaces Network interfaces to use
+         */
+        virtual void start(std::string_view group,
+                           std::string_view satellite_name,
+                           log::Level log_level,
+                           const std::vector<networking::Interface>& interfaces) = 0;
+
+        /**
+         * @brief Join the satellite
+         */
+        virtual void join() = 0;
+
+        /**
+         * @brief Get type name as loaded from the library
+         *
+         * @return Type name of the loaded satellite
+         */
+        std::string_view getTypeName() const { return type_name_; }
+
+    protected:
+        void set_type_name(std::string type_name) { type_name_ = std::move(type_name); }
+
+    private:
+        std::string type_name_;
     };
 
     /**

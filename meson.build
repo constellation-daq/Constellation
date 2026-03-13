@@ -11,17 +11,25 @@ project('Constellation',
 # https://en.wikipedia.org/wiki/IAU_designated_constellations_by_area
 version_code_name = 'Reticulum'
 
+# Python implementation
+py = import('python').find_installation(required: get_option('impl_py'))
+impl_py = py.found()
+if impl_py and not py.language_version().version_compare('>=3.11')
+  if get_option('impl_py').enabled()
+    error('Python 3.11 or newer required')
+  else
+    message('Disabled Python implementation since Python 3.11 or newer is required')
+    impl_py = false
+  endif
+endif
+if impl_py
+  message('Enabled Python implementation')
+  subdir('python/constellation')
+endif
+
 # C++ implementation
 impl_cxx = add_languages('cpp', native: false, required: get_option('impl_cxx'))
 if impl_cxx
   message('Enabled C++ implementation')
   subdir('cxx')
-endif
-
-# Python implementation
-py = import('python').find_installation(required: get_option('impl_py'))
-impl_py = py.found()
-if impl_py
-  message('Enabled Python implementation')
-  subdir('python/constellation')
 endif

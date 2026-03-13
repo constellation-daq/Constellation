@@ -94,8 +94,7 @@ lecroy = ["lecrunch3>=3.0.3", "numpy"]
 visa = ["pyvisa", "pyvisa-py", "pyserial", "zeroconf"]
 
 [tool.meson-python.args]
-setup = ["--wrap-mode=forcefallback", "-Dimpl_py=enabled", "-Dimpl_cxx=disabled"]  # disable C++ for now
-dist = ["--include-subprojects"]
+setup = ["--wrap-mode=forcefallback", "-Dimpl_py=enabled", "-Dimpl_cxx=disabled"]  # disable C++ by default
 
 [tool.ruff]
 line-length = 125

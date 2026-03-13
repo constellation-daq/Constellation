@@ -20,7 +20,6 @@
 
 #include "constellation/core/log/log.hpp"
 #include "constellation/exec/cli.hpp"
-#include "constellation/exec/cpp.hpp"
 #include "constellation/gui/qt_utils.hpp"
 
 #include "Observatory.hpp"

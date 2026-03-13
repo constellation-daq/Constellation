@@ -15,7 +15,15 @@ RUN apt-get install --no-install-recommends -y git ca-certificates netbase
 # Install Meson and GCC toolchain
 RUN apt-get install --no-install-recommends -y meson g++
 
+# Install Python toolchain
+RUN apt-get install --no-install-recommends -y python3 python3-dev python3-pip
+
+# Keep libpython installed when auto-removing python3-dev
+RUN apt-get install libpython$(python3 -c "import platform; print('.'.join(platform.python_version().split('.')[0:2]))")t64
+
 # Set up and build Constellation
+RUN --mount=type=bind,rw,source=.,target=/constellation pip install --break-system-packages \
+    ./constellation[cli,hdf5,influx,lecroy,visa]
 RUN --mount=type=bind,rw,source=.,target=/constellation meson setup build /constellation \
     -Dbuildtype=release \
     -Db_lto=true \
@@ -28,9 +36,9 @@ RUN --mount=type=bind,rw,source=.,target=/constellation meson setup build /const
     && meson compile -C build \
     && meson install -C build --tags runtime
 
-# Remove build artifacts, toolchain, and git
+# Remove build artifacts, toolchains, and git
 RUN rm -rf build
-RUN apt-get remove --auto-remove --purge -y meson g++ git
+RUN apt-get remove --auto-remove --purge -y meson g++ git python3-dev python3-pip
 
 # Minify image
 RUN rm -rf /var/lib/apt/lists/* /usr/share/man/* /usr/share/lintian/overrides/* /usr/share/info/* /tmp/*

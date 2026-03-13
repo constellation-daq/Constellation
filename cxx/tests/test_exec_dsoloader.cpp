@@ -12,11 +12,13 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "constellation/build.hpp"
+#include "constellation/core/utils/string.hpp"
 #include "constellation/exec/DSOLoader.hpp"
 #include "constellation/exec/exceptions.hpp"
 
 using namespace Catch::Matchers;
 using namespace constellation::exec;
+using namespace constellation::utils;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
@@ -36,10 +38,10 @@ TEST_CASE("Case-insensitive library loading", "[exec][exec::dsoloader]") {
 
 TEST_CASE("Try loading missing library", "[exec][exec::dsoloader]") {
 
-    REQUIRE_THROWS_MATCHES(DSOLoader("MissingLib"),
-                           DSOLoadingError,
-                           Message("Error while loading shared library `MissingLib`: Could not find " +
-                                   DSOLoader::to_dso_file_name("MissingLib")));
+    REQUIRE_THROWS_MATCHES(
+        DSOLoader("MissingLib"),
+        DSOLoadingError,
+        Message("Error while loading MissingLib: could not find " + quote(DSOLoader::to_dso_file_name("MissingLib"))));
 }
 
 TEST_CASE("Load wrong library", "[exec][exec::dsoloader]") {

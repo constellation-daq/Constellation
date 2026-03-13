@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 hdf5datawriter_sat_files = files(
+  '__init__.py',
   '__main__.py',
   'H5DataWriter.py',
 )

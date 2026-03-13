@@ -204,7 +204,7 @@ build:debian-clang-libcxx:
     - .debian-clang
   variables:
     BUILD_TYPE: "debugoptimized"
-    BUILD_OPTIONS: "--wrap-mode=forcefallback -Db_sanitize=thread -Db_lundef=false -Dbuild_gui=none"
+    BUILD_OPTIONS: "--wrap-mode=forcefallback -Db_sanitize=thread -Db_lundef=false -Dimpl_py=disabled -Dbuild_gui=none"
     CXXFLAGS: "-stdlib=libc++ -fexperimental-library"
 
 build:fedora-clang:
@@ -233,7 +233,7 @@ build:fedora-mingw:
     - .fedora-mingw
   variables:
     BUILD_TYPE: "release"
-    BUILD_OPTIONS: "--cross .cross/mingw-ucrt.ini -Dbuild_gui=none -Dcpp_args=-Wno-maybe-uninitialized" # GCC 15 bug
+    BUILD_OPTIONS: "--cross .cross/mingw-ucrt.ini -Dimpl_py=disabled -Dbuild_gui=none -Dcpp_args=-Wno-maybe-uninitialized" # GCC 15 bug
 
 build:ubuntu-22.04:
   extends:
