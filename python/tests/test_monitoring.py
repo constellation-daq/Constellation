@@ -53,6 +53,7 @@ def mock_monitoringsender(mock_zmq_context):
     time.sleep(0.1)
     yield m, ctx
     # teardown
+    logging.root.removeHandler(m._zmq_log_handler)
     m.reentry()
 
 
