@@ -8,7 +8,6 @@ import random
 import threading
 import time
 from functools import partial
-from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
 
 import pytest
@@ -21,7 +20,6 @@ from constellation.core.controller_configuration import load_config
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.heartbeatchecker import HeartbeatChecker
 from constellation.core.message.cscp1 import SatelliteState
-from constellation.core.monitoring import FileMonitoringListener
 from constellation.core.network import get_loopback_interface_name
 from constellation.core.satellite import Satellite
 
@@ -146,6 +144,7 @@ class mocket:
         self.port = 0
         self.packet_queue_in = {}
         self.packet_queue_out = {}
+        self.closed = False
 
     def _get_queue(self, out: bool):
         """Return queue depending on direction (outward/inward)."""
@@ -256,7 +255,7 @@ class mocket:
         pass
 
     def close(self, *args, **kwargs):
-        pass
+        self.closed = True
 
 
 @pytest.fixture
@@ -469,29 +468,6 @@ def mock_example_satellite(mock_zmq_context, mock_chirp_socket):
     yield s, ctx
     # teardown
     s.reentry()
-
-
-@pytest.fixture
-def monitoringlistener(request):
-    """Create a MonitoringListener instance."""
-    marker = request.node.get_closest_marker("constellation")
-    if not marker:
-        constellation = "mockstellation"
-    else:
-        constellation = marker.args[0]
-    with TemporaryDirectory(prefix="constellation_pytest_") as tmpdirname:
-        m = FileMonitoringListener(
-            name="mock_monitor",
-            group=constellation,
-            interface=[get_loopback_interface_name()],
-            output_path=tmpdirname,
-        )
-        t = threading.Thread(target=m.run_listener)
-        t.start()
-        # give the thread a chance to start
-        time.sleep(0.1)
-        yield m, tmpdirname
-        m.reentry()
 
 
 def wait_for_state(fsm, state: str, timeout: float = 2.0):

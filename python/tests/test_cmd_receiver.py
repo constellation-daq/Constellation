@@ -8,12 +8,13 @@ from datetime import datetime
 
 import pytest
 import zmq
-from conftest import DEFAULT_SEND_PORT
 
 from constellation.core.commandmanager import CommandReceiver, cscp_requestable
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.network import get_loopback_interface_name
+
+from .conftest import DEFAULT_SEND_PORT
 
 CMD_PORT = DEFAULT_SEND_PORT
 

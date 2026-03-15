@@ -163,7 +163,7 @@ class MonitoringSender(BaseSatelliteFrame):
         for attr in dir(self):
             obj = getattr(self, attr)
             if callable(obj):
-                if hasattr(obj, "metric"):
+                if hasattr(obj, "metric") and hasattr(obj, "__name__"):
                     metric = getattr(obj, "metric")  # noqa: B009
                     metric.value_cb = partial(getattr(metric, "raw_value_cb"), self)  # noqa: B009
                     res[obj.__name__] = metric

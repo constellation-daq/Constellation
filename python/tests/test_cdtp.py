@@ -9,7 +9,6 @@ from typing import Any
 
 import pytest
 import zmq
-from conftest import DATA_PORT, wait_for_state
 
 from constellation.core.cdtp import (
     DataReceiver,
@@ -28,6 +27,8 @@ from constellation.core.message.cscp1 import SatelliteState
 from constellation.core.network import get_loopback_interface_name
 from constellation.core.receiver_satellite import ReceiverSatellite
 from constellation.core.transmitter_satellite import TransmitterSatellite
+
+from .conftest import DATA_PORT, wait_for_state
 
 
 @pytest.fixture
