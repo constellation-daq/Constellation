@@ -8,12 +8,9 @@ Module implementing listeners
 import logging
 import time
 from datetime import datetime
-from logging.handlers import QueueListener
-from queue import Empty, SimpleQueue
+from queue import Empty
 from threading import Lock, Thread
-from typing import Any, cast
-
-import zmq
+from typing import Any
 
 from .chirp import CHIRPServiceIdentifier
 from .chirpmanager import CHIRPManager, DiscoveredService, chirp_callback
@@ -21,44 +18,6 @@ from .cmdp import Metric
 from .message.cmdp1 import CMDP1LogMessage, CMDP1Message, CMDP1Notification, CMDP1StatMessage
 from .message.exceptions import MessageDecodingError
 from .pools import SubscriberPool
-
-
-class LogPoolQueue(SubscriberPool, SimpleQueue[logging.LogRecord]):
-    """Simple wrapper around subscriper pool which queues CMDP message as log records
-
-    Note: this class does not handle adding connections and subscribing to them.
-    """
-
-    def __init__(self, context: zmq.Context):
-        super().__init__(context, self._receive)
-
-    def _receive(self, frames: list[bytes]) -> None:
-        try:
-            self.put_nowait(CMDP1LogMessage.disassemble(frames).to_log_record())
-        except MessageDecodingError:
-            pass
-
-
-class LogPoolQueueListener(QueueListener):
-    """Simple queue listener for LogPoolQueue
-
-    Note: this class does not handle adding connections and subscribing to them.
-    """
-
-    def __init__(self, context: zmq.Context, *args: Any, **kwargs: Any):
-        super().__init__(LogPoolQueue(context), *args, **kwargs)
-
-    @property
-    def log_receiver_queue(self) -> LogPoolQueue:
-        return cast(LogPoolQueue, self.queue)
-
-    def start(self) -> None:
-        super().start()
-        self.log_receiver_queue.start_poll_thread()
-
-    def stop(self) -> None:
-        self.log_receiver_queue.stop_poll_thread()
-        super().stop()
 
 
 class MonitoringListener(CHIRPManager):
