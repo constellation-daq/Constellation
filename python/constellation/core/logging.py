@@ -65,7 +65,7 @@ class ZeroMQSocketLogHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord) -> None:
         if self.transmitter is not None:
-            if self.transmitter.has_log_subscribers(record):
+            if self.transmitter.has_log_subscribers_record(record):
                 self.transmitter.send_log(record)
 
     def close(self) -> None:

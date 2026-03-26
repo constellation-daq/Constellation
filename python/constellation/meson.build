@@ -19,10 +19,11 @@ core_files = files(
   'core/heartbeatchecker.py',
   'core/heartbeater.py',
   'core/logging.py',
+  'core/listener.py',
   'core/monitoring.py',
   'core/multicast.py',
   'core/network.py',
-  'core/protocol.py',
+  'core/pools.py',
   'core/py.typed',
   'core/receiver_satellite.py',
   'core/satellite.py',
@@ -33,9 +34,15 @@ core_message_files = files(
   'core/message/__init__.py',
   'core/message/cscp1.py',
   'core/message/cdtp2.py',
+  'core/message/cmdp1.py',
   'core/message/exceptions.py',
   'core/message/msgpack_helpers.py',
   'core/message/multipart.py',
+)
+
+core_protocol_files = files(
+  'core/protocol/__init__.py',
+  'core/protocol/cmdp1.py',
 )
 
 satellites_files = files(
@@ -45,6 +52,7 @@ satellites_files = files(
 tools_files = files(
   'tools/__init__.py',
   'tools/discover_plugins.py',
+  'tools/monitor.py',
 )
 
 py.install_sources(core_files,
@@ -52,6 +60,9 @@ py.install_sources(core_files,
 
 py.install_sources(core_message_files,
   subdir: 'constellation/core/message')
+
+  py.install_sources(core_protocol_files,
+    subdir: 'constellation/core/protocol')
 
 py.install_sources(satellites_files,
   subdir: 'constellation/satellites')

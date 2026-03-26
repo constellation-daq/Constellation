@@ -5,7 +5,9 @@ SPDX-License-Identifier: EUPL-1.2
 Provides the class for the Influx satellite
 """
 
+from datetime import datetime
 from threading import Lock
+from typing import Any
 
 from influxdb_client.client.influxdb_client import InfluxDBClient
 from influxdb_client.client.write.point import Point
@@ -13,11 +15,11 @@ from influxdb_client.client.write_api import WriteOptions
 
 from constellation.core.cmdp import Metric
 from constellation.core.configuration import Configuration
-from constellation.core.monitoring import StatListener
+from constellation.core.listener import MonitoringListener
 from constellation.core.satellite import Satellite
 
 
-class Influx(Satellite, StatListener):
+class Influx(Satellite, MonitoringListener):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._influxdb_connected = False
@@ -47,14 +49,15 @@ class Influx(Satellite, StatListener):
             self._influxdb_connected = True
             self.log.info("Connected to InfluxDB")
 
-    def metric_callback(self, metric: Metric) -> None:
-        super().metric_callback(metric)
+        # Subscribe to all metric messages
+        self.set_topics(["STAT/"])
 
+    def receive_metric(self, sender: str, metric: Metric, timestamp: datetime, value: Any) -> None:
         with self._influxdb_lock:
             if self._influxdb_connected:
-                if isinstance(metric.value, (float, int, bool, str)):
-                    record = Point(metric.sender).field(metric.name, metric.value).time(metric.time.to_datetime())
+                if isinstance(value, (float, int, bool, str)):
+                    record = Point(sender).field(metric.name, value).time(timestamp)
                     self.log.trace("Writing metric %s to InfluxDB", metric.name)
                     self.write_api.write(bucket=self.bucket, record=record)
                 else:
-                    self.log.debug(f"Metric of type {type(metric.value).__name__} cannot be written to InfluxDB")
+                    self.log.debug(f"Metric of type {type(value).__name__} cannot be written to InfluxDB")

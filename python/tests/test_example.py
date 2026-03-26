@@ -7,12 +7,13 @@ import threading
 import time
 
 import pytest
-from conftest import wait_for_state
 
 from constellation.core.configuration import Configuration
 from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.network import get_loopback_interface_name
 from constellation.satellites.Mariner.Mariner import Mariner as MarinerDef
+
+from .conftest import wait_for_state
 
 
 class Mariner(MarinerDef):

@@ -9,13 +9,13 @@ The basic concepts behind metrics and telemetry in Constellation are described i
 :::{tab-item} C++
 :sync: cxx
 
-Metrics have to be registered before use. For satellite this can be done via:
+Metrics have to be registered before use. For satellites this can be done via:
 
 ```cpp
 register_metric("NAME", "unit", "description");
 ```
 
-A metric can then be send using the `STAT` macros:
+This metric can then be sent using the `STAT` macros:
 
 ```cpp
 STAT("NAME", get_metric_value());
@@ -51,51 +51,39 @@ Note that timed metrics can still be triggered manually if desired.
 :::{tab-item} Python
 :sync: python
 
-There are two approaches to send metrics (e.g. readings from a temperature sensor): one is
-via a function decorator and the other is via a scheduling method.
-
-The scheduling method,`schedule_metric`, makes it easy to create metrics
-programmatically at run time. This can be particularly useful in cases where e.g. the number of available channels is only
-known after connecting to the instrument hardware. The method takes a metric name, the unit, a polling interval, and a
-callable function as arguments. The name of the metric will always be converted to upper-case.
-
-* Polling interval: a float value in seconds, indicating how often the metric is transmitted.
-* Callable function: Should return a single value (of any type), and take no arguments. If you have a callable that requires
-  arguments, consider using `functools.partial` to fill in the necessary information at scheduling time. If the callback
-  returns `None`, no metric will be published.
-
-An example call is shown below:
+Metrics have to be registered before use. For satellites this can be done via:
 
 ```python
-self.schedule_metric("Current", "A", 10, self.device.get_current)
+self.register_metric("NAME", "unit", "description")
 ```
 
-In this example, the callable `self.device.get_current` fetches the current from
-a power supply, is called every 10 seconds, and the value is sent as Metric with
-name `Current`, unit `A` and an indicator for any receiver(s) to only show the
-last value.
+This metric can then be sent using the `stat` method:
 
-Similarly, a metric to can be sent via the `schedule_metric` function decorator:
+```python
+self.stat("NAME", self.get_metric_value());
+```
+
+Metrics that are evaluated regularly from a function can also be registered:
+
+```python
+self.register_scheduled_metric("NAME", "unit", "description", interval, self.get_metric_value)
+```
+
+The registered callback returns `None` the metric is not sent.
+
+Alternative, a metric can also be registered via the `schedule_metric` function decorator:
 
 ```python
 @schedule_metric("A", 10)
-def Current(self) -> Any:
+def current(self) -> float | None:
     """The current as measured by the power supply."""
     if self.device.can_read_current():
         return self.device.get_current()
     return None
 ```
 
-In case of the decorator, the name of the metric is taken from the function
-name. Again, if `None` is returned, no metric is sent.
-
-In either case, the doc string of the callable or decorated function serves as a
-description of the Metric and is published via the CMDP `STAT?` notification
-subscription.
-
-When using class methods for retrieving values for the metrics, then the
-decorator can be a convenient way of scheduling them. But if metrics need to be created at run time, then the method is a
-powerful approach to schedule an arbitrary number of metrics.
+In case of the decorator, the name of the metric is taken from the function name and the description from the doc string.
+Also in this case if the function returns `None` the metric is not sent.
 
 ```{attention}
 Note that any registered Metrics are by default retrieved in any of the Satellite's states, **except** `NEW`, `ERROR` and `initializing` where it is assumed that reliable Metrics cannot be guaranteed.

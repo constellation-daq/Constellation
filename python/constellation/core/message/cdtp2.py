@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from enum import IntEnum
 from io import BytesIO
-from typing import Any
+from typing import Any, cast
 
 import msgpack  # type: ignore[import-untyped]
 
@@ -176,7 +176,8 @@ class CDTP2BORMessage(CDTP2Message):
         if len(msg._data_records) != 2:
             raise MessageDecodingError("Wrong number of data records, exactly two data records expected")
         msg.__class__ = CDTP2BORMessage
-        return msg  # type: ignore[return-value]
+        msg = cast(CDTP2BORMessage, msg)
+        return msg
 
     @property
     def user_tags(self) -> dict[str, Any]:
@@ -202,7 +203,8 @@ class CDTP2EORMessage(CDTP2Message):
         if len(msg._data_records) != 2:
             raise MessageDecodingError("Wrong number of data records, exactly two data records expected")
         msg.__class__ = CDTP2EORMessage
-        return msg  # type: ignore[return-value]
+        msg = cast(CDTP2EORMessage, msg)
+        return msg
 
     @property
     def user_tags(self) -> dict[str, Any]:

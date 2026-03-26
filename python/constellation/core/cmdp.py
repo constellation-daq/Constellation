@@ -2,355 +2,133 @@
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
 
-Module implementing the Constellation Monitoring Distribution Protocol.
+Module implementing the Constellation Monitoring Distribution Protocol
 """
 
-import io
 import logging
-import time
+from datetime import datetime
 from threading import Lock
 from typing import Any
 
-import msgpack  # type: ignore[import-untyped]
 import zmq
 
-from .protocol import Protocol
-
-
-class Metric:
-    """Class to hold information for a Constellation metric."""
-
-    def __init__(
-        self,
-        name: str,
-        unit: str,
-        value: Any = None,
-    ):
-        self.name: str = name
-        self.unit: str = unit
-        self.value: Any = value
-        self.sender: str = ""
-        self.time: msgpack.Timestamp = msgpack.Timestamp(0)
-        self.meta: dict[str, Any] | None = None
-
-    def pack(self) -> bytes:
-        """Pack metric for CMDP payload."""
-        stream = io.BytesIO()
-        packer = msgpack.Packer()
-        stream.write(packer.pack(self.value))
-        stream.write(packer.pack(0x0))
-        stream.write(packer.pack(self.unit))
-        return stream.getvalue()
-
-    def __str__(self) -> str:
-        """Convert to string."""
-        t = ""
-        if self.time:
-            t = f" at {self.time}"
-        return f"{self.name}: {self.value} [{self.unit}]{t}"
-
-
-class Notification:
-    """Class to hold information for a Constellation CMDP notification."""
-
-    def __init__(
-        self,
-        prefix: str,
-    ) -> None:
-        self.sender: str = ""
-        self.time: msgpack.Timestamp = msgpack.Timestamp(0)
-        self.topics: dict[str, str] = {}
-        self.topic_prefix: str = prefix
-
-
-class CMDP1Header:
-    """Class implementing a Constellation CMDP1 message header."""
-
-    protocol = Protocol.CMDP1
-
-    def __init__(self, name: str):
-        self.name: str = name
-
-    def send(
-        self,
-        socket: zmq.Socket,  # type: ignore[type-arg]
-        flags: int = zmq.SNDMORE,
-        meta: dict[str, Any] | None = None,
-    ) -> None:
-        """Send a message header via socket.
-
-        meta is an optional dictionary that is sent as a map of string/value
-        pairs with the header.
-
-        """
-        socket.send(self.encode(meta), flags)
-
-    def encode(self, meta: dict[str, Any] | None = None) -> memoryview:
-        """Generate and return a header as list.
-
-        Additional keyword arguments are required for protocols specifying
-        additional fields.
-
-        """
-        if not meta:
-            meta = {}
-        stream = io.BytesIO()
-        packer = msgpack.Packer()
-        stream.write(packer.pack(self.protocol.value))
-        stream.write(packer.pack(self.name))
-        stream.write(packer.pack(msgpack.Timestamp.from_unix_nano(time.time_ns())))
-        stream.write(packer.pack(meta))
-        return stream.getbuffer()
-
-    def decode(self, header: Any) -> tuple[str, msgpack.Timestamp, dict[str, Any] | None]:
-        """Decode header string and return host, timestamp and meta map."""
-        unpacker = msgpack.Unpacker()
-        unpacker.feed(header)
-        protocol = unpacker.unpack()
-        if not protocol == self.protocol.value:
-            raise RuntimeError(f"Received message with malformed {self.protocol.name} header: {bytes(header)!r}!")
-        host = unpacker.unpack()
-        timestamp = unpacker.unpack()
-        meta = unpacker.unpack()
-        return host, timestamp, meta
-
-
-def decode_log(name: str, topic: str, msg: list[bytes]) -> logging.LogRecord:
-    """Receive a Constellation log message."""
-    # Read header
-    header = CMDP1Header(name).decode(msg[1])
-    # assert to help mypy determine len of tuple returned
-    assert len(header) == 3, "Header decoding resulted in too many values for CMDP."
-    sender, _timestamp, record = header
-    level_name = topic.split("/")[1]
-    # assert to help mypy determine type
-    assert isinstance(record, dict)
-    # receive payload
-    record["msg"] = msg[2].decode()
-    record["name"] = sender
-    record["levelname"] = level_name
-    record["levelno"] = logging.getLevelNamesMapping()[level_name]
-    return logging.makeLogRecord(record)
-
-
-def decode_metric(name: str, topic: str, msg: list[Any]) -> Metric:
-    """Receive a Constellation STATS message and return a Metric."""
-    name = topic.split("/")[1]
-    # Read header
-    header = CMDP1Header(name).decode(msg[1])
-    # assert to help mypy determine len of tuple returned
-    assert len(header) == 3, "Header decoding resulted in too many values for CMDP."
-    sender, timestamp, record = header
-    # Unpack metric payload
-    unpacker = msgpack.Unpacker()
-    unpacker.feed(msg[2])
-    value = unpacker.unpack()
-    # unpack unused metric flags
-    unpacker.unpack()
-    unit = unpacker.unpack()
-    # Create metric and fill in sender
-    m = Metric(name, unit, value)
-    m.sender = sender
-    m.time = timestamp
-    m.meta = record
-    return m
-
-
-def decode_notification(name: str, topic: str, msg: list[bytes]) -> Notification:
-    """Receive a Constellation log message."""
-    # Read header
-    header = CMDP1Header(name).decode(msg[1])
-    # assert to help mypy determine len of tuple returned
-    assert len(header) == 3, "Header decoding resulted in too many values for CMDP."
-    sender, timestamp, _record = header
-    unpacker = msgpack.Unpacker()
-    unpacker.feed(msg[2])
-    topics = unpacker.unpack()
-    n = Notification(topic)
-    n.sender = sender
-    n.time = timestamp
-    n.topics = topics
-    return n
+from .message.cmdp1 import CMDP1LogMessage, CMDP1Message, CMDP1Notification, CMDP1StatMessage
+from .protocol.cmdp1 import Metric
 
 
 class CMDPTransmitter:
-    """Class for sending Constellation monitoring messages via ZMQ."""
+    """Class for sending monitoring information via CMDP"""
 
-    def __init__(self, name: str, socket: zmq.Socket | None):  # type: ignore[type-arg]
-        """Initialize transmitter."""
-        self.name = name
-        self.msgheader = CMDP1Header(name)
+    def __init__(self, sender: str, socket: zmq.Socket):
+        self._sender = sender
         self._socket = socket
         self._lock = Lock()
 
-    def send(self, data: logging.LogRecord | Metric) -> None:
-        """Send a LogRecord or a Metric."""
-        if isinstance(data, logging.LogRecord):
-            self.send_log(data)
-        elif isinstance(data, Metric):
-            self.send_metric(data)
-        else:
-            raise RuntimeError(f"CMDPTransmitter cannot send object of type '{type(data)}'")
-
     def send_log(self, record: logging.LogRecord) -> None:
-        """Send a LogRecord via an ZMQ socket.
+        """Send a log record"""
+        self._send_message(CMDP1LogMessage.from_log_record(record, self._sender))
 
-        Follows the Constellation Monitoring Distribution Protocol.
+    def send_metric(self, metric: Metric, value: Any) -> None:
+        """Send a metric"""
+        time_now = datetime.now().astimezone()
+        msg = CMDP1StatMessage(self._sender, metric, value, time_now)
+        self._send_message(msg)
 
-        record: LogRecord to send.
-
-        """
-        topic = f"LOG/{record.levelname}/{record.name}"
-        # Instead of just adding the formatted message, this adds key attributes
-        # of the LogRecord, allowing to reconstruct the message on the other
-        # end.
-        meta = {
-            "filename": record.filename,
-            "pathname": record.pathname,
-            "lineno": record.lineno,
-            "funcName": record.funcName,
-            "module": record.module,
-            "thread": record.thread,
-            "threadName": record.threadName,
-            "process": record.process,
-            "processName": record.processName,
-            "created": record.created,
-            "msecs": record.msecs,
-        }
-        tb: str | None = getattr(record, "traceback", None)
-        if tb:
-            meta["traceback"] = tb
-        payload = record.getMessage().encode()
-        self._dispatch(topic, payload, meta)
-
-    def send_metric(self, metric: Metric) -> None:
-        """Send a metric via a ZMQ socket."""
-        topic = "STAT/" + metric.name.upper()
-        payload = metric.pack()
-        meta = None
-        self._dispatch(topic, payload, meta)
-
-    def recv(self, flags: int = 0) -> logging.LogRecord | Metric | Notification | None:
-        """Receive a Constellation monitoring message and return log or metric."""
-        if not self._socket:
-            raise RuntimeError("Monitoring ZMQ socket misconfigured")
-        try:
-            with self._lock:
-                msg = self._socket.recv_multipart(flags)
-            topic = msg[0].decode("utf-8")
-        except zmq.ZMQError as e:
-            if "Resource temporarily unavailable" not in e.strerror:
-                raise RuntimeError("CommandTransmitter encountered zmq exception") from e
-            return None
-        if topic.startswith("STAT/"):
-            return decode_metric(self.name, topic, msg)
-        if topic.startswith("LOG/"):
-            return decode_log(self.name, topic, msg)
-        if topic.startswith("LOG?") or topic.startswith("STAT?"):
-            return decode_notification(self.name, topic, msg)
-        raise RuntimeError(f"CMDPTransmitter cannot decode messages of topic '{topic}'")
+    def send_notification(self, topics_prefix: str, topics: dict[str, str]) -> None:
+        msg = CMDP1Notification(self._sender, topics_prefix, topics)
+        self._send_message(msg)
 
     def closed(self) -> bool:
-        """Return whether socket is closed or not."""
-        if not isinstance(self._socket, zmq.Socket):
-            return True
-        if self._socket:
-            # NOTE: according to zmq.Socket, this should return a bool; mypy thinks
-            # "str | bytes | int" though..?
+        """Return whether socket is closed or not"""
+        with self._lock:
             return bool(self._socket.closed)
-        return True
 
     def close(self) -> None:
-        """Close the socket."""
-        if not self._socket:
-            raise RuntimeError("Monitoring ZMQ socket misconfigured")
+        """Close the socket"""
         with self._lock:
-            self._socket.close()
-            self._socket = None
+            if not bool(self._socket.closed):
+                self._socket.close()
 
-    def _dispatch(
+    def _send_message(
         self,
-        topic: str,
-        payload: bytes,
-        meta: dict[str, Any] | None = None,
+        msg: CMDP1Message,
         flags: int = 0,
     ) -> None:
-        """Dispatch a message via ZMQ socket."""
         with self._lock:
             if not self._socket:
-                # closed already
-                return
-            topic = topic.upper()
-            flags = zmq.SNDMORE | flags
-            self._socket.send_string(topic, flags)
-            self.msgheader.send(self._socket, meta=meta, flags=flags)
-            flags = flags & ~zmq.SNDMORE
-            self._socket.send(payload, flags=flags)
+                return  # closed already
+            msg.assemble().send(self._socket, flags)
 
 
 class CMDPPublisher(CMDPTransmitter):
-    """Class for publishing Constellation monitoring messages via ZMQ."""
+    """Class for sending and publishing monitoring information"""
 
-    def __init__(self, name: str, socket: zmq.Socket | None):  # type: ignore[type-arg]
+    def __init__(self, name: str, socket: zmq.Socket):
         """Initialize transmitter."""
         super().__init__(name, socket)
         self.log_topics: dict[str, str] = {}
         self.stat_topics: dict[str, str] = {}
         self.subscriptions: dict[str, int] = {}
 
-    def register_log(self, topic: str, description: str | None = "") -> None:
+    def register_log(self, topic: str, description: str | None = None) -> None:
         """Register a LOG topic that subscribers should be notified about."""
         if description is None:
             description = ""
         self.log_topics[topic.upper()] = description
         if "LOG?" in self.subscriptions:
-            self._send_log_notification()
+            self.send_notification("LOG", self.log_topics)
 
-    def register_stat(self, topic: str, description: str | None = "") -> None:
+    def register_stat(self, topic: str, description: str) -> None:
         """Register a STAT topic that subscribers should be notified about."""
-        if description is None:
-            description = ""
         self.stat_topics[topic.upper()] = description
         if "STAT?" in self.subscriptions:
-            self._send_stat_notification()
+            self.send_notification("STAT", self.stat_topics)
 
-    def has_log_subscribers(self, record: logging.LogRecord) -> bool:
-        """Return whether or not we have subscribers for the given log topic."""
-        # do we have a global subscription?
+    def unregister_stat(self, topic: str) -> None:
+        popped = self.stat_topics.pop(topic.upper(), None)
+        if popped is not None and "STAT?" in self.subscriptions:
+            self.send_notification("STAT", self.stat_topics)
+
+    def has_log_subscribers(self, levelname: str, topic: str | None = None):
+        """Return whether or not there are subscribers for the given log level and topic."""
+        # Check global subscription
         if "LOG/" in self.subscriptions:
             return True
-        topic = f"LOG/{record.levelname}/{record.name}"
-        if topic in self.subscriptions:
+        # Check level subscription
+        if f"LOG/{levelname}" in self.subscriptions:
             return True
-        # do we have a subscription to the level??
-        if f"LOG/{record.levelname}" in self.subscriptions:
+        # Check topic subscription
+        if topic is not None and f"LOG/{levelname}/{topic}" in self.subscriptions:
             return True
         return False
 
+    def has_log_subscribers_record(self, record: logging.LogRecord) -> bool:
+        """Return whether or not we have subscribers for the given log topic."""
+        return self.has_log_subscribers(record.levelname, record.name)
+
     def has_metric_subscribers(self, metric_name: str) -> bool:
         """Return whether or not we have subscribers for the given metric data topic."""
-        # do we have a global subscription?
+        # Check global subscription
         if "STAT/" in self.subscriptions:
             return True
-        topic = f"STAT/{metric_name.upper()}"
-        if topic in self.subscriptions:
+        # Check topic subscription
+        if f"STAT/{metric_name.upper()}" in self.subscriptions:
             return True
         return False
 
     def update_subscriptions(self) -> None:
-        """Receive a Constellation subscription message and handle that."""
-        if not self._socket:
-            raise RuntimeError("Monitoring ZMQ socket misconfigured")
+        """Receive and handle a subscription messages"""
 
         # Run until there are no more messages to process:
         while True:
             try:
                 with self._lock:
-                    msg = self._socket.recv_multipart(flags=zmq.NOBLOCK)
+                    frames = self._socket.recv_multipart(flags=zmq.NOBLOCK)
+                msg = frames[0]
                 # unpack list, decode string, drop the first character
-                topic = msg[0].decode()[1:]
+                topic = msg.decode()[1:]
                 # First byte \x01 is subscription, \0x00 is unsubscription
-                subscribe = bool(msg[0][0])
+                subscribe = bool(msg[0])
                 count = self.subscriptions.get(topic, 0)
                 # subscription:
                 if subscribe:
@@ -364,9 +142,9 @@ class CMDPPublisher(CMDPTransmitter):
                         self.subscriptions[topic] = count - 1
                 # send current notifications if requested
                 if topic.startswith("LOG?") and subscribe:
-                    self._send_log_notification()
+                    self.send_notification("LOG", self.log_topics)
                 elif topic.startswith("STAT?") and subscribe:
-                    self._send_stat_notification()
+                    self.send_notification("STAT", self.stat_topics)
                 else:
                     if not topic.startswith("STAT") and not topic.startswith("LOG"):
                         raise ValueError(f"Unknown topic '{topic}'")
@@ -374,15 +152,3 @@ class CMDPPublisher(CMDPTransmitter):
                 if "Resource temporarily unavailable" not in e.strerror:
                     raise RuntimeError("CMDPPublisher encountered ZMQ exception") from e
                 break
-
-    def _send_log_notification(self) -> None:
-        stream = io.BytesIO()
-        packer = msgpack.Packer()
-        stream.write(packer.pack(self.log_topics))
-        self._dispatch("LOG?", payload=stream.getvalue())
-
-    def _send_stat_notification(self) -> None:
-        stream = io.BytesIO()
-        packer = msgpack.Packer()
-        stream.write(packer.pack(self.stat_topics))
-        self._dispatch("STAT?", payload=stream.getvalue())
