@@ -74,6 +74,9 @@ class ReceiverSatellite(Satellite):
 
         Start the data receiver and requests DATA services via CHIRP.
         """
+        # Emit metric for received bytes
+        self.stat("rx_bytes", 0)
+
         # Start data receiver
         assert self._drc is not None
         self._drc.start_receiving()
@@ -89,6 +92,9 @@ class ReceiverSatellite(Satellite):
         # Stop data receiver
         assert self._drc is not None
         self._drc.stop_receiving()
+
+        # Emit metric for received bytes
+        self.stat("rx_bytes", self._drc.bytes_received)
 
         return super()._wrap_stop(payload)
 
@@ -125,8 +131,9 @@ class ReceiverSatellite(Satellite):
             else:
                 self._drc.add_sender(service)
 
-    @schedule_metric("B", 10)
+    @schedule_metric("B", 5)
     def rx_bytes(self) -> int | None:
+        """Amount of bytes received from all transmitters during current run"""
         if self._drc is not None and self._drc.running:
             return self._drc.bytes_received
         return None
