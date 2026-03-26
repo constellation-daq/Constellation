@@ -2,12 +2,9 @@
 
 ## Getting Access to the DESY GitLab
 
-While Pull Requests can be opened in the [GitHub repositories](https://github.com/constellation-daq/Constellation), DESY's
-GitLab instance is used as the primary issue tracker. Access to the
-[Constellation group](https://gitlab.desy.de/constellation) on can be gained by following these steps:
-
-1. Log in at [https://gitlab.desy.de/users/sign_in](https://gitlab.desy.de/users/sign_in) via Helmholtz AAI using either a research institute or GitHub account.
-2. Contact [gitlab.service@desy.de](mailto://gitlab.service@desy.de) with [simon.spannagel@desy.de](mailto://simon.spannagel@desy.de) and [stephan.lachnit@desy.de](mailto://stephan.lachnit@desy.de) in CC stating that you need GitLab access for a common project ([https://gitlab.desy.de/constellation](https://gitlab.desy.de/constellation)).
+While Pull Requests can be opened in the GitHub repository ([https://github.com/constellation-daq/Constellation](https://github.com/constellation-daq/Constellation)), the Constellation repository on DESY's GitLab instance ([https://gitlab.desy.de/constellation/constellation](https://gitlab.desy.de/constellation/constellation)) is used as the primary issue tracker.
+A DESY account is not necessary for this, on the [login page](https://gitlab.desy.de/users/sign_in) one can select Helmholtz ID using either a research institute or GitHub account.
+Note that forking or creating projects is not possible for external users.
 
 ## Setting up the Development Environment
 
