@@ -57,19 +57,19 @@ TransmitterSatellite::TransmitterSatellite(std::string_view type, std::string_vi
     register_timed_metric("TX_BYTES",
                           "B",
                           "Number of bytes transmitted by this satellite in the current run",
-                          10s,
+                          5s,
                           {CSCP::State::RUN, CSCP::State::stopping, CSCP::State::interrupting},
                           [this]() { return bytes_transmitted_.load(); });
     register_timed_metric("TX_BLOCKS",
                           "",
                           "Number of blocks transmitted by this satellite in the current run",
-                          10s,
+                          5s,
                           {CSCP::State::RUN, CSCP::State::stopping, CSCP::State::interrupting},
                           [this]() { return blocks_transmitted_.load(); });
     register_timed_metric("TX_RECORDS",
                           "",
                           "Number of data records transmitted by this satellite in the current run",
-                          10s,
+                          5s,
                           {CSCP::State::RUN, CSCP::State::stopping, CSCP::State::interrupting},
                           [this]() { return data_records_transmitted_.load(); });
 
@@ -246,6 +246,10 @@ void TransmitterSatellite::stopping_transmitter() {
     set_run_metadata_tag("condition_code", std::to_underlying(condition_code));
     set_run_metadata_tag("condition", enum_name(condition_code));
     send_eor();
+    // Emit final metrics
+    STAT("TX_BYTES", bytes_transmitted_.load());
+    STAT("TX_BLOCKS", blocks_transmitted_.load());
+    STAT("TX_RECORDS", data_records_transmitted_.load());
 }
 
 void TransmitterSatellite::interrupting_transmitter(CSCP::State previous_state) {

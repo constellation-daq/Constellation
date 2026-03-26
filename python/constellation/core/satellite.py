@@ -79,6 +79,10 @@ class Satellite(
         if hasattr(self, "do_reconfigure"):
             self.add_cscp_command("reconfigure")
 
+        # Register metric for announcing new run ids
+        self.register_metric("RUN_ID", "", "Current run identifier. Updated when changed.")
+        # TODO: add STATE metric
+
         # Add exception handling via threading.excepthook to allow the state
         # machine to reflect exceptions in the communication services threads.
         #
@@ -337,6 +341,8 @@ class Satellite(
         msg: str | None = self.do_starting(run_identifier)
         if not isinstance(msg, str):
             msg = ""
+        # emit run ID
+        self.stat("RUN_ID", run_identifier)
         # allow inheriting classes to execute code just before do_run is called:
         self._pre_run_hook(run_identifier)
         # complete transitional state
