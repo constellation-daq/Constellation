@@ -24,14 +24,14 @@ A restart is required for the changes to be effective.
 
 ## Requirements
 
-The Keithley satellite requires the `[keithley]` component, which can be installed with:
+The Keithley satellite requires the `[visa]` component, which can be installed with:
 
 ::::{tab-set}
 :::{tab-item} PyPI
 :sync: pypi
 
 ```sh
-pip install "ConstellationDAQ[keithley]"
+pip install "ConstellationDAQ[visa]"
 ```
 
 :::
@@ -39,7 +39,7 @@ pip install "ConstellationDAQ[keithley]"
 :sync: source
 
 ```sh
-pip install --no-build-isolation -e ".[keithley]"
+pip install --no-build-isolation -e ".[visa]"
 ```
 
 :::
@@ -54,8 +54,7 @@ devices are current supported:
 
 The `2410` device supports the Keithley Series 2400 SourceMeter in RS-232 mode.
 The following serial communication settings are required and have to be configured on the SMU before starting the satellite.
-They can be found at MENU -> COMMUNICATION -> RS-223
-
+They can be found at MENU -> COMMUNICATION -> RS-223.
 
 - `BAUD`: `19200`
 - `BITS`: `8`

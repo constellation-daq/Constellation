@@ -5,6 +5,7 @@ SPDX-License-Identifier: EUPL-1.2
 Provides the class for the Keithley satellite
 """
 
+import time
 from typing import Any
 
 from constellation.core.commandmanager import cscp_requestable
@@ -25,18 +26,18 @@ class Keithley(Satellite):
     device: KeithleyInterface
 
     def do_initializing(self, config: Configuration) -> None:
-        device_name = config["device"]
+        device_name = config.get_str("device")
         if device_name not in _SUPPORTED_DEVICES.keys():
             raise ValueError(f"Device {device_name} not supported")
 
-        self.device = _SUPPORTED_DEVICES[device_name](config["port"])
+        self.device = _SUPPORTED_DEVICES[device_name](config.get_str("port"))
 
-        self.voltage = config["voltage"]
-        self.voltage_step = config["voltage_step"]
-        self.settle_time = config["settle_time"]
+        self.voltage = config.get_float("voltage")
+        self.voltage_step = config.get_float("voltage_step", min_val=0.0)
+        self.settle_time = config.get_float("settle_time", min_val=0.0)
 
-        self.ovp = config["ovp"]
-        self.compliance = config["compliance"]
+        self.ovp = config.get_float("ovp", min_val=0.0)
+        self.compliance = config.get_float("compliance", min_val=0.0)
 
         # If one terminal, select as default, otherwise get from config
         terminals = self.device.get_terminals()
@@ -61,7 +62,7 @@ class Keithley(Satellite):
 
         # Set voltage to zero in case it wasn't properly reset for some reason
         self.device.enable_output(False)
-        self.device.set_voltage(0)
+        self.device.set_voltage(0.0)
 
         # Ramp to target voltage
         self.device.enable_output(True)
@@ -71,7 +72,7 @@ class Keithley(Satellite):
 
     def do_landing(self) -> str:
         # Ramp to zero, then disable output
-        self._ramp(0)
+        self._ramp(0.0)
         self.device.enable_output(False)
 
         return f"Keithley at {self.device.get_voltage()}V (output disabled)"
@@ -87,25 +88,32 @@ class Keithley(Satellite):
             raise ValueError("Reconfiguring terminal is not possible")
 
         if "ovp" in config_keys:
-            self.ovp = partial_config["ovp"]
+            self.ovp = partial_config.get_float("ovp", min_val=0.0)
             self._set_ovp()
         if "compliance" in config_keys:
-            self.compliance = partial_config["compliance"]
+            self.compliance = partial_config.get_float("compliance", min_val=0.0)
             self._set_compliance()
 
         if "voltage_step" in config_keys:
-            self.voltage_step = partial_config["voltage_step"]
+            self.voltage_step = partial_config.get_float("voltage_step", min_val=0.0)
         if "settle_time" in config_keys:
-            self.voltage_step = partial_config["settle_time"]
+            self.voltage_step = partial_config.get_float("settle_time", min_val=0.0)
 
         # If voltage changed, ramp to new voltage
         if "voltage" in config_keys:
-            self.voltage = partial_config["voltage"]
-            self.log.info(f"Ramping output voltage from {self.device.get_voltage()}V to {self.voltage}V")
-            self.device.ramp_voltage(self.voltage, self.voltage_step, self.settle_time)
-            self.log.info(f"Ramped output voltage to {self.voltage}V")
+            self.voltage = partial_config.get_float("voltage")
+            self._ramp(self.voltage)
 
         return f"Keithley at {self.device.get_voltage()}V"
+
+    def fail_gracefully(self) -> None:
+        # Try to ramp down
+        self.log.info("Attempting to ramp down after failure")
+        try:
+            self._ramp(0.0)
+            self.device.enable_output(False)
+        except Exception:
+            self.log.warning("Failed to ramp down")
 
     def reentry(self) -> None:
         if hasattr(self, "device"):
@@ -126,9 +134,38 @@ class Keithley(Satellite):
         if device_compliance != self.compliance:
             raise ValueError(f"Compliance set to {self.compliance}A but {device_compliance}A was applied")
 
-    def _ramp(self, voltage: float):
-        self.log.info(f"Ramping output voltage from {self.device.get_voltage()} to {voltage}V")
-        self.device.ramp_voltage(voltage, self.voltage_step, self.settle_time)
+    def _ramp(self, voltage_target: float):
+        voltage_current = self.device.get_voltage()
+        ramp_up = voltage_target > voltage_current
+
+        self.log.info(f"Ramping output voltage from {voltage_current}V {'up' if ramp_up else 'down'} to {voltage_target}V")
+
+        # Lambda to evaluate if another step should be added
+        voltage_step = self.voltage_step
+        do_next_step = lambda voltage: voltage + voltage_step < voltage_target  # noqa: E731
+        if not ramp_up:
+            voltage_step *= -1
+            do_next_step = lambda voltage: voltage + voltage_step > voltage_target  # noqa: E731
+
+        while voltage_current != voltage_target:
+            # Check if another step can be added without exceeding target
+            if do_next_step(voltage_current):
+                voltage_current += voltage_step
+            else:
+                voltage_current = voltage_target
+
+            # Set voltage
+            self.log.debug(f"Setting output voltage to {voltage_current}V")
+            self.device.set_voltage(voltage_current)
+            # Send metrics
+            voltage, current, timestamp = self.device.read_output()
+            in_compliance = self.device.in_compliance()
+            self.stat("VOLTAGE", voltage)
+            self.stat("CURRENT", current)
+            self.stat("IN_COMPLIANCE", in_compliance)
+            # Settle
+            time.sleep(self.settle_time)
+
         self.log.info(f"Ramped output voltage to {self.device.get_voltage()}V")
 
     @cscp_requestable
@@ -156,19 +193,37 @@ class Keithley(Satellite):
         return self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]
 
     @schedule_metric("V", 5)
-    def VOLTAGE(self) -> Any:
-        if self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]:
+    def VOLTAGE(self) -> float | None:
+        if self.fsm.state in [
+            SatelliteState.INIT,
+            SatelliteState.ORBIT,
+            SatelliteState.starting,
+            SatelliteState.stopping,
+            SatelliteState.RUN,
+        ]:
             return self.device.read_output()[0]
         return None
 
     @schedule_metric("A", 5)
-    def CURRENT(self) -> Any:
-        if self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]:
+    def CURRENT(self) -> float | None:
+        if self.fsm.state in [
+            SatelliteState.INIT,
+            SatelliteState.ORBIT,
+            SatelliteState.starting,
+            SatelliteState.stopping,
+            SatelliteState.RUN,
+        ]:
             return self.device.read_output()[1]
         return None
 
     @schedule_metric("", 5)
-    def IN_COMPLIANCE(self) -> Any:
-        if self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]:
+    def IN_COMPLIANCE(self) -> float | None:
+        if self.fsm.state in [
+            SatelliteState.INIT,
+            SatelliteState.ORBIT,
+            SatelliteState.starting,
+            SatelliteState.stopping,
+            SatelliteState.RUN,
+        ]:
             return self.device.in_compliance()
         return None
