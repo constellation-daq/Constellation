@@ -52,9 +52,11 @@ class LakeShore218(Satellite):
         )
 
         # Register metrics
-        self.reset_scheduled_metrics()
+        self.reset_metrics()
         for n in range(8):
-            self.schedule_metric(channel_names[n], "K", sampling_interval, partial(self._get_temp, n + 1))
+            self.register_scheduled_metric(
+                channel_names[n], "K", f"Temperature of channel {n}", sampling_interval, partial(self._get_temp, n + 1)
+            )
 
     def _get_temp(self, channel: int) -> float | None:
         # Check that _serial exists (required for metrics before INIT)
