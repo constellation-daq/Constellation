@@ -23,6 +23,7 @@ core_src = files(
   'networking/asio_helpers.cpp',
   'networking/zmq_helpers.cpp',
   'utils/ManagerLocator.cpp',
+  'utils/psutils.cpp',
 )
 
 core_lib = library(

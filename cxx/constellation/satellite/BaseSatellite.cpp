@@ -48,6 +48,7 @@
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/msgpack.hpp"
+#include "constellation/core/utils/psutils.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/thread.hpp"
@@ -102,6 +103,10 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
     // Register metric for announcing new run ids and states:
     utils::ManagerLocator::getMetricsManager().registerMetric("RUN_ID", "", "Current run identifier. Updated when changed.");
     utils::ManagerLocator::getMetricsManager().registerMetric("STATE", "", "Current satellite state. Updated when changed.");
+    utils::ManagerLocator::getMetricsManager().registerTimedMetric(
+        "CPU_LOAD_AVG", "%", "CPU load average.", 10s, []() { return get_cpu_load_average(); });
+    utils::ManagerLocator::getMetricsManager().registerTimedMetric(
+        "MEM_AVAIL", "MiB", "Available memory in Megabytes.", 10s, []() { return get_available_memory(); });
 
     // Register state callback for extrasystoles
     fsm_.registerStateCallback("extrasystoles", [&](CSCP::State, std::string_view status) {
