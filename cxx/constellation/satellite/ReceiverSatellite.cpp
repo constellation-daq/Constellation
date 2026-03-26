@@ -69,7 +69,7 @@ ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view nam
     register_timed_metric("RX_BYTES",
                           "B",
                           "Number of bytes received by this satellite in the current run",
-                          10s,
+                          5s,
                           {CSCP::State::RUN, CSCP::State::stopping, CSCP::State::interrupting},
                           [this]() { return bytes_received_.load(); });
 
@@ -177,7 +177,7 @@ void ReceiverSatellite::register_diskspace_metric(const std::filesystem::path& p
     register_timed_metric("DISKSPACE_FREE",
                           "MiB",
                           "Available disk space at the target location of the output file",
-                          10s,
+                          5s,
                           [this, path]() -> std::optional<uint64_t> {
                               try {
                                   const auto space = std::filesystem::space(path);
@@ -411,6 +411,9 @@ void ReceiverSatellite::stopping_receiver() {
 
     // Stop BasePool thread and disconnect all connected sockets
     stopPool();
+
+    // Emit final number of bytes received
+    STAT("RX_BYTES", bytes_received_.load());
 }
 
 void ReceiverSatellite::interrupting_receiver(CSCP::State previous_state) {
