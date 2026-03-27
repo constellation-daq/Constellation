@@ -11,7 +11,7 @@ from typing import Any
 from datetime import datetime
 from pathlib import Path
 import numpy as np
-import io
+import io, time
 
 class EtrocReceiver(ReceiverSatellite):
 
@@ -101,6 +101,8 @@ class EtrocReceiver(ReceiverSatellite):
         # Reset counters and state for the new run
         self.file_counter = 0
         self.file_size = 0
+        self.start_time = time.time()
+        self.data_rate = 0.0 # Reset saved rate
         self.last_flush = datetime.now()
         self._reset_params()
 
@@ -119,10 +121,21 @@ class EtrocReceiver(ReceiverSatellite):
 
     def do_stopping(self) -> None:
         """Runs when the Run ends. We safely close the file here."""
+
+        run_duration = time.time() - self.start_time
+        if self._drc is not None and run_duration > 0:
+            gigabyte_received = 1e-9 * self._drc.bytes_received
+            self.data_rate = 8 * gigabyte_received / run_duration
+            self.log.status(f"Received {gigabyte_received:.2g} GB in {run_duration:.0f}s ({self.data_rate:.3g} Gbps)")
+
         if self.outfile:
             self._close_file(self.outfile)
             self.outfile = None
         self.log.info(f"Stopped Run {self.run_identifier}. File closed safely.")
+
+    @cscp_requestable
+    def get_data_rate(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
+        return f"{self.data_rate:.3g} Gbps", self.data_rate, {}
 
     def receive_data(self, sender: str, data_record: DataRecord) -> None:
         """Called automatically by the framework every time a packet arrives."""
