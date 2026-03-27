@@ -20,7 +20,7 @@ class PyRandomTransmitter(TransmitterSatellite):
         for _ in range(self._number_of_blocks):
             self._blocks.append(random.randbytes(self._block_size))
 
-    def do_run(self, run_identifier: str) -> str:
+    def do_run(self) -> str:
         while not self.stop_requested():
             # Check if rate limited
             if not self.can_send_record():

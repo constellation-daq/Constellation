@@ -84,7 +84,7 @@ class DummyTransmitterSatellite(TransmitterSatellite):
         self.eor = {"data_collected": False}
         return "Stopped"
 
-    def do_run(self, run_identifier: str) -> str:
+    def do_run(self) -> str:
         while not self.stop_requested():
             if self.throw_run:
                 raise Exception("throwing in RUN as requested")
@@ -129,12 +129,12 @@ class DummyReceiverSatellite(ReceiverSatellite):
     def receive_eor(self, sender: str, user_tags: dict[str, Any], run_metadata: dict[str, Any]):
         self.last_eors.append((sender, user_tags, run_metadata))
 
-    def do_run(self, run_identifier: str) -> str:
+    def do_run(self) -> str:
         while not self.stop_requested():
             if self.throw_run:
                 raise Exception("throwing in RUN as requested")
             time.sleep(0.05)
-        return super().do_run(run_identifier)
+        return super().do_run()
 
 
 @pytest.fixture

@@ -66,7 +66,7 @@ class LeCroySatellite(TransmitterSatellite):
             self._configure_sequences(num_sequences)
         return "Successfully reconfigured scope"
 
-    def do_run(self, run_identifier: str) -> str:
+    def do_run(self) -> str:
         num_sequences_acquired = 0
         self._num_triggers_acquired = 0
         while not self.stop_requested():

@@ -69,7 +69,7 @@ class ReceiverSatellite(Satellite):
         if len(missing_transmitters) > 0:
             raise RuntimeError(f"The requested data transmitters {', '.join(missing_transmitters)} are not available")
 
-    def _pre_run_hook(self, run_identifier: str) -> None:
+    def _pre_run_hook(self) -> None:
         """Hook run immediately before `do_run()` is called.
 
         Start the data receiver and requests DATA services via CHIRP.
@@ -156,7 +156,7 @@ class ReceiverSatellite(Satellite):
         """Receive end-of-run (EOR)"""
         raise NotImplementedError()
 
-    def do_run(self, run_identifier: str) -> str:
+    def do_run(self) -> str:
         """Run loop
 
         NOTE: This must not be overridden by receiver satellite implementations!

@@ -344,17 +344,17 @@ class Satellite(
         # emit run ID
         self.stat("RUN_ID", run_identifier)
         # allow inheriting classes to execute code just before do_run is called:
-        self._pre_run_hook(run_identifier)
+        self._pre_run_hook()
         # complete transitional state
         self.fsm.complete(msg)
         # continue to execute DAQ in this thread
-        msg = self.do_run(run_identifier)
+        msg = self.do_run()
         if not isinstance(msg, str):
             msg = ""
         return msg
 
     @debug_log
-    def _pre_run_hook(self, run_identifier: str) -> None:
+    def _pre_run_hook(self) -> None:
         """Hook run immediately before do_run() is called.
 
         Intended for inheriting classes to inject code in between calls to
@@ -374,7 +374,7 @@ class Satellite(
         return self._state_thread_evt.is_set()
 
     @debug_log
-    def do_run(self, run_identifier: str) -> str | None:
+    def do_run(self) -> str | None:
         """The acquisition event loop.
 
         This method will be started by the Satellite and run in a thread. It
