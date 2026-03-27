@@ -4,7 +4,7 @@ SPDX-License-Identifier: EUPL-1.2
 """
 
 from constellation.core.commandmanager import cscp_requestable
-from constellation.core.cscp import CSCPMessage
+from constellation.core.cscp import CSCP1Message
 from constellation.core.configuration import Configuration
 from constellation.core.transmitter_satellite import TransmitterSatellite
 from typing import Any
@@ -279,17 +279,17 @@ class EtrocTransmitter(TransmitterSatellite):
         return "Finished acquisition"
 
     @cscp_requestable
-    def get_config_register(self, request: CSCPMessage) -> tuple[str, Any, dict]:
+    def get_config_register(self, request: CSCP1Message) -> tuple[str, Any, dict]:
         reg = request.payload
         return "FPGA is Ready", format(cmd_interpret.read_config_reg(self.connection_socket, reg), '016b'), {}
 
     @cscp_requestable
-    def get_status_register(self, request: CSCPMessage) -> tuple[str, Any, dict]:
+    def get_status_register(self, request: CSCP1Message) -> tuple[str, Any, dict]:
         reg = request.payload
         return "FPGA is Ready", format(cmd_interpret.read_status_reg(self.connection_socket, reg), '016b'), {}
 
     @cscp_requestable
-    def set_data_phase_delay(self, request: CSCPMessage) -> tuple[str, Any, dict]:
+    def set_data_phase_delay(self, request: CSCP1Message) -> tuple[str, Any, dict]:
         data_delay = max(0, min(request.payload, 63)) # 6 bits max
 
         # Clear bits 7-12 (6 bits), then set them to data_delay
@@ -300,7 +300,7 @@ class EtrocTransmitter(TransmitterSatellite):
         return "FPGA Reg 13 Set, Data Delay Set", format(cmd_interpret.read_config_reg(self.connection_socket, 13), '016b'), {}
 
     @cscp_requestable
-    def set_data_phase_channel_delay(self, request: CSCPMessage) -> tuple[str, Any, dict]:
+    def set_data_phase_channel_delay(self, request: CSCP1Message) -> tuple[str, Any, dict]:
         data_delay = max(0, min(request.payload[0], 39)) # Original code clamped to 39
         channel = max(0, min(request.payload[1], 3))
 
@@ -317,7 +317,7 @@ class EtrocTransmitter(TransmitterSatellite):
             return "FPGA Reg 6 Set, Data Delay Set", format(cmd_interpret.read_config_reg(self.connection_socket, 6), '016b'), {}
 
     @cscp_requestable
-    def set_fc_phase_delay(self, request: CSCPMessage) -> tuple[str, Any, dict]:
+    def set_fc_phase_delay(self, request: CSCP1Message) -> tuple[str, Any, dict]:
         fc_delay = max(0, min(request.payload, 63))
 
         # Clear bits 10-15 (6 bits) and set to fc_delay
@@ -328,7 +328,7 @@ class EtrocTransmitter(TransmitterSatellite):
         return "FPGA Reg 7 Set, FC Phase Delay Set", format(cmd_interpret.read_config_reg(self.connection_socket, 7), '016b'), {}
 
     @cscp_requestable
-    def set_fc_phase_channel_delay(self, request: CSCPMessage) -> tuple[str, Any, dict]:
+    def set_fc_phase_channel_delay(self, request: CSCP1Message) -> tuple[str, Any, dict]:
         fc_delay = max(0, min(request.payload[0], 31))
         channel = max(0, min(request.payload[1], 3))
 
@@ -350,7 +350,7 @@ class EtrocTransmitter(TransmitterSatellite):
         return "FPGA Reg 4 and 5 Set, FC Phase Delay Set", [format(cmd_interpret.read_config_reg(self.connection_socket, 4), '016b'), format(cmd_interpret.read_config_reg(self.connection_socket, 5), '016b')], {}
 
     @cscp_requestable
-    def set_fc_bit_delay(self, request: CSCPMessage) -> tuple[str, Any, dict]:
+    def set_fc_bit_delay(self, request: CSCP1Message) -> tuple[str, Any, dict]:
         bit_delay = max(0, min(request.payload, 15)) # Assuming 4 bits max based on original logic
 
         # Clear bits 10-13 (4 bits) and set to bit_delay
@@ -361,7 +361,7 @@ class EtrocTransmitter(TransmitterSatellite):
         return "FPGA Reg 14 Set, FC Bit Delay Set", format(cmd_interpret.read_config_reg(self.connection_socket, 14), '016b'), {}
 
     @cscp_requestable
-    def set_ledpage(self, request: CSCPMessage) -> tuple[str, Any, dict]:
+    def set_ledpage(self, request: CSCP1Message) -> tuple[str, Any, dict]:
         ledpage = max(0, min(request.payload, 5))
 
         # Clear bits 2-4 (3 bits) and set to ledpage
@@ -372,13 +372,13 @@ class EtrocTransmitter(TransmitterSatellite):
         return "FPGA Reg 13 Set, Led Page Set", format(cmd_interpret.read_config_reg(self.connection_socket, 13), '016b'), {}
 
     @cscp_requestable
-    def set_active_channel(self, request: CSCPMessage) -> tuple[str, Any, dict]:
+    def set_active_channel(self, request: CSCP1Message) -> tuple[str, Any, dict]:
         self.active_channel = request.payload
         cmd_interpret.write_config_reg_decoded(self.connection_socket, "active_channel", self.active_channel)
         return "FPGA Reg 15 Set, active_channel Set", format(cmd_interpret.read_config_reg(self.connection_socket, 15), '016b'), {}
 
     @cscp_requestable
-    def set_fast_command_memo(self, request: CSCPMessage) -> tuple[str, Any, dict]:
+    def set_fast_command_memo(self, request: CSCP1Message) -> tuple[str, Any, dict]:
         self.fast_command_memo = request.payload
         self.configure_memo_FC()
         return "Fast Command Configured", self.fast_command_memo, {}
@@ -387,7 +387,7 @@ class EtrocTransmitter(TransmitterSatellite):
     # CSCP Command Permission Checks
     # ==========================================
 
-    def _is_orbit_state(self, request: CSCPMessage) -> bool:
+    def _is_orbit_state(self, request: CSCP1Message) -> bool:
         """Helper to ensure commands are only allowed in the ORBIT state."""
         return self.fsm.current_state.id in ["ORBIT"]
 
