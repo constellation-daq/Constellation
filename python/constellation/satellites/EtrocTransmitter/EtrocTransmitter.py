@@ -127,9 +127,28 @@ class EtrocTransmitter(Satellite):
     def do_initializing(self, config: Configuration) -> str:
         """Configure the Satellite and any associated hardware."""
 
-        # Loop through the defaults and set them dynamically
+      # Loop through the defaults and dynamically apply the correct Constellation getter
         for key, default_value in self.DEFAULT_CONFIG.items():
-            setattr(self, key, config.setdefault(key, default_value))
+
+            # If the default is an integer (and not a boolean)
+            if isinstance(default_value, int) and not isinstance(default_value, bool):
+                value = config.get_int(key, default_value)
+
+            # If the default is a float
+            elif isinstance(default_value, float):
+                value = config.get_float(key, default_value)
+
+            # If the default is a string
+            elif isinstance(default_value, str):
+                value = config.get_str(key, default_value)
+
+            # Fallback for anything else (like booleans)
+            else:
+                config.set_default(key, default_value)
+                value = config.get(key)
+
+            # Set the variable on the class (e.g., self.port = 1024)
+            setattr(self, key, value)
 
         self.connection_socket = None
 
