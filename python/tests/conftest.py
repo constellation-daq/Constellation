@@ -19,8 +19,8 @@ from constellation.core.controller import BaseController
 from constellation.core.controller_configuration import load_config
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.heartbeatchecker import HeartbeatChecker
-from constellation.core.message.cscp1 import SatelliteState
 from constellation.core.network import get_loopback_interface_name
+from constellation.core.protocol.cscp1 import SatelliteState
 from constellation.core.satellite import Satellite
 
 # a default port to send arbitrary data on

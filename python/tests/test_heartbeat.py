@@ -9,8 +9,8 @@ import pytest
 
 from constellation.core.chirp import get_uuid
 from constellation.core.heartbeater import HeartbeatSender
-from constellation.core.message.cscp1 import SatelliteState
 from constellation.core.network import get_loopback_interface_name
+from constellation.core.protocol.cscp1 import SatelliteState
 
 HB_PORT = 33333
 

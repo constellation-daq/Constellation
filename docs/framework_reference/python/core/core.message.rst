@@ -16,6 +16,7 @@ Submodules
    :maxdepth: 1
 
    core.message.cdtp2
+   core.message.cmdp1
    core.message.cscp1
    core.message.exceptions
    core.message.msgpack_helpers
