@@ -37,16 +37,6 @@ class EtrocTransmitter(Satellite):
         "triggerbit_delay", "fc_delays", "data_delays_01", "data_delays_23"
     }
 
-    def print_all_config_params(self) -> None:
-        self.log.info("Printing All Config Params...")
-        # Loop through the defaults to print current values
-        for key in self.DEFAULT_CONFIG:
-            value = getattr(self, key)
-            if key in self.HEX_KEYS and isinstance(value, int):
-                self.log.info(f"{key}: {hex(value)}")
-            else:
-                self.log.info(f"{key}: {value}")
-
     def _send_fc_sequence(self, reg12_val: int, reg10_val: int, reg9_val: int) -> None:
         """Helper to send a standard Fast Command hardware sequence."""
         cmd_interpret.write_config_reg_decoded(self.connection_socket, "register_12", reg12_val)
@@ -129,26 +119,9 @@ class EtrocTransmitter(Satellite):
 
       # Loop through the defaults and dynamically apply the correct Constellation getter
         for key, default_value in self.DEFAULT_CONFIG.items():
-
-            # If the default is an integer (and not a boolean)
-            if isinstance(default_value, int) and not isinstance(default_value, bool):
-                value = config.get_int(key, default_value)
-
-            # If the default is a float
-            elif isinstance(default_value, float):
-                value = config.get_float(key, default_value)
-
-            # If the default is a string
-            elif isinstance(default_value, str):
-                value = config.get_str(key, default_value)
-
-            # Fallback for anything else (like booleans)
-            else:
-                config.set_default(key, default_value)
-                value = config.get(key)
-
             # Set the variable on the class (e.g., self.port = 1024)
-            setattr(self, key, value)
+            config.set_default(key, default_value)
+            setattr(self, key, default_value)
 
         self.connection_socket = None
 
@@ -156,7 +129,6 @@ class EtrocTransmitter(Satellite):
             raise ValueError(f"Prescale factor must be one of [2048, 4096, 8192, 16384], {self.prescale_factor} not supported")
 
         self.log.info("Configuration loaded and Defaults set")
-        self.print_all_config_params()
         return "Initialized - Configuration loaded and Defaults set"
 
     def do_launching(self) -> str:
