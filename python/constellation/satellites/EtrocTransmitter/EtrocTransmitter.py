@@ -247,23 +247,16 @@ class EtrocTransmitter(Satellite):
         # 1. Use the framework's built-in stop request flag
         while not self.stop_requested():
 
-            # 2. Backpressure / Rate Limiting Check
-            if not self.can_send_record():
-                time.sleep(0.001)
-                continue
-
-            # 3. Your Hardware Logic: Read the main DAQ-loop
+            # 2. Your Hardware Logic: Read the main DAQ-loop
             raw_bytes = cmd_interpret.read_data_fifo(self.connection_socket, self.num_fifo_read)
 
-            # 4. Handle empty buffer (exactly as you had it before)
+            # 3. Handle empty buffer (exactly as you had it before)
             if not raw_bytes:
                 self.log.debug("No data in buffer! Will try to read again")
                 time.sleep(1.01)
                 continue
 
-            data_record = self.new_data_record()
-            data_record.add_block(raw_bytes) # Pass bytes directly
-            self.send_data_record(data_record)
+            self.log.info(raw_bytes)
 
         return "Finished acquisition"
 
