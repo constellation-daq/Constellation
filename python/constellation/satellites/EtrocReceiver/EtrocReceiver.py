@@ -6,14 +6,14 @@ SPDX-License-Identifier: EUPL-1.2
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.message.cdtp2 import DataRecord
 from constellation.core.message.cscp1 import CSCP1Message
-from constellation.core.receiver_satellite import ReceiverSatellite
+from constellation.core.satellite import Satellite
 from typing import Any
 from datetime import datetime
 from pathlib import Path
 import numpy as np
 import io, time
 
-class EtrocReceiver(ReceiverSatellite):
+class EtrocReceiver(Satellite):
 
     # 1. Centralize standard configurations
     DEFAULT_CONFIG = {
