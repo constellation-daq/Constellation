@@ -6,12 +6,12 @@ SPDX-License-Identifier: EUPL-1.2
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.cscp import CSCP1Message
 from constellation.core.configuration import Configuration
-from constellation.core.transmitter_satellite import TransmitterSatellite
+from constellation.core.satellite import Satellite
 from typing import Any
 from . import cmd_interpret
 import time, socket
 
-class EtrocTransmitter(TransmitterSatellite):
+class EtrocTransmitter(Satellite):
 
     DEFAULT_CONFIG = {
             "hostname": "192.168.2.3",
