@@ -8,7 +8,7 @@ from constellation.core.cscp import CSCP1Message
 from constellation.core.configuration import Configuration
 from constellation.core.transmitter_satellite import TransmitterSatellite
 from typing import Any
-import cmd_interpret
+from . import cmd_interpret
 import time, socket
 
 class EtrocTransmitter(TransmitterSatellite):
