@@ -7,6 +7,7 @@ from constellation.core.commandmanager import cscp_requestable
 from constellation.core.message.cdtp2 import DataRecord
 from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.satellite import Satellite
+from constellation.core.configuration import Configuration
 from typing import Any
 from datetime import datetime
 from pathlib import Path
@@ -52,12 +53,12 @@ class EtrocReceiver(Satellite):
 
     BUFFER_SHIFTS = {1: 24, 2: 16, 3: 8, 4: 0}
 
-    def do_initializing(self, config: dict[str, Any]) -> str:
+    def do_initializing(self, config: Configuration) -> str:
         """Initialize and configure the satellite."""
 
         # Apply configurations dynamically
         for key, default_value in self.DEFAULT_CONFIG.items():
-            setattr(self, key, config.setdefault(key, default_value))
+            setattr(self, key, config.set_default(key, default_value))
 
         # Setup monitoring
         self._configure_monitoring(2.0)
