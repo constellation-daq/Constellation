@@ -13,6 +13,25 @@ import time, socket
 
 class EtrocTransmitter(Satellite):
 
+    DEFAULT_CONFIG = {
+        "hostname": "192.168.2.3",
+        "port": 1024,
+        "firmware": "0001",
+        "polarity": 0x4023,
+        "timestamp": 0x0000,
+        "active_channel": 0x0001,
+        "prescale_factor": 2048,
+        "counter_duration": 0x0000,
+        "triggerbit_delay": 0x1800,
+        "fc_delays": 0x0000,
+        "data_delays_01": 0x0000,
+        "data_delays_23": 0x0000,
+        "num_fifo_read": 65536,
+        "clear_fifo": 1,
+        "reset_counter": 1,
+        "fast_command_memo": "Start Triggerbit"
+    }
+
     def _send_fc_sequence(self, reg12_val: int, reg10_val: int, reg9_val: int) -> None:
         """Helper to send a standard Fast Command hardware sequence."""
         cmd_interpret.write_config_reg_decoded(self.connection_socket, "register_12", reg12_val)
@@ -93,22 +112,15 @@ class EtrocTransmitter(Satellite):
     def do_initializing(self, config: Configuration) -> str:
         """Configure the Satellite and any associated hardware."""
 
-        self.port = config.set_default("port", 1024)
-        self.hostname = config.set_default("hostname", "192.168.2.3")
-        self.firmware = config.set_default("firmware", "0001")
-        self.polarity = config.set_default("polarity", 0x4023)
-        self.timestamp = config.set_default("timestamp", 0x0000)
-        self.active_channel = config.set_default("active_channel", 0x0001)
-        self.prescale_factor = config.set_default("prescale_factor", 2048)
-        self.counter_duration = config.set_default("counter_duration", 0x0000)
-        self.triggerbit_delay = config.set_default("triggerbit_delay", 0x1800)
-        self.fc_delays = config.set_default("fc_delays", 0x0000)
-        self.data_delays_01 = config.set_default("data_delays_01", 0x0000)
-        self.data_delays_23 = config.set_default("data_delays_23", 0x0000)
-        self.num_fifo_read = config.set_default("num_fifo_read", 65536)
-        self.clear_fifo = config.set_default("clear_fifo", 1)
-        self.reset_counter = config.set_default("reset_counter", 1)
-        self.fast_command_memo = config.set_default("fast_command_memo", "Start Triggerbit")
+        for key, default_value in self.DEFAULT_CONFIG.items():
+            # config.get() automatically sets the default if missing
+            # and pulls the value from the config file!
+            # Adding 'return_type' ensures it stays type-safe!
+            value = config.get(key, default_value, return_type=type(default_value))
+
+            # Set the variable on the class
+            setattr(self, key, value)
+
         self.connection_socket = None
 
         if self.prescale_factor not in [2048, 4096, 8192, 16384]:
