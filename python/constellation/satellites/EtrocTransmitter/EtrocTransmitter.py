@@ -13,30 +13,6 @@ import time, socket
 
 class EtrocTransmitter(Satellite):
 
-    DEFAULT_CONFIG = {
-            "hostname": "192.168.2.3",
-            "port": 1024,
-            "firmware": "0001",
-            "polarity": 0x4023,
-            "timestamp": 0x0000,
-            "active_channel": 0x0001,
-            "prescale_factor": 2048,
-            "counter_duration": 0x0000,
-            "triggerbit_delay": 0x1800,
-            "fc_delays": 0x0000,
-            "data_delays_01": 0x0000,
-            "data_delays_23": 0x0000,
-            "num_fifo_read": 65536,
-            "clear_fifo": 1,
-            "reset_counter": 1,
-            "fast_command_memo": "Start Triggerbit"
-    }
-
-    HEX_KEYS = {
-        "polarity", "timestamp", "active_channel", "counter_duration",
-        "triggerbit_delay", "fc_delays", "data_delays_01", "data_delays_23"
-    }
-
     def _send_fc_sequence(self, reg12_val: int, reg10_val: int, reg9_val: int) -> None:
         """Helper to send a standard Fast Command hardware sequence."""
         cmd_interpret.write_config_reg_decoded(self.connection_socket, "register_12", reg12_val)
@@ -117,20 +93,28 @@ class EtrocTransmitter(Satellite):
     def do_initializing(self, config: Configuration) -> str:
         """Configure the Satellite and any associated hardware."""
 
-      # Loop through the defaults and dynamically apply the correct Constellation getter
-        for key, default_value in self.DEFAULT_CONFIG.items():
-            # Set the variable on the class (e.g., self.port = 1024)
-            config.set_default(key, default_value)
-            setattr(self, key, default_value)
-
+        self.port = config.set_default("port", 1024)
+        self.hostname = config.set_default("hostname", "192.168.2.3")
+        self.firmware = config.set_default("firmware", "0001")
+        self.polarity = config.set_default("polarity", 0x4023)
+        self.timestamp = config.set_default("timestamp", 0x0000)
+        self.active_channel = config.set_default("active_channel", 0x0001)
+        self.prescale_factor: int = config.set_default("prescale_factor", 2048)
+        self.counter_duration = config.set_default("counter_duration", 0x0000)
+        self.triggerbit_delay = config.set_default("triggerbit_delay", 0x1800)
+        self.fc_delays = config.set_default("fc_delays", 0x0000)
+        self.data_delays_01 = config.set_default("data_delays_01", 0x0000)
+        self.data_delays_23 = config.set_default("data_delays_23", 0x0000)
+        self.num_fifo_read = config.set_default("num_fifo_read", 65536)
+        self.clear_fifo = config.set_default("clear_fifo", 1)
+        self.reset_counter = config.set_default("reset_counter", 1)
+        self.fast_command_memo = config.set_default("fast_command_memo", "Start Triggerbit")
         self.connection_socket = None
 
         if self.prescale_factor not in [2048, 4096, 8192, 16384]:
             raise ValueError(f"Prescale factor must be one of [2048, 4096, 8192, 16384], {self.prescale_factor} not supported")
 
-        for key, _ in self.DEFAULT_CONFIG.items():
-            self.log.info(f"{key}: {config.get(key)}")
-
+        self.log.info(f"{self.active_channel}")
         self.log.info("Configuration loaded and Defaults set")
         return "Initialized - Configuration loaded and Defaults set"
 
@@ -162,7 +146,7 @@ class EtrocTransmitter(Satellite):
             cmd_interpret.write_config_reg_decoded(self.connection_socket, reg_name, value)
 
         # Write special-case register
-        cmd_interpret.write_config_reg_decoded(self.connection_socket, "register_10", 0x000, prescale_factor=self.prescale_factor)
+        cmd_interpret.write_config_reg_decoded(self.connection_socket, "register_10", 0x000, self.prescale_factor)
 
         if self.clear_fifo:
             self.log.info("Clearing FIFO...")
