@@ -99,7 +99,7 @@ class EtrocTransmitter(Satellite):
         self.polarity = config.set_default("polarity", 0x4023)
         self.timestamp = config.set_default("timestamp", 0x0000)
         self.active_channel = config.set_default("active_channel", 0x0001)
-        self.prescale_factor: int = config.set_default("prescale_factor", 2048)
+        self.prescale_factor = config.set_default("prescale_factor", 2048)
         self.counter_duration = config.set_default("counter_duration", 0x0000)
         self.triggerbit_delay = config.set_default("triggerbit_delay", 0x1800)
         self.fc_delays = config.set_default("fc_delays", 0x0000)
