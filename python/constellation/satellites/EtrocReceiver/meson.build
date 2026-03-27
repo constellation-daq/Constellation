@@ -1,7 +1,7 @@
 etrocreceiver_sat_files = files(
   '__init__.py',
   '__main__.py',
-  'EtrocTransmitter.py',
+  'EtrocReceiver.py',
 )
 
 py.install_sources(etrocreceiver_sat_files,
