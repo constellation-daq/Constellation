@@ -5,6 +5,7 @@ SPDX-License-Identifier: EUPL-1.2
 Module containing definitions for CSCP.
 """
 
+import re
 from enum import Enum
 
 
@@ -39,3 +40,29 @@ class SatelliteState(Enum):
     def transitions_to(self, state: Enum) -> bool:
         # Target steady state indicated by the lower four bits
         return bool(((self.value & 0x0F) << 4) == state.value)
+
+
+def is_valid_satellite_name(satellite_name: str) -> bool:
+    """Checks if a satellite name is valid
+
+    A satellite name may contain alphanumeric characters and underscores and may not be empty."""
+    return bool(re.match(r"^\w+$", satellite_name))
+
+
+def is_valid_satellite_type(satellite_type: str) -> bool:
+    """Checks if a satellite type is valid
+
+    A satellite type may contain alphanumeric characters and underscores and may not be empty."""
+    return bool(re.match(r"^\w+$", satellite_type))
+
+
+def is_valid_canonical_name(canonical_name: str) -> bool:
+    """Checks if a canonical name is valid
+
+    A canonical name consists of two parts, separated by a period.
+    Both parts may contain alphanumeric characters and underscores and may not be empty.
+    """
+    name_parts = canonical_name.split(".")
+    if len(name_parts) != 2:
+        return False
+    return is_valid_satellite_type(name_parts[0]) and is_valid_satellite_type(name_parts[1])

@@ -631,3 +631,12 @@ def test_data_satellites_receiver_failure(
         time.sleep(0.05)
         timeout -= 0.05
     assert transmitter.fsm.state in [SatelliteState.SAFE, SatelliteState.ERROR]
+
+
+def test_data_satellites_invalid_data_transmitter(receiver_satellite: DummyReceiverSatellite, cmd_transmitter):
+    receiver = receiver_satellite
+    cmd_tx, cmd_rx = cmd_transmitter
+
+    # Initialize
+    cmd_rx.request_get_response("initialize", {"_data": {"receive_from": ["Spuntik.One", "Spuntik.Two."]}})
+    wait_for_state(receiver.fsm, "ERROR", 1)
