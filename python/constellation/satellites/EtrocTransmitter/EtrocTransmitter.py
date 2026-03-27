@@ -128,6 +128,9 @@ class EtrocTransmitter(Satellite):
         if self.prescale_factor not in [2048, 4096, 8192, 16384]:
             raise ValueError(f"Prescale factor must be one of [2048, 4096, 8192, 16384], {self.prescale_factor} not supported")
 
+        for key, _ in self.DEFAULT_CONFIG.items():
+            self.log.info(f"{key}: {config.get(key)}")
+
         self.log.info("Configuration loaded and Defaults set")
         return "Initialized - Configuration loaded and Defaults set"
 
