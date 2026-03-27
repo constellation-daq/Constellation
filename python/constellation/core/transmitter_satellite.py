@@ -87,7 +87,7 @@ class TransmitterSatellite(Satellite):
         self._dtm.queue_size = config_data.get_int("queue_size", 32768, min_val=1)
         self._data_license = config_data.get_str("license", "ODC-By-1.0")
 
-    def _pre_run_hook(self, run_identifier: str) -> None:
+    def _pre_run_hook(self) -> None:
         """Hook run immediately before `do_run()` is called.
 
         Send the BOR message and start the data transmitter.
@@ -100,7 +100,7 @@ class TransmitterSatellite(Satellite):
         self._run_metadata = {
             "version": __version__,
             "version_full": f"Constellation v{__version__} ({__version_code_name__})",
-            "run_id": run_identifier,
+            "run_id": self.run_identifier,
             "time_start": datetime.now(UTC),
             "license": self._data_license,
         }
@@ -216,7 +216,7 @@ class TransmitterSatellite(Satellite):
         """Mark the current run as tainted"""
         self._mark_run_tainted = True
 
-    def do_run(self, run_identifier: str) -> str:
+    def do_run(self) -> str:
         """Perform the data acquisition and enqueue the results.
 
         This is only an abstract method. Inheriting classes must implement their

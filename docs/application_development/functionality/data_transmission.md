@@ -219,7 +219,7 @@ to each message sent by the satellite. There are three possibilities:
 * Finally, metadata can be attached to each individual data message sent during the run:
 
   ```python
-  def do_run(self, run_identifier: str) -> str:
+  def do_run(self) -> str:
       while not self.stop_requested():
           data = np.linspace(0, 2 * np.pi, 1024, endpoint=False)
           tags = {"dtype": str(data.dtype), "other_info": 12345}

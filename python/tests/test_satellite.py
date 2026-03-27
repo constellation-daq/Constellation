@@ -67,7 +67,7 @@ def mock_fail_satellite(mock_zmq_context, mock_chirp_transmitter):
     ctx.flip_queues()
 
     class MockFailSatellite(Satellite):
-        def do_run(self, run_identifier):
+        def do_run(self):
             raise RuntimeError("mock failure")
 
     s = MockFailSatellite("fail1", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
