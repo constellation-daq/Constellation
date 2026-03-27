@@ -53,6 +53,13 @@ class EtrocReceiver(Satellite):
 
     BUFFER_SHIFTS = {1: 24, 2: 16, 3: 8, 4: 0}
 
+    def print_all_config_params(self) -> None:
+        self.log.info("Printing All Config Params...")
+        # Loop through the defaults to print current values
+        for key in self.DEFAULT_CONFIG:
+            value = getattr(self, key)
+            self.log.info(f"{key}: {value}")
+
     def do_initializing(self, config: Configuration) -> str:
         """Initialize and configure the satellite."""
 
@@ -60,8 +67,7 @@ class EtrocReceiver(Satellite):
         for key, default_value in self.DEFAULT_CONFIG.items():
             setattr(self, key, config.set_default(key, default_value))
 
-        # Setup monitoring
-        self._configure_monitoring(2.0)
+        self.print_all_config_params()
 
         # Determine file size limit (20 MB for binary, 50,000 lines for text)
         if self.compressed_binary and not self.translate:
