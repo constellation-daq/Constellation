@@ -7,7 +7,7 @@ import time
 
 import pytest
 
-from constellation.core.message.cscp1 import SatelliteState
+from constellation.core.protocol.cscp1 import SatelliteState
 
 # %%%%%%%%%%%%%%%
 # TESTS

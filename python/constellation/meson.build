@@ -43,6 +43,7 @@ core_message_files = files(
 core_protocol_files = files(
   'core/protocol/__init__.py',
   'core/protocol/cmdp1.py',
+  'core/protocol/cscp1.py',
 )
 
 satellites_files = files(

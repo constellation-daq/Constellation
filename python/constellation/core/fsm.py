@@ -21,7 +21,8 @@ from .commandmanager import cscp_requestable
 from .configuration import Configuration
 from .error import debug_log, handle_error
 from .heartbeatchecker import HeartbeatChecker
-from .message.cscp1 import CSCP1Message, SatelliteState
+from .message.cscp1 import CSCP1Message
+from .protocol.cscp1 import SatelliteState
 
 
 class SatelliteFSM(StateMachine):

@@ -23,8 +23,8 @@ from constellation.core.chirpmanager import DiscoveredService
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.logging import ConstellationLogger
 from constellation.core.message.cdtp2 import DataRecord
-from constellation.core.message.cscp1 import SatelliteState
 from constellation.core.network import get_loopback_interface_name
+from constellation.core.protocol.cscp1 import SatelliteState
 from constellation.core.receiver_satellite import ReceiverSatellite
 from constellation.core.transmitter_satellite import TransmitterSatellite
 

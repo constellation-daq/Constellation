@@ -22,8 +22,9 @@ from .configuration import Configuration, ConfigurationGroup
 from .error import debug_log, handle_error
 from .heartbeatchecker import HeartbeatChecker
 from .heartbeater import HeartbeatSender
-from .message.cscp1 import CSCP1Message, SatelliteState
+from .message.cscp1 import CSCP1Message
 from .monitoring import MonitoringSender
+from .protocol.cscp1 import SatelliteState
 
 
 class Satellite(
