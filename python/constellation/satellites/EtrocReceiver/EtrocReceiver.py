@@ -123,12 +123,6 @@ class EtrocReceiver(Satellite):
     def do_stopping(self) -> None:
         """Runs when the Run ends. We safely close the file here."""
 
-        run_duration = time.time() - self.start_time
-        if self._drc is not None and run_duration > 0:
-            gigabyte_received = 1e-9 * self._drc.bytes_received
-            self.data_rate = 8 * gigabyte_received / run_duration
-            self.log.status(f"Received {gigabyte_received:.2g} GB in {run_duration:.0f}s ({self.data_rate:.3g} Gbps)")
-
         if self.outfile:
             self._close_file(self.outfile)
             self.outfile = None
