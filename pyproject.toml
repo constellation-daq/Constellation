@@ -50,6 +50,8 @@ SatelliteLeCroy = "constellation.satellites.LeCroy.__main__:main"
 SatelliteMariner = "constellation.satellites.Mariner.__main__:main"
 SatellitePyDevNullReceiver = "constellation.satellites.PyDevNullReceiver.__main__:main"
 SatellitePyRandomTransmitter = "constellation.satellites.PyRandomTransmitter.__main__:main"
+SatelliteEtrocTransmitter = "constellation.satellites.EtrocTransmitter.__main__:main"
+SatelliteEtrocReceiver = "constellation.satellites.EtrocReceiver.__main__:main"
 
 [project.urls]
 Homepage = "https://constellation.pages.desy.de/"
