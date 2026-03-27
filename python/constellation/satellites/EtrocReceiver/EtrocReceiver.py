@@ -24,7 +24,6 @@ class EtrocReceiver(Satellite):
         "skip_fillers": 0,
         "keep_time": 1,
         "flush_interval": 10.0,
-        "frame_trailers": {0: 0x17f0f, 1: 0x17f0f, 2: 0x17f0f, 3: 0x17f0f}
     }
 
     # 2. Define static hardware patterns at the class level
@@ -63,11 +62,26 @@ class EtrocReceiver(Satellite):
     def do_initializing(self, config: Configuration) -> str:
         """Initialize and configure the satellite."""
 
-        # Apply configurations dynamically
+        # 1. The Smart Loop (Handles ints, floats, and strings)
         for key, default_value in self.DEFAULT_CONFIG.items():
-            setattr(self, key, config.set_default(key, default_value))
+            if isinstance(default_value, int) and not isinstance(default_value, bool):
+                value = config.get_int(key, default_value)
+            elif isinstance(default_value, float):
+                value = config.get_float(key, default_value)
+            elif isinstance(default_value, str):
+                value = config.get_str(key, default_value)
+            else:
+                config.set_default(key, default_value)
+                value = config.get(key)
+            setattr(self, key, value)
 
-        self.print_all_config_params()
+        # 2. Safely handle the frame_trailers dictionary separately
+        self.frame_trailers = {0: 0x17f0f, 1: 0x17f0f, 2: 0x17f0f, 3: 0x17f0f}
+        if config.has("frame_trailers"):
+            trailers_section = config.get_section("frame_trailers")
+            # Convert the string keys from the TOML config file back into integers
+            for key in trailers_section.get_keys():
+                self.frame_trailers[int(key)] = trailers_section.get_int(key)
 
         # Determine file size limit (20 MB for binary, 50,000 lines for text)
         if self.compressed_binary and not self.translate:
