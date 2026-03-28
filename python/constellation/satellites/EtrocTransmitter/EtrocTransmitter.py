@@ -282,7 +282,7 @@ class EtrocTransmitter(TransmitterSatellite):
         self.timestamp = (self.timestamp & mask) | (data_delay << 7)
 
         cmd_interpret.write_config_reg_decoded(self.connection_socket, "timestamp", self.timestamp)
-        return "FPGA Reg 13 Set, Data Delay Set", format(cmd_interpret.read_config_reg(self.connection_socket, 13), '016b'), {}
+        return "FPGA Reg 13 Set, Data Delay Set", f"0x{cmd_interpret.read_config_reg(self.connection_socket, 13):04x}", {}
 
     @cscp_requestable
     def set_data_phase_channel_delay(self, request: CSCP1Message) -> tuple[str, Any, dict]:
@@ -295,11 +295,11 @@ class EtrocTransmitter(TransmitterSatellite):
         if channel < 2:
             self.data_delays_01 = (self.data_delays_01 & mask) | (data_delay << shift)
             cmd_interpret.write_config_reg_decoded(self.connection_socket, "data_delays_01", self.data_delays_01)
-            return "FPGA Reg 5 Set, Data Delay Set", format(cmd_interpret.read_config_reg(self.connection_socket, 5), '016b'), {}
+            return "FPGA Reg 5 Set, Data Delay Set", f"0x{cmd_interpret.read_config_reg(self.connection_socket, 5):04x}", {}
         else:
             self.data_delays_23 = (self.data_delays_23 & mask) | (data_delay << shift)
             cmd_interpret.write_config_reg_decoded(self.connection_socket, "data_delays_23", self.data_delays_23)
-            return "FPGA Reg 6 Set, Data Delay Set", format(cmd_interpret.read_config_reg(self.connection_socket, 6), '016b'), {}
+            return "FPGA Reg 6 Set, Data Delay Set", f"0x{cmd_interpret.read_config_reg(self.connection_socket, 6):04x}", {}
 
     @cscp_requestable
     def set_fc_phase_delay(self, request: CSCP1Message) -> tuple[str, Any, dict]:
@@ -310,7 +310,7 @@ class EtrocTransmitter(TransmitterSatellite):
         self.counter_duration = (self.counter_duration & mask) | (fc_delay << 10)
 
         cmd_interpret.write_config_reg_decoded(self.connection_socket, "counter_duration", self.counter_duration)
-        return "FPGA Reg 7 Set, FC Phase Delay Set", format(cmd_interpret.read_config_reg(self.connection_socket, 7), '016b'), {}
+        return "FPGA Reg 7 Set, FC Phase Delay Set", f"0x{cmd_interpret.read_config_reg(self.connection_socket, 7):04x}", {}
 
     @cscp_requestable
     def set_fc_phase_channel_delay(self, request: CSCP1Message) -> tuple[str, Any, dict]:
@@ -332,7 +332,7 @@ class EtrocTransmitter(TransmitterSatellite):
             self.data_delays_01 = (self.data_delays_01 & mask_msb) | (msb << shift_msb)
             cmd_interpret.write_config_reg_decoded(self.connection_socket, "data_delays_01", self.data_delays_01)
 
-        return "FPGA Reg 4 and 5 Set, FC Phase Delay Set", [format(cmd_interpret.read_config_reg(self.connection_socket, 4), '016b'), format(cmd_interpret.read_config_reg(self.connection_socket, 5), '016b')], {}
+        return "FPGA Reg 4 and 5 Set, FC Phase Delay Set", [f"0x{cmd_interpret.read_config_reg(self.connection_socket, 4):04x}", f"0x{cmd_interpret.read_config_reg(self.connection_socket, 5):04x}"], {}
 
     @cscp_requestable
     def set_fc_bit_delay(self, request: CSCP1Message) -> tuple[str, Any, dict]:
@@ -343,7 +343,7 @@ class EtrocTransmitter(TransmitterSatellite):
         self.polarity = (self.polarity & mask) | (bit_delay << 10)
 
         cmd_interpret.write_config_reg_decoded(self.connection_socket, "polarity", self.polarity)
-        return "FPGA Reg 14 Set, FC Bit Delay Set", format(cmd_interpret.read_config_reg(self.connection_socket, 14), '016b'), {}
+        return "FPGA Reg 14 Set, FC Bit Delay Set", f"0x{cmd_interpret.read_config_reg(self.connection_socket, 14):04x}", {}
 
     @cscp_requestable
     def set_ledpage(self, request: CSCP1Message) -> tuple[str, Any, dict]:
