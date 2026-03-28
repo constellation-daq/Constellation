@@ -6,7 +6,7 @@ SPDX-License-Identifier: EUPL-1.2
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.message.cdtp2 import DataRecord
 from constellation.core.message.cscp1 import CSCP1Message
-from constellation.core.satellite import Satellite
+from constellation.core.receiver_satellite import ReceiverSatellite
 from constellation.core.configuration import Configuration
 from typing import Any
 from datetime import datetime
@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 import io, time
 
-class EtrocReceiver(Satellite):
+class EtrocReceiver(ReceiverSatellite):
 
     # 1. Centralize standard configurations
     DEFAULT_CONFIG = {
@@ -159,7 +159,7 @@ class EtrocReceiver(Satellite):
 
     def _manage_file_state(self) -> None:
         """Handles file size limits and timed disk flushes."""
-        now = datetime.datetime.now()
+        now = datetime.now()
 
         # 1. Do we need to make a new file? (prevent very large single files)
         if self.file_size > self.file_size_limit:
