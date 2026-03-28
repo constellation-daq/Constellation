@@ -187,12 +187,10 @@ class EtrocTransmitter(TransmitterSatellite):
         move to data taking position
         """
         # Packaging the BOR Message
-        self.run_start_time = time.strftime("%Y-%m-%d-%H%M%S", time.localtime())
-        self.run_identifier = run_identifier
-        tmp_BOR = {}
-        tmp_BOR["start_time"] = self.run_start_time
-        tmp_BOR["run_identifier"] = self.run_identifier
-        self.BOR = tmp_BOR
+        self.BOR = {
+            "start_time": time.strftime("%Y-%m-%d-%H%M%S", time.localtime()),
+            "run_identifier": run_identifier,
+        }
         time.sleep(0.1)  # add sleep to make sure that everything has stopped
 
         # FPGA Presteps for DAQ
@@ -233,11 +231,11 @@ class EtrocTransmitter(TransmitterSatellite):
         self.log.debug(f"Status of DAQ Toggle after Stop Pulse: {format(cmd_interpret.read_status_reg(self.connection_socket, 5), '016b')}")
 
         # Packaging the EOR Message
-        tmp_EOR = {}
-        tmp_EOR["stop_time"] = time.strftime("%Y-%m-%d-%H%M%S", time.localtime())
-        for reg in range(7,16):
-            tmp_EOR[f"register_{reg}"] = cmd_interpret.read_config_reg(self.connection_socket, reg)
-        self.EOR = tmp_EOR
+        self.EOR = {
+            "stop_time": time.strftime("%Y-%m-%d-%H%M%S", time.localtime()),
+            "register_7": cmd_interpret.read_config_reg(self.connection_socket, 7),
+            "register_16": cmd_interpret.read_config_reg(self.connection_socket, 16),
+        }
         return f"Run {self.run_identifier} Stopped, EOR Sent"
 
     def do_run(self) -> str:
