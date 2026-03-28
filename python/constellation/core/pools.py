@@ -42,7 +42,7 @@ class BasePool:
         if self._poll_thread is None or not self._poll_thread.is_alive():
             self._stopevt.clear()
             self._poll_thread_exc = None
-            self._poll_thread = threading.Thread(target=self._poll)
+            self._poll_thread = threading.Thread(target=self._poll, daemon=True)
             self._poll_thread.start()
             self._polling = True
 

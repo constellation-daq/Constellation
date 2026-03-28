@@ -25,7 +25,7 @@ from .cscp import CommandTransmitter
 from .error import debug_log
 from .heartbeatchecker import HeartbeatChecker
 from .logging import setup_cli_logging
-from .message.cscp1 import SatelliteState
+from .protocol.cscp1 import SatelliteState
 from .satellite import Satellite
 
 

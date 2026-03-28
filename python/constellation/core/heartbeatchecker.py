@@ -13,7 +13,7 @@ import zmq
 
 from .base import BaseSatelliteFrame
 from .chp import CHPMessageFlags, CHPRole, chp_decode_message
-from .message.cscp1 import SatelliteState
+from .protocol.cscp1 import SatelliteState
 
 
 class HeartbeatState:

@@ -7,7 +7,6 @@ This module provides a base class for Constellation Satellite modules.
 
 import atexit
 import logging
-import re
 import socket
 import threading
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
@@ -19,6 +18,7 @@ import zmq
 from . import __version__, __version_code_name__
 from .logging import ConstellationLogger
 from .network import get_interface_names, validate_interface
+from .protocol.cscp1 import is_valid_satellite_name, is_valid_satellite_type
 
 
 @atexit.register
@@ -97,8 +97,10 @@ class BaseSatelliteFrame:
     def __init__(self, name: str, **_kwds: Any):
         # type name == python class name
         self.type = type(self).__name__
+        if not is_valid_satellite_type(self.type):
+            raise ValueError("Satellite type contains invalid characters")
         # Check if provided name is valid:
-        if not re.match(r"^\w+$", name):
+        if not is_valid_satellite_name(name):
             raise ValueError("Satellite name contains invalid characters")
         # add type name to create the canonical name
         self.name = f"{self.type}.{name}"

@@ -13,8 +13,9 @@ from constellation.core.chirp import CHIRPMessageType, CHIRPServiceIdentifier
 from constellation.core.chirpmanager import DiscoveredService, chirp_callback
 from constellation.core.chp import CHPRole
 from constellation.core.cscp import CommandTransmitter
-from constellation.core.message.cscp1 import CSCP1Message, SatelliteState
+from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.network import get_loopback_interface_name
+from constellation.core.protocol.cscp1 import SatelliteState
 from constellation.core.satellite import Satellite
 
 from .conftest import wait_for_state
@@ -67,7 +68,7 @@ def mock_fail_satellite(mock_zmq_context, mock_chirp_transmitter):
     ctx.flip_queues()
 
     class MockFailSatellite(Satellite):
-        def do_run(self, run_identifier):
+        def do_run(self):
             raise RuntimeError("mock failure")
 
     s = MockFailSatellite("fail1", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])

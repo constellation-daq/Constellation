@@ -11,8 +11,9 @@ from typing import Any
 
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
-from constellation.core.message.cscp1 import CSCP1Message, SatelliteState
+from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.monitoring import schedule_metric
+from constellation.core.protocol.cscp1 import SatelliteState
 from constellation.core.satellite import Satellite
 
 
@@ -71,7 +72,7 @@ class Mariner(Satellite):
         self.device = CanopusStarTracker(voltage, current, sample_period)
         return "Initialized"
 
-    def do_run(self, run_identifier: str) -> str:
+    def do_run(self) -> str:
         """The main run routine.
 
         Here, the main part of the mission would be performed.

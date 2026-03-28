@@ -18,10 +18,11 @@ from statemachine.states import States
 
 from .base import BaseSatelliteFrame
 from .commandmanager import cscp_requestable
-from .configuration import Configuration
+from .configuration import Configuration, InvalidValueError
 from .error import debug_log, handle_error
 from .heartbeatchecker import HeartbeatChecker
-from .message.cscp1 import CSCP1Message, SatelliteState
+from .message.cscp1 import CSCP1Message
+from .protocol.cscp1 import SatelliteState, is_valid_canonical_name
 
 
 class SatelliteFSM(StateMachine):
@@ -179,9 +180,11 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
             ]:
                 key = f"require_{transition.name}_after"
                 if key in config_conditions:
-                    value = config_conditions.get_array(key, element_type=str)
-                    # FIXME could check for valid canonical name
-                    self.conditions[transition] = value
+                    satellites = config_conditions.get_array(key, element_type=str)
+                    for satellite in satellites:
+                        if not is_valid_canonical_name(satellite):
+                            raise InvalidValueError(config_conditions, key, f"`{satellite}` is not a valid canonical name")
+                    self.conditions[transition] = satellites
                     self.log_fsm.debug(f"Registered remote condition {transition.name} with {self.conditions[transition]}")
 
             # Set timeout for conditional transitions

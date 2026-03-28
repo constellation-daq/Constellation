@@ -231,9 +231,8 @@ possible as soon as the `stop_running` Event is set. An example run loop is show
 below:
 
 ```python
-def do_run(self, payload: any) -> str:
-    # the stop_running Event will be set from outside the thread when it is
-    # time to close down.
+def do_run(self) -> str:
+    # Check if a stop of the run was request
     while not self.stop_requested():
         # Do work
         ...

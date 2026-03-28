@@ -23,8 +23,8 @@ from constellation.core.chirpmanager import DiscoveredService
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.logging import ConstellationLogger
 from constellation.core.message.cdtp2 import DataRecord
-from constellation.core.message.cscp1 import SatelliteState
 from constellation.core.network import get_loopback_interface_name
+from constellation.core.protocol.cscp1 import SatelliteState
 from constellation.core.receiver_satellite import ReceiverSatellite
 from constellation.core.transmitter_satellite import TransmitterSatellite
 
@@ -84,7 +84,7 @@ class DummyTransmitterSatellite(TransmitterSatellite):
         self.eor = {"data_collected": False}
         return "Stopped"
 
-    def do_run(self, run_identifier: str) -> str:
+    def do_run(self) -> str:
         while not self.stop_requested():
             if self.throw_run:
                 raise Exception("throwing in RUN as requested")
@@ -129,12 +129,12 @@ class DummyReceiverSatellite(ReceiverSatellite):
     def receive_eor(self, sender: str, user_tags: dict[str, Any], run_metadata: dict[str, Any]):
         self.last_eors.append((sender, user_tags, run_metadata))
 
-    def do_run(self, run_identifier: str) -> str:
+    def do_run(self) -> str:
         while not self.stop_requested():
             if self.throw_run:
                 raise Exception("throwing in RUN as requested")
             time.sleep(0.05)
-        return super().do_run(run_identifier)
+        return super().do_run()
 
 
 @pytest.fixture
@@ -631,3 +631,12 @@ def test_data_satellites_receiver_failure(
         time.sleep(0.05)
         timeout -= 0.05
     assert transmitter.fsm.state in [SatelliteState.SAFE, SatelliteState.ERROR]
+
+
+def test_data_satellites_invalid_data_transmitter(receiver_satellite: DummyReceiverSatellite, cmd_transmitter):
+    receiver = receiver_satellite
+    cmd_tx, cmd_rx = cmd_transmitter
+
+    # Initialize
+    cmd_rx.request_get_response("initialize", {"_data": {"receive_from": ["Spuntik.One", "Spuntik.Two."]}})
+    wait_for_state(receiver.fsm, "ERROR", 1)

@@ -15,8 +15,9 @@ import numpy as np
 
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
-from constellation.core.message.cscp1 import CSCP1Message, SatelliteState
+from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.monitoring import schedule_metric
+from constellation.core.protocol.cscp1 import SatelliteState
 from constellation.core.transmitter_satellite import TransmitterSatellite
 
 
@@ -66,7 +67,7 @@ class LeCroySatellite(TransmitterSatellite):
             self._configure_sequences(num_sequences)
         return "Successfully reconfigured scope"
 
-    def do_run(self, run_identifier: str) -> str:
+    def do_run(self) -> str:
         num_sequences_acquired = 0
         self._num_triggers_acquired = 0
         while not self.stop_requested():
