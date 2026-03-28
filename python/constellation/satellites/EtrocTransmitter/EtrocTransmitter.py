@@ -6,12 +6,12 @@ SPDX-License-Identifier: EUPL-1.2
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.cscp import CSCP1Message
 from constellation.core.configuration import Configuration
-from constellation.core.satellite import Satellite
+from constellation.core.transmitter_satellite import TransmitterSatellite
 from typing import Any
 from . import cmd_interpret
 import time, socket
 
-class EtrocTransmitter(Satellite):
+class EtrocTransmitter(TransmitterSatellite):
 
     DEFAULT_CONFIG = {
         "hostname": "192.168.2.3",
@@ -240,23 +240,28 @@ class EtrocTransmitter(Satellite):
         self.EOR = tmp_EOR
         return f"Run {self.run_identifier} Stopped, EOR Sent"
 
-    def do_run(self, run_identifier: str) -> str:
+    def do_run(self) -> str:
         """Run the satellite. Collect data from buffers and send it."""
-        self.log.info(f"EtrocTransmitter satellite running for run {run_identifier}, publishing events...")
-
         # 1. Use the framework's built-in stop request flag
         while not self.stop_requested():
 
-            # 2. Your Hardware Logic: Read the main DAQ-loop
+            # 2. Check if rate limited
+            if not self.can_send_record():
+                time.sleep(0.001)
+                continue
+
+            # 3. Your Hardware Logic: Read the main DAQ-loop
             raw_bytes = cmd_interpret.read_data_fifo(self.connection_socket, self.num_fifo_read)
 
             # 3. Handle empty buffer (exactly as you had it before)
             if not raw_bytes:
                 self.log.debug("No data in buffer! Will try to read again")
-                time.sleep(1.01)
+                time.sleep(0.1)
                 continue
 
-            self.log.info(raw_bytes)
+            data_record = self.new_data_record()
+            data_record.add_block(raw_bytes)
+            self.send_data_record(data_record)
 
         return "Finished acquisition"
 
