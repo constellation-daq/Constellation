@@ -9,7 +9,6 @@ from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.receiver_satellite import ReceiverSatellite
 from constellation.core.configuration import Configuration
 from typing import Any
-from datetime import datetime
 from pathlib import Path
 import numpy as np
 import io, time
@@ -20,7 +19,6 @@ class EtrocReceiver(ReceiverSatellite):
     DEFAULT_CONFIG = {
         "output_path": "data",
         "translate": 1,
-        "compressed_binary": 1,
         "skip_fillers": 0,
         "keep_time": 1,
         "flush_interval": 10.0,
@@ -67,10 +65,10 @@ class EtrocReceiver(ReceiverSatellite):
         self.frame_trailers = {0: 0x17f0f, 1: 0x17f0f, 2: 0x17f0f, 3: 0x17f0f}
 
         # Determine file size limit (20 MB for binary, 50,000 lines for text)
-        if self.compressed_binary and not self.translate:
-            self.file_size_limit = 20 * 10**6
+        if self.translate:
+            self.file_size_limit = 50000       # 50,000 lines for .nem text
         else:
-            self.file_size_limit = 50000
+            self.file_size_limit = 20 * 10**6  # 20 MB for raw .bin
 
         # Running variables used during run/write loop
         self.file_counter = 0
@@ -94,6 +92,8 @@ class EtrocReceiver(ReceiverSatellite):
         self.active_channels_clear()
         self.active_channel  = -1
         self.translate_state[0] = False
+        self.translate_state[1] = ""
+        self.translate_state[2] = -1
         self.event_stats[0] = -1
         self.event_stats[1] = -1
         self.event_stats[2] = -1
@@ -107,17 +107,11 @@ class EtrocReceiver(ReceiverSatellite):
         self.file_size = 0
         self.start_time = time.time()
         self.data_rate = 0.0 # Reset saved rate
-        self.last_flush = datetime.now()
+        self.last_flush = time.monotonic()
         self._reset_params()
 
         # Determine extension and open the first file
-        if self.translate:
-            extension = "nem"
-        elif self.compressed_binary:
-            extension = "bin"
-        else:
-            extension = "dat"
-
+        extension = "nem" if self.translate else "bin"
         self.file_name_pattern = f"{{run_identifier}}/file_{{date}}.{extension}"
         self.outfile = self._open_file()
 
@@ -155,99 +149,125 @@ class EtrocReceiver(ReceiverSatellite):
                 self._translate_and_write(payload)
 
         # 3. Check if we need to rotate the file or flush to disk
-        self._manage_file_state()
+        self._rotate_file()
 
-    def _manage_file_state(self) -> None:
-        """Handles file size limits and timed disk flushes."""
-        now = datetime.now()
+    def _rotate_file(self) -> None:
+        """Forces a clean file rotation."""
+        # 1. Safely close the old file
+        self._close_file(self.outfile)
 
-        # 1. Do we need to make a new file? (prevent very large single files)
-        if self.file_size > self.file_size_limit:
-            self._close_file(self.outfile)
-            self.file_size = 0
-            self.file_counter += 1
-            self.outfile = self._open_file()
-            self.last_flush = now
-
-        # 2. Is it time to flush data to disk?
-        elif self.flush_interval > 0 and (now - self.last_flush).total_seconds() > self.flush_interval:
-            self.outfile.flush()
-            self.last_flush = now
+        # 2. Reset counters and start a fresh file
+        self.file_size = 0
+        self.file_counter += 1
+        self.outfile = self._open_file() # Ensure _open_file utilizes self.file_counter
+        self.last_flush = time.monotonic()
 
     def _write_untranslated(self, payload: np.ndarray) -> None:
-        """Handles writing raw binary (.bin) or formatted text (.dat) files."""
+        """Handles writing raw binary (.bin) files."""
 
-        if self.compressed_binary:
-            if self.skip_fillers:
-                # --- Original filtering logic ---
-                filtered_payload = []
-                for x in payload:
-                    if (x >> (32 - self.FIXED_PATTERN_SIZES["event_header"])) == self.FIXED_PATTERNS["event_header"]:
-                        self.translate_state[0] = True # in event
-                    elif (x >> (32 - self.FIXED_PATTERN_SIZES["event_trailer"])) == self.FIXED_PATTERNS["event_trailer"]:
-                        self.translate_state[0] = False # not in event
+        if self.skip_fillers:
+            filtered_payload = []
 
-                    if not self.translate_state[0]: # if not in_event
-                        if self.keep_time:
-                            if (x >> 20) not in [self.FIXED_PATTERNS["fifo_filler"], 0x555]:
-                                filtered_payload.append(x)
-                        else:
-                            if (x >> 20) not in [self.FIXED_PATTERNS["fifo_filler"], 0x555, self.FIXED_PATTERNS["time_filler"], self.FIXED_PATTERNS["clk2_filler"]]:
-                                filtered_payload.append(x)
+            for x in payload:
+                is_trailer = False
+
+                if (x >> (32 - self.FIXED_PATTERN_SIZES["event_header"])) == self.FIXED_PATTERNS["event_header"]:
+                    self.translate_state[0] = True # in event
+                elif (x >> (32 - self.FIXED_PATTERN_SIZES["event_trailer"])) == self.FIXED_PATTERNS["event_trailer"]:
+                    self.translate_state[0] = False # not in event
+                    is_trailer = True # Flag that we hit a clean boundary
+
+                # Filtering logic
+                if not self.translate_state[0] and not is_trailer:
+                    if self.keep_time:
+                        if (x >> 20) not in [self.FIXED_PATTERNS["fifo_filler"], 0x555]:
+                            filtered_payload.append(x)
                     else:
-                        filtered_payload.append(x)
+                        if (x >> 20) not in [self.FIXED_PATTERNS["fifo_filler"], 0x555, self.FIXED_PATTERNS["time_filler"], self.FIXED_PATTERNS["clk2_filler"]]:
+                            filtered_payload.append(x)
+                else:
+                    filtered_payload.append(x)
 
-                # Write the filtered list as Little-Endian bytes
+                # --- NEW: PENDING FILE ROTATION LOGIC ---
+                if is_trailer:
+                    # Check if writing this buffer pushes us over the size limit (4 bytes per int)
+                    if self.file_size + (len(filtered_payload) * 4) >= self.file_size_limit:
+                        # 1. Flush the current buffered event to the old file
+                        self.outfile.write(b''.join(int(val).to_bytes(4, 'little') for val in filtered_payload))
+
+                        # 2. Rotate the files (this should also reset self.file_size = 0)
+                        self._rotate_file()
+
+                        # 3. Clear the buffer so it doesn't get written twice
+                        filtered_payload.clear()
+                # ----------------------------------------
+
+            # Write anything left over in the buffer at the end of the chunk
+            if filtered_payload:
                 self.outfile.write(b''.join(int(x).to_bytes(4, 'little') for x in filtered_payload))
                 self.file_size += 4 * len(filtered_payload)
 
-            else:
-                # No filtering: Write the NumPy array directly as Little-Endian bytes
-                # .astype('<u4') ensures Little-Endian, .tobytes() converts it instantly
-                raw_little_endian = payload.astype('<u4').tobytes()
-                self.outfile.write(raw_little_endian)
-                self.file_size += len(raw_little_endian)
-
         else:
-            # Text format (.dat)
-            self.outfile.write("\n".join(format(int(x), '032b') for x in payload) + "\n")
-            self.file_size += len(payload)
+            # No filtering: Write the NumPy array directly as Little-Endian bytes
+            # .astype('<u4') ensures Little-Endian, .tobytes() converts it instantly
+            raw_little_endian = payload.astype('<u4').tobytes()
+            self.outfile.write(raw_little_endian)
+            self.file_size += len(raw_little_endian)
 
     def _translate_and_write(self, payload: np.ndarray) -> None:
         """Translates raw 32-bit integers into human-readable ETROC2 format (.nem)."""
+
+        # BULLET 2: Initialize the holding buffer for batch writing
+        output_buffer = []
+
         for line_int in payload:
             # Currently outside of an event
             if not self.translate_state[0]:
+
                 # FIFO or fixed TIME Filler
                 if (line_int >> (32 - self.FIXED_PATTERN_SIZES["fifo_filler"]) == self.FIXED_PATTERNS["fifo_filler"] or
                     line_int >> (32 - self.FIXED_PATTERN_SIZES["time_filler"]) == self.FIXED_PATTERNS["time_filler"]):
 
-                    binary_text = format(int(line_int), '032b')[self.FIXED_PATTERN_SIZES["fifo_filler"]:]
                     filler_type = "FIFO" if (line_int >> (32 - self.FIXED_PATTERN_SIZES["fifo_filler"]) == self.FIXED_PATTERNS["fifo_filler"]) else "CLOCK"
 
-                    if self.translate_state[2] != binary_text:
-                        self.log.info(f"Link Status: {binary_text[0:4]} {binary_text[4:12]}, Reset Counter: {int(binary_text[12:],2)}")
-                        self.translate_state[2] = binary_text
+                    # BULLET 1: Pure Bitwise masking (Extremely Fast)
+                    # Mask bottom 20 bits: 0xFFFFF
+                    payload_20bit = line_int & 0xFFFFF
+
+                    if self.translate_state[2] != payload_20bit:
+                        status1 = (payload_20bit >> 16) & 0xF
+                        status2 = (payload_20bit >> 8) & 0xFF
+                        reset_counter = payload_20bit & 0xFF
+
+                        self.log.info(f"Link Status: {status1:04b} {status2:08b}, Reset Counter: {reset_counter}")
+                        self.translate_state[2] = payload_20bit
 
                     if not self.skip_fillers:
-                        self.outfile.write(f"{filler_type} {binary_text[0:4]} {binary_text[4:12]} {int(binary_text[12:],2)}\n")
-                        self.file_size += 1
+                        # We still format strings for the output file, but we do it instantly here
+                        status1 = (payload_20bit >> 16) & 0xF
+                        status2 = (payload_20bit >> 8) & 0xFF
+                        reset_counter = payload_20bit & 0xFF
+                        output_buffer.append(f"{filler_type} {status1:04b} {status2:08b} {reset_counter}")
+
                     self.translate_state[1] = "FILLER"
 
                 # CLOCK2 Filler
                 elif line_int >> (32 - self.FIXED_PATTERN_SIZES["clk2_filler"]) == self.FIXED_PATTERNS["clk2_filler"]:
-                    binary_text = format(int(line_int), '032b')[self.FIXED_PATTERN_SIZES["clk2_filler"]:]
                     if not self.skip_fillers:
-                        self.outfile.write(f"CLOCK2 {binary_text}\n")
-                        self.file_size += 1
+                        payload_20bit = line_int & 0xFFFFF
+                        output_buffer.append(f"CLOCK2 {payload_20bit:020b}")
                     self.translate_state[1] = "FILLER"
 
                 # Event Header, forces transition into event state
                 elif line_int >> (32 - self.FIXED_PATTERN_SIZES["event_header"]) == self.FIXED_PATTERNS["event_header"]:
                     self.translate_state[0] = True
                     self.translate_state[1] = "HEADER_1"
-                    binary_text = format(int(line_int) & 0xF, '04b')
-                    self.active_channels.extend([key for key, val in enumerate(binary_text[::-1]) if val == '1'][::-1])
+
+                    # BULLET 1: Pure Bitwise logic for stacking active channels
+                    active_bits = line_int & 0xF
+                    for ch in range(3, -1, -1): # Loops 3, 2, 1, 0 to stack properly for pop()
+                        if (active_bits >> ch) & 1:
+                            self.active_channels.append(ch)
 
             # Currently inside of an event
             else:
@@ -258,11 +278,12 @@ class EtrocReceiver(ReceiverSatellite):
                         num_words = (line_int >> 2) & 0x3FF
                         self.event_stats[1] = -(40 * int(num_words) // -32) # div ceil -(x//(-y))
                         self.event_stats[2] += 1
-                        self.outfile.write(f"EH {(line_int >> 12) & 0xFFFF} {line_int & 0x3} {num_words} {self.event_stats[1]}\n")
+
+                        # BULLET 2: Append to buffer instead of writing
+                        output_buffer.append(f"EH {(line_int >> 12) & 0xFFFF} {line_int & 0x3} {num_words} {self.event_stats[1]}")
                     else:
                         self._reset_params()
-                        self.outfile.write("BROKEN EVENT HEADER!\n")
-                    self.file_size += 1
+                        output_buffer.append("BROKEN EVENT HEADER!")
 
                 # Translate ETROC2 Frames after HEADER_2
                 elif self.translate_state[1] == "HEADER_2":
@@ -276,25 +297,24 @@ class EtrocReceiver(ReceiverSatellite):
                         to_be_translated = self.translate_int >> self.BUFFER_SHIFTS[self.event_stats[0]]
                         self.translate_int = self.translate_int & ((1 << self.BUFFER_SHIFTS[self.event_stats[0]]) - 1)
 
-                        # HEADER "H {channel} {L1Counter} {Type} {BCID}"
+                        # HEADER
                         if to_be_translated >> (40 - self.FIXED_PATTERN_SIZES["frame_header"]) == (self.FIXED_PATTERNS["frame_header"] << 2):
                             try:
                                 self.active_channel = self.active_channels.pop()
                             except IndexError:
                                 self.active_channel = -1
-                            self.outfile.write(f"H {self.active_channel} {(to_be_translated >> 14) & 0xFF} {(to_be_translated >> 12) & 0x3} {to_be_translated & 0xFFF}\n")
+                            output_buffer.append(f"H {self.active_channel} {(to_be_translated >> 14) & 0xFF} {(to_be_translated >> 12) & 0x3} {to_be_translated & 0xFFF}")
 
-                        # DATA "D {channel} {EA} {ROW} {COL} {TOA} {TOT} {CAL}"
+                        # DATA
                         elif to_be_translated >> (40 - self.FIXED_PATTERN_SIZES["frame_data"]) == self.FIXED_PATTERNS["frame_data"]:
-                            self.outfile.write(f"D {self.active_channel} {(to_be_translated >> 37) & 0x3} {(to_be_translated >> 29) & 0xF} {(to_be_translated >> 33) & 0xF} {(to_be_translated >> 19) & 0x3FF} {(to_be_translated >> 10) & 0x1FF} {to_be_translated & 0x3FF}\n")
+                            output_buffer.append(f"D {self.active_channel} {(to_be_translated >> 37) & 0x3} {(to_be_translated >> 29) & 0xF} {(to_be_translated >> 33) & 0xF} {(to_be_translated >> 19) & 0x3FF} {(to_be_translated >> 10) & 0x1FF} {to_be_translated & 0x3FF}")
 
-                        # TRAILER "T {channel} {Status} {Hits} {CRC}"
+                        # TRAILER
                         elif to_be_translated >> (40 - self.FIXED_PATTERN_SIZES["frame_trailer"]) == self.frame_trailers.get(self.active_channel, 0):
-                            self.outfile.write(f"T {self.active_channel} {(to_be_translated >> 16) & 0x3F} {(to_be_translated >> 8) & 0xFF} {to_be_translated & 0xFF}\n")
+                            output_buffer.append(f"T {self.active_channel} {(to_be_translated >> 16) & 0x3F} {(to_be_translated >> 8) & 0xFF} {to_be_translated & 0xFF}")
 
                         else:
-                            self.outfile.write("UNKNOWN 40 bit word!\n")
-                        self.file_size += 1
+                            output_buffer.append("UNKNOWN 40 bit word!")
 
                     if self.event_stats[2] == self.event_stats[1]:
                         self.translate_state[1] = "ETROC2"
@@ -303,43 +323,53 @@ class EtrocReceiver(ReceiverSatellite):
                 elif self.translate_state[1] == "ETROC2":
                     if line_int >> (32 - self.FIXED_PATTERN_SIZES["event_trailer"]) == self.FIXED_PATTERNS["event_trailer"]:
                         self.translate_state[1] = "TRAILER"
-                        self.outfile.write(f"ET {(line_int >> 14) & 0xFFF} {(line_int >> 11) & 0x7} {(line_int >> 8) & 0x7} {line_int & 0xFF}\n")
+                        output_buffer.append(f"ET {(line_int >> 14) & 0xFFF} {(line_int >> 11) & 0x7} {(line_int >> 8) & 0x7} {line_int & 0xFF}")
+
+                        # --- NEW: CLEAN FILE ROTATION LOGIC ---
+                        # We safely reached the end of an event. Are we over the size limit?
+                        if self.file_size + len(output_buffer) >= self.file_size_limit:
+                            # 1. Flush the current event to the OLD file
+                            self.outfile.write("\n".join(output_buffer) + "\n")
+
+                            # 2. Rotate the files
+                            self._rotate_file()
+
+                            # 3. Clear the buffer so it doesn't get written again at the end of the loop
+                            output_buffer.clear()
+                        # --------------------------------------
+
                     else:
-                        self.outfile.write("BROKEN EVENT NO EVENT TRAILER FOUND!\n")
+                        output_buffer.append("BROKEN EVENT NO EVENT TRAILER FOUND!")
                     self._reset_params()
-                    self.file_size += 1
                 else:
                     self._reset_params()
-                    self.outfile.write("BROKEN EVENT... How did we get here?...\n")
-                    self.file_size += 1
+                    output_buffer.append("BROKEN EVENT... How did we get here?...")
+
+        # BULLET 2: Flush the entire buffer to the hard drive in one single I/O operation
+        if output_buffer:
+            self.outfile.write("\n".join(output_buffer) + "\n")
+            self.file_size += len(output_buffer)
 
     def _open_file(self) -> io.IOBase:
         """Open the data file safely with directory creation."""
-        filename_list = self.file_name_pattern.format(
-                            run_identifier=self.run_identifier,
-                            date=self.file_counter,
-                        ).split('/')
+        # 1. Format the raw string
+        raw_path_str = self.file_name_pattern.format(
+            run_identifier=self.run_identifier,
+            date=self.file_counter
+        )
 
-        filename = Path(filename_list[-1])
-        # Join all preceding parts to form the directory path safely
-        directory = Path(self.output_path).joinpath(*filename_list[:-1])
-
-        filepath = directory / filename
+        # 2. Let Pathlib combine your output path and the new filename intelligently
+        filepath = Path(self.output_path) / Path(raw_path_str)
+        directory = filepath.parent
 
         if filepath.is_file():
             self.log.critical(f"File already exists: {filepath}")
             raise RuntimeError(f"File already exists: {filepath}")
 
-        self.log.info(f"Creating file {filename} in {directory}...")
-
-        try:
-            directory.mkdir(exist_ok=True)
-            # Use "w" for translated text, "wb" for raw binary
-            mode = "w" if self.translate or not self.compressed_binary else "wb"
-            return open(filepath, mode)
-        except Exception as e:
-            self.log.critical(f"Unable to create/open file {filepath}: {e}")
-            raise RuntimeError(f"Unable to open {filepath}: {e}") from e
+        # 3. Make the directory and open the file
+        directory.mkdir(parents=True, exist_ok=True)
+        mode = "w" if self.translate else "wb"
+        return open(filepath, mode)
 
     def _close_file(self, outfile: io.IOBase) -> None:
         """Safely flush and close the filehandler."""
