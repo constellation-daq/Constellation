@@ -129,6 +129,9 @@ class EtrocReceiver(ReceiverSatellite):
     def get_data_rate(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         return f"{self.data_rate:.3g} Gbps", self.data_rate, {}
 
+    def receive_bor(self, sender: str, user_tags: dict[str, Any], configuration: dict[str, Any]) -> None:
+        pass
+
     def receive_data(self, sender: str, data_record: DataRecord) -> None:
         """Called automatically by the framework every time a packet arrives."""
         if not self.outfile:
@@ -150,6 +153,9 @@ class EtrocReceiver(ReceiverSatellite):
 
         # 3. Check if we need to rotate the file or flush to disk
         self._rotate_file()
+
+    def receive_eor(self, sender: str, user_tags: dict[str, Any], run_metadata: dict[str, Any]) -> None:
+        pass
 
     def _rotate_file(self) -> None:
         """Forces a clean file rotation."""
