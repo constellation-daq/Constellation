@@ -13,6 +13,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <memory>
 #include <stop_token>
 #include <string>
@@ -229,9 +230,8 @@ namespace constellation::satellite {
          *
          * @param message Reference to data message
          * @param current_payload_bytes Size of the payload of the message in bytes
-         * @return True if the message was sent successfully, false otherwise
          */
-        CNSTLN_LOCAL bool send_data(message::CDTP2Message& message, std::size_t current_payload_bytes);
+        CNSTLN_LOCAL void send_data(message::CDTP2Message& message, std::size_t current_payload_bytes);
 
         /**
          * @brief Handle failure in `sending_loop`
@@ -260,6 +260,7 @@ namespace constellation::satellite {
         AtomicQueueT data_record_queue_;
         std::uint64_t seq_ {};
         std::jthread sending_thread_;
+        std::exception_ptr exception_ptr_;
 
         config::Dictionary bor_tags_;
         config::Dictionary eor_tags_;

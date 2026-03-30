@@ -12,6 +12,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
 #include <functional>
 #include <future>
 #include <numeric>
@@ -204,6 +205,7 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     set_send_timeout(data_msg_timeout_);
 
     // Start sending loop
+    exception_ptr_ = nullptr;
     sending_thread_ = std::jthread(std::bind_front(&TransmitterSatellite::sending_loop, this));
 }
 
@@ -291,6 +293,10 @@ void TransmitterSatellite::stop_sending_loop() {
     while(!data_record_queue_.was_empty()) {
         data_record_queue_.pop();
     }
+    // Rethrow exception from sending loop if present
+    if(exception_ptr_) {
+        std::rethrow_exception(exception_ptr_);
+    };
 }
 
 void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
@@ -333,8 +339,10 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
         }
 
         // Send message
-        const auto success = send_data(message, current_payload_bytes);
-        if(!success) [[unlikely]] {
+        try {
+            send_data(message, current_payload_bytes);
+        } catch(const std::exception& error) {
+            send_failure(error.what());
             return;
         }
 
@@ -344,12 +352,16 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
     }
 
     // Send remaining data blocks
-    if(!message.getDataRecords().empty()) {
-        send_data(message, current_payload_bytes);
+    try {
+        if(!message.getDataRecords().empty()) {
+            send_data(message, current_payload_bytes);
+        }
+    } catch(const std::exception& error) {
+        send_failure(error.what());
     }
 }
 
-bool TransmitterSatellite::send_data(CDTP2Message& message, std::size_t current_payload_bytes) {
+void TransmitterSatellite::send_data(CDTP2Message& message, std::size_t current_payload_bytes) {
     // Log and update telemetry
     const auto& current_data_records = message.getDataRecords();
     LOG(cdtp_logger_, TRACE) << "Sending data records from " << current_data_records.front().getSequenceNumber() << " to "
@@ -363,28 +375,28 @@ bool TransmitterSatellite::send_data(CDTP2Message& message, std::size_t current_
     data_records_transmitted_ += current_data_records.size();
 
     // Send message
-    try {
-        const auto sent = message.assemble().send(cdtp_push_socket_);
-        if(!sent) [[unlikely]] {
-            send_failure("data timeout reached");
-            return false;
-        }
-    } catch(const zmq::error_t& error) {
-        send_failure(error.what());
-        return false;
+    const auto sent = message.assemble().send(cdtp_push_socket_);
+    if(!sent) [[unlikely]] {
+        throw SendTimeoutError("data message", data_msg_timeout_);
     }
 
     // Clear blocks
     message.clearBlocks();
-
-    return true;
 }
 
 void TransmitterSatellite::send_failure(const std::string& reason) {
     // Request failure as async future
-    auto failure_fut =
-        std::async(std::launch::async, [this, &reason]() { getFSM().requestFailure("Failed to send message: " + reason); });
-    // While still in RUN state, pop queue to avoid deadlock with block queue push
+    auto failure_fut = std::async(std::launch::async, [this, &reason]() {
+        // Request failure only when in RUN to avoid deadlock
+        if(getState() == CSCP::State::RUN) {
+            getFSM().requestFailure("Failed to send message: " + reason);
+        }
+    });
+    // Pop queue to avoid deadlock in stop_sending_loop
+    while(!data_record_queue_.was_empty()) {
+        data_record_queue_.pop();
+    }
+    // Continue to pop queue while still in RUN state
     while(getState() == CSCP::State::RUN) {
         while(!data_record_queue_.was_empty()) {
             data_record_queue_.pop();
@@ -393,4 +405,6 @@ void TransmitterSatellite::send_failure(const std::string& reason) {
     }
     // Join future
     failure_fut.get();
+    // Store current exception
+    exception_ptr_ = std::current_exception();
 }
