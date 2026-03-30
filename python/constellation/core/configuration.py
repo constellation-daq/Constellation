@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import datetime
 import enum
-import functools
 import os
 import pathlib
 import pprint
@@ -107,52 +106,78 @@ def validate_dictionary_for_configuration(dictionary: Any, prefix: str = "") -> 
                 raise TypeError(f"value of key `{prefixed_key}` not scalar")
 
 
+def enum_type(enum: type[T_E]) -> Callable[[Any], T_E]:
+    """Return type function for enum types
+
+    Note: this assumes that enum keys are case-insensitive
+    """
+
+    def enum_type_internal(value: Any) -> T_E:
+        if not isinstance(value, str):
+            raise TypeError("not `str`")
+        for enum_entry in enum:
+            if enum_entry.name.casefold() == value.casefold():
+                return enum_entry
+        raise ValueError(
+            f"not a valid {enum.__name__}, possible choices {', '.join([f'`{enum_entry.name}`' for enum_entry in enum])}"
+        )
+
+    return enum_type_internal
+
+
 def num_type(
-    value: Any,
     return_type: type[int] | type[float] | None,
     min_val: int | float | None,
     max_val: int | float | None,
-) -> int | float:
+) -> Callable[[Any], int | float]:
     """Return type function for numeric types"""
-    # Check that value is a number
-    if return_type is not None:
-        if not isinstance(value, return_type):
-            raise TypeError(f"not `{return_type.__name__}`")
-    else:
-        if not isinstance(value, (int, float)):
-            raise TypeError("not `int` or `float`")
-    # Check limits
-    if min_val is not None:
-        if value < min_val:
-            raise ValueError(f"{value} is smaller than minimum value {min_val}")
-    if max_val is not None:
-        if value > max_val:
-            raise ValueError(f"{value} is larger than maximum value {max_val}")
-    return value
+
+    def num_type_internal(value: Any) -> int | float:
+        # Check that value is a number
+        if return_type is not None:
+            if not isinstance(value, return_type):
+                raise TypeError(f"not `{return_type.__name__}`")
+        else:
+            if not isinstance(value, (int, float)):
+                raise TypeError("not `int` or `float`")
+        # Check limits
+        if min_val is not None:
+            if value < min_val:
+                raise ValueError(f"{value} is smaller than minimum value {min_val}")
+        if max_val is not None:
+            if value > max_val:
+                raise ValueError(f"{value} is larger than maximum value {max_val}")
+        return value
+
+    return num_type_internal
 
 
-def absolute_path_type(value: Any, check_exists: bool) -> pathlib.Path:
+def absolute_path_type(check_exists: bool) -> Callable[[Any], pathlib.Path]:
     """Return type function for absolute paths"""
-    # Convert path from string to pathlib path
-    if not isinstance(value, str):
-        raise ValueError("path needs to be a string")
-    path = pathlib.Path(value)
 
-    # If not a absolute path, make it an absolute path
-    if not path.is_absolute():
-        # Get current directory and append the relative path
-        path = pathlib.Path(os.getcwd()).joinpath(path)
+    def absolute_path_type_internal(value: Any) -> pathlib.Path:
+        # Convert path from string to pathlib path
+        if not isinstance(value, str):
+            raise ValueError("path needs to be a string")
+        path = pathlib.Path(value)
 
-    # Check if the path exists
-    exists = path.exists()
-    if check_exists and not exists:
-        raise ValueError(f"path `{path}` not found")
+        # If not a absolute path, make it an absolute path
+        if not path.is_absolute():
+            # Get current directory and append the relative path
+            path = pathlib.Path(os.getcwd()).joinpath(path)
 
-    # Normalize path if the path exists
-    if exists:
-        path = path.resolve()
+        # Check if the path exists
+        exists = path.exists()
+        if check_exists and not exists:
+            raise ValueError(f"path `{path}` not found")
 
-    return path
+        # Normalize path if the path exists
+        if exists:
+            path = path.resolve()
+
+        return path
+
+    return absolute_path_type_internal
 
 
 def resolve_env_variable(match: re.Match[str]) -> str:
@@ -260,11 +285,9 @@ class Section:
     def get_enum(self, enum: type[T_E], key: str, default_value: T_E | None = None) -> T_E:
         """Get value of key as enum
 
-        Note: this assumes that only upper case letters are used as enum keys
+        Note: this assumes that enum keys are case-insensitive
         """
-        return self.get(
-            key, default_value.name if default_value is not None else None, return_type=lambda x: enum[x.upper()]
-        )  # pyright: ignore[reportReturnType]
+        return self.get(key, default_value.name if default_value is not None else None, return_type=enum_type(enum))
 
     def get_num(
         self,
@@ -278,12 +301,7 @@ class Section:
         return self.get(
             key,
             default_value,
-            functools.partial(
-                num_type,
-                return_type=return_type,
-                min_val=min_val,
-                max_val=max_val,
-            ),
+            num_type(return_type=return_type, min_val=min_val, max_val=max_val),
         )
 
     def get_int(
@@ -348,10 +366,7 @@ class Section:
         return self.get(
             key,
             default_value_str,
-            functools.partial(
-                absolute_path_type,
-                check_exists=check_exists,
-            ),
+            absolute_path_type(check_exists=check_exists),
         )
 
     def get_section(self, key: str, default_value: dict[str, Any] | None = None) -> Section:

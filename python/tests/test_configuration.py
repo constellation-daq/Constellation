@@ -96,9 +96,15 @@ def test_configuration_get_str():
 
 def test_configuration_get_enum():
     enum_v = DummyEnum.A
-    config = Configuration({"enum_v": enum_v.name})
+    config = Configuration({"enum_v": enum_v.name, "int_v": 5, "invalid_v": "C"})
     assert config.get_enum(DummyEnum, "enum_v") == enum_v
     assert config.get_enum(DummyEnum, "enum2_v", DummyEnum.B) == DummyEnum.B
+    with pytest.raises(InvalidTypeError) as excinfo:
+        config.get_enum(DummyEnum, "int_v")
+    assert str(excinfo.value) == "Could not convert value of type `int` to target type for key `int_v`: not `str`"
+    with pytest.raises(InvalidValueError) as excinfo:
+        config.get_enum(DummyEnum, "invalid_v")
+    assert str(excinfo.value) == "Value of key `invalid_v` is not valid: not a valid DummyEnum, possible choices `A`, `B`"
 
 
 def test_configuration_get_num():
