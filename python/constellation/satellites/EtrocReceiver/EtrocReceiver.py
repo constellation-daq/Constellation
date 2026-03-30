@@ -151,9 +151,6 @@ class EtrocReceiver(ReceiverSatellite):
             else:
                 self._translate_and_write(payload)
 
-        # 3. Check if we need to rotate the file or flush to disk
-        self._rotate_file()
-
     def receive_eor(self, sender: str, user_tags: dict[str, Any], run_metadata: dict[str, Any]) -> None:
         pass
 
