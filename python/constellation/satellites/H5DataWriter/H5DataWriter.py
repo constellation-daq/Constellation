@@ -263,7 +263,7 @@ class H5DataWriter(ReceiverSatellite):
         except Exception:
             return None
 
-    @cscp_requestable
+    @cscp_requestable()
     def get_concurrent_reading_status(
         self,
         _request: CSCP1Message,
@@ -275,7 +275,7 @@ class H5DataWriter(ReceiverSatellite):
             return "not yet enabled", False, {"bor_sent": list(self._swmr_bor_sent)}
         return "not enabled", False, {}
 
-    @cscp_requestable
+    @cscp_requestable()
     def get_current_filename(
         self,
         _request: CSCP1Message,

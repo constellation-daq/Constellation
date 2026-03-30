@@ -86,11 +86,8 @@ In case of the decorator, the name of the metric is taken from the function name
 Also in this case if the function returns `None` the metric is not sent.
 
 ```{attention}
-Note that any registered Metrics are by default retrieved in any of the Satellite's states, **except** `NEW`, `ERROR` and `initializing` where it is assumed that reliable Metrics cannot be guaranteed.
-
-If you have a Metric that is only valid in fewer than those states, it is advisable to add a check for the current state within the function's body (e.g. `if not self.fsm.state in [SatelliteState.RUN, SatelliteState.SAFE]: ...`). Simply return `None` in this case.
-
-Should any error occur during the retrieval of a Metric, it will be logged but the Satellite will not be affected otherwise and the Metric will be requested again at the next scheduled interval.
+Note that any scheduled metrics are by default retrieved in all states except the {bdg-secondary}`NEW`, {bdg-secondary}`initializing`, {bdg-secondary}`reconfiguring` and {bdg-secondary}`ERROR` state.
+In both the decorator and the registration function an optional `allowed_states` parameter can be passed to change this.
 ```
 
 :::

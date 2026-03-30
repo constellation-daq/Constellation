@@ -514,7 +514,7 @@ class Satellite(
     # ----- device methods ----- #
     # -------------------------- #
 
-    @cscp_requestable
+    @cscp_requestable()
     def get_version(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Get Constellation version.
 
@@ -526,7 +526,7 @@ class Satellite(
         """
         return __version__, None, {}
 
-    @cscp_requestable
+    @cscp_requestable()
     def get_run_id(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Get current/last known run identifier.
 
@@ -535,7 +535,7 @@ class Satellite(
         """
         return self.run_identifier, None, {}
 
-    @cscp_requestable
+    @cscp_requestable()
     def get_config(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Get current satellite configuration.
 

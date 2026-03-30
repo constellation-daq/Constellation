@@ -13,7 +13,7 @@ from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
 from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.monitoring import schedule_metric
-from constellation.core.protocol.cscp1 import SatelliteState
+from constellation.core.protocol.cscp1 import SatelliteState, states_except
 from constellation.core.satellite import Satellite
 
 
@@ -85,7 +85,7 @@ class Mariner(Satellite):
             self.log.info(f"New sample at {self.device.voltage} V")
         return "Finished acquisition."
 
-    @cscp_requestable
+    @cscp_requestable(states_except([SatelliteState.NEW, SatelliteState.initializing, SatelliteState.ERROR]))
     def get_attitude(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Determine and return the space craft's attitude.
 
@@ -94,25 +94,8 @@ class Mariner(Satellite):
         payload value and an (optional) dictionary with meta information.
 
         """
-        # we cannot perform this command when not ready:
-        if self.fsm.state in [
-            SatelliteState.NEW,
-            SatelliteState.ERROR,
-            SatelliteState.DEAD,
-            SatelliteState.initializing,
-            SatelliteState.reconfiguring,
-        ]:
-            return "Canopus Star Tracker not ready", None, {}
         return "Canopus Star Tracker locked and ready", self.device.get_attitude(), {}
 
     @schedule_metric("lm", 10)
     def brightness(self) -> int | None:
-        if self.fsm.state in [
-            SatelliteState.NEW,
-            SatelliteState.ERROR,
-            SatelliteState.DEAD,
-            SatelliteState.initializing,
-            SatelliteState.reconfiguring,
-        ]:
-            return None
         return self.device.get_current_brightness()

@@ -19,25 +19,34 @@ from statemachine.exceptions import TransitionNotAllowed
 from .base import BaseSatelliteFrame
 from .cscp import CommandTransmitter
 from .message.cscp1 import CSCP1Message
+from .protocol.cscp1 import SatelliteState
 
 T = TypeVar("T")
 P = ParamSpec("P")
 
 
-def cscp_requestable(func: Callable[P, T]) -> Callable[P, T]:
+def cscp_requestable(
+    allowed_states: list[SatelliteState] | None = None,
+) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """Register a function as a supported command for CSCP.
 
     See CommandReceiver for a description of the expected signature.
 
     """
 
-    @wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
-        return func(*args, **kwargs)
+    def decorator(func: Callable[P, T]) -> Callable[P, T]:
+        @wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+            return func(*args, **kwargs)
 
-    # mark function as chirp callback
-    wrapper.cscp_command = True  # type: ignore[attr-defined]
-    return wrapper
+        # mark function as cscp command
+        setattr(wrapper, "cscp_command", True)  # noqa: B010
+        if allowed_states is not None:
+            setattr(wrapper, "allowed_states", allowed_states)  # noqa: B010
+
+        return wrapper
+
+    return decorator
 
 
 def get_cscp_commands(cls: Any) -> dict[str, str]:
@@ -70,14 +79,7 @@ class CommandReceiver(BaseSatelliteFrame):
     - map (dictionary) (e.g. for meta information)
 
     Inheriting classes need to decorate such command methods with
-    '@cscp_requestable' to make them callable through CSCP requests.
-
-    If a method
-
-    `def _COMMAND_is_allowed(self, request: CSCP1Message) -> bool:`
-
-    exists, it will be called first to determine whether the command is
-    currently allowed or not.
+    `@cscp_requestable()` to make them callable through CSCP requests.
 
     """
 
@@ -142,23 +144,24 @@ class CommandReceiver(BaseSatelliteFrame):
                 self.log_cscp.warning("Unknown command: %s", command)
                 self._cmd_tm.send_reply(f"Unknown command: {command}", CSCP1Message.Type.UNKNOWN)
                 continue
-            # test whether callback is allowed by calling the
-            # method "_COMMAND_is_allowed" (if exists).
-            try:
-                is_allowed = getattr(self, f"_{command}_is_allowed")(req)
-                if not is_allowed:
-                    self.log_cscp.warning("Command not allowed: %s", req)
-                    self._cmd_tm.send_reply(
-                        "Command not allowed (in current state)",
-                        CSCP1Message.Type.INVALID,
-                    )
+            # check whether callback is allowed
+            command_cb = getattr(self, command)
+            if hasattr(self, "fsm") and hasattr(command_cb, "allowed_states"):
+                state = getattr(self, "fsm").state  # noqa: B009
+                if command_cb.allowed_states is not None and state not in command_cb.allowed_states:
+                    self.log_cscp.warning("Command not allowed in %s state: %s", state.name, req)
+                    self._cmd_tm.send_reply(f"Command not allowed in {state.name} state", CSCP1Message.Type.INVALID)
                     continue
-            except AttributeError:
-                pass
             # perform the actual callback
             try:
                 self.log_cscp.debug("Calling command %s with argument %s", command, req)
-                res, payload, tags = getattr(self, command)(req)
+                rv = command_cb(req)
+                if rv is None:
+                    # command not allowed since None returned
+                    self.log_cscp.warning("Command not allowed: %s", req)
+                    self._cmd_tm.send_reply("Command not allowed", CSCP1Message.Type.INVALID)
+                    continue
+                res, payload, tags = rv
             except (AttributeError, NotImplementedError) as e:
                 self.log_cscp.error("Command failed with %s: %s", e, req)
                 self._cmd_tm.send_reply(
@@ -195,32 +198,38 @@ class CommandReceiver(BaseSatelliteFrame):
         # shutdown
         self._cmd_tm.close()
 
-    def add_cscp_command(self, method: str, doc: str | None = None) -> None:
+    def add_cscp_command(
+        self, method: str, doc: str | None = None, allowed_states: list[SatelliteState] | None = None
+    ) -> None:
         """Add a method to CSCP.
 
-        This is an alternative to using the `@cscp_requestable` decorator.
+        This is an alternative to using the `@cscp_requestable()` decorator.
 
         Arguments:
 
-        - method [str]: name of the method.
+        - method (`str`): name of the method.
 
-        - doc [str]: a short string providing documentation to the command. If
+        - doc (`str`): a short string providing documentation to the command. If
           no `doc` argument is given, the doc-string of the method will be
           used instead.
+
+        - allowed_states (`list[SatelliteState]`): list of states in which the command is allowed
 
         """
         if not doc:
             call = getattr(self, method)
             doc = str(call.__doc__)
+            if allowed_states is not None:
+                setattr(call, "allowed_states", allowed_states)  # noqa: B010
         self._cmds[method] = doc
 
-    @cscp_requestable
+    @cscp_requestable()
     def get_commands(self, _request: CSCP1Message | None = None) -> tuple[str, dict[str, str], None]:
         """Return all commands supported by the Satellite.
 
         No payload argument.
 
-        This will include all methods with the `@cscp_requestable` decorator. The
+        This will include all methods with the `@cscp_requestable()` decorator. The
         doc string of the function will be used to derive the summary and
         payload argument description for each command by using the first and the
         second line of the doc string, respectively (not counting empty lines).
@@ -232,13 +241,13 @@ class CommandReceiver(BaseSatelliteFrame):
                 public_cmds[key] = value
         return f"{len(public_cmds)} commands known", public_cmds, None
 
-    @cscp_requestable
+    @cscp_requestable()
     def _get_commands(self, _request: CSCP1Message | None = None) -> tuple[str, dict[str, str], None]:
         """Return all hidden commands supported by the Satellite.
 
         No payload argument.
 
-        This will include all methods with the @cscp_requestable decorator starting with an underscore. The
+        This will include all methods with the @cscp_requestable() decorator starting with an underscore. The
         doc string of the function will be used to derive the summary and payload argument description for
         each command by using the first and the second line of the doc string, respectively (not counting
         empty lines).
@@ -250,7 +259,7 @@ class CommandReceiver(BaseSatelliteFrame):
                 hidden_cmds[key] = value
         return f"{len(hidden_cmds)} commands known", hidden_cmds, None
 
-    @cscp_requestable
+    @cscp_requestable()
     def get_name(self, _request: CSCP1Message) -> tuple[str, None, None]:
         """Return the canonical name of the Satellite.
 
@@ -259,7 +268,7 @@ class CommandReceiver(BaseSatelliteFrame):
         """
         return self.name, None, None
 
-    @cscp_requestable
+    @cscp_requestable()
     def shutdown(self, _request: CSCP1Message) -> tuple[str, None, None]:
         """Queue the Satellite's reentry.
 

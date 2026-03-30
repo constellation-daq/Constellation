@@ -18,18 +18,26 @@ from .base import BaseSatelliteFrame
 from .cmdp import CMDPPublisher
 from .logging import ConstellationLogger, ZeroMQSocketLogHandler
 from .protocol.cmdp1 import Metric
+from .protocol.cscp1 import SatelliteState, states_except
 
 T = TypeVar("T")
 P = ParamSpec("P")
+
+DEFAULT_ALLOWED_STATES = states_except(
+    [SatelliteState.NEW, SatelliteState.initializing, SatelliteState.reconfiguring, SatelliteState.ERROR]
+)
 
 
 @dataclass
 class ScheduledMetric(Metric):
     interval: float
     value_cb: Callable[[], Any]
+    allowed_states: list[SatelliteState] | None
 
 
-def schedule_metric(unit: str, interval: float) -> Callable[[Callable[P, T]], Callable[P, T]]:
+def schedule_metric(
+    unit: str, interval: float, allowed_states: list[SatelliteState] | None = DEFAULT_ALLOWED_STATES
+) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """Schedule a metric for a function with given interval in seconds"""
 
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
@@ -39,7 +47,9 @@ def schedule_metric(unit: str, interval: float) -> Callable[[Callable[P, T]], Ca
             return func(*args, **kwargs)
 
         # Mark function as scheduled metric
-        metric = ScheduledMetric(func.__name__, unit, func.__doc__ if func.__doc__ else "", interval, lambda: None)
+        metric = ScheduledMetric(
+            func.__name__, unit, func.__doc__ if func.__doc__ else "", interval, lambda: None, allowed_states
+        )
         setattr(metric, "raw_value_cb", wrapper)  # noqa: B010
         setattr(wrapper, "metric", metric)  # noqa: B010
 
@@ -116,11 +126,17 @@ class MonitoringSender(BaseSatelliteFrame):
         self._metrics[metric.name] = metric
 
     def register_scheduled_metric(
-        self, name: str, unit: str, description: str, interval: float, value_cb: Callable[[], Any]
+        self,
+        name: str,
+        unit: str,
+        description: str,
+        interval: float,
+        value_cb: Callable[[], Any],
+        allowed_states: list[SatelliteState] = DEFAULT_ALLOWED_STATES,
     ) -> None:
         """Register a scheduled metric"""
         self._cmdp_publisher.register_stat(name, description)
-        metric = ScheduledMetric(name, unit, description, interval, value_cb)
+        metric = ScheduledMetric(name, unit, description, interval, value_cb, allowed_states)
         self._metrics[metric.name] = metric
 
     def unregister_metric(self, metric_name: str) -> None:
@@ -188,12 +204,6 @@ class MonitoringSender(BaseSatelliteFrame):
             except ValueError as exc:
                 self.log_cmdp_s.warning("Encountered unexpected subscription request: %s", exc)
 
-            # if the satellite is not ready for sending metrics then skip ahead
-            # and try again later
-            readyfcn = getattr(self, "_is_sending_metrics", None)
-            if readyfcn and not readyfcn():
-                continue
-
             for metric_name, metric in self._metrics.items():
                 # is it a scheduled metric?
                 if not isinstance(metric, ScheduledMetric):
@@ -202,6 +212,12 @@ class MonitoringSender(BaseSatelliteFrame):
                 # do we have subscribers?
                 if not self._cmdp_publisher.has_metric_subscribers(metric_name):
                     continue
+                # are we in a correct state?
+                if hasattr(self, "fsm"):
+                    state = getattr(self, "fsm").state  # noqa: B009
+                    if metric.allowed_states is not None and state not in metric.allowed_states:
+                        self.log_cmdp_s.trace(f"Not sending metric {metric_name}: not allowed in {state}")
+                        continue
                 # is it time to update?
                 update = False
                 try:

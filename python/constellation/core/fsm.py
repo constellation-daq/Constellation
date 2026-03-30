@@ -147,7 +147,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         self._state_thread_fut: Future | None = None  # type: ignore[type-arg]
 
     @debug_log
-    @cscp_requestable
+    @cscp_requestable()
     def initialize(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Initiate 'initialize' state transition via a CSCP request.
 
@@ -193,7 +193,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         return self._transition("initialize", config, thread=False)
 
     @debug_log
-    @cscp_requestable
+    @cscp_requestable()
     def launch(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Initiate launch state transition via a CSCP request.
 
@@ -206,7 +206,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         return self._transition("launch", request.payload, thread=False)
 
     @debug_log
-    @cscp_requestable
+    @cscp_requestable()
     def land(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Initiate landing state transition via a CSCP request.
 
@@ -219,7 +219,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         return self._transition("land", request.payload, thread=False)
 
     @debug_log
-    @cscp_requestable
+    @cscp_requestable()
     def start(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Initiate start state transition via a CSCP request.
 
@@ -238,7 +238,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         return self._transition("start", request.payload, thread=True)
 
     @debug_log
-    @cscp_requestable
+    @cscp_requestable()
     def stop(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Initiate stop state transition via a CSCP request.
 
@@ -275,7 +275,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         return self._transition("reconfigure", partial_config, thread=False)
 
     @debug_log
-    @cscp_requestable
+    @cscp_requestable()
     def _interrupt(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Initiate interrupt state transition via a CSCP request.
 
@@ -288,7 +288,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         return self._transition("interrupt", request.payload, thread=False)
 
     @debug_log
-    @cscp_requestable
+    @cscp_requestable()
     def _failure(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Enter error state transition via a CSCP request.
 
@@ -448,25 +448,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
                 # operational state
                 self.fsm.status = res
 
-    def _is_sending_metrics(self) -> bool:
-        """Determines whether the satellite is ready to send Metrics via CMDP.
-
-        This is checked via the state of the FSM. Override this method to change
-        the behavior when to send out Metrics.
-
-        """
-        # there are several states in which we likely either cannot or do not
-        # want to send out (most) Metrics:
-        if self.fsm.state in [
-            SatelliteState.NEW,
-            SatelliteState.ERROR,
-            SatelliteState.DEAD,
-            SatelliteState.initializing,
-        ]:
-            return False
-        return True
-
-    @cscp_requestable
+    @cscp_requestable()
     def get_state(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Return the current state of the Satellite.
 
@@ -481,7 +463,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         }
         return self.fsm.state.name, payload, meta
 
-    @cscp_requestable
+    @cscp_requestable()
     def get_status(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Get a string describing the current status of the Satellite.
 

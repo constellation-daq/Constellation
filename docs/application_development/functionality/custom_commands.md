@@ -81,7 +81,7 @@ has to be replaced with
 :::{tab-item} Python
 :sync: python
 
-In Python, commands are registered by placing the `@cscp_requestable` decorator above the method defining the command.
+In Python, commands are registered by placing the `@cscp_requestable()` decorator above the method defining the command.
 The method needs to have a specific signature:
 
 ```python
@@ -99,7 +99,7 @@ Adding a custom command thus also requires `from constellation.core.message.cscp
 In this example, the command `get_channel_reading(channel: int)` is added to a satellite:
 
 ```python
-@cscp_requestable
+@cscp_requestable()
 def get_channel_reading(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
     """Read the value of the channel given by the first supplied argument."""
     paramList = request.payload
@@ -108,7 +108,7 @@ def get_channel_reading(self, request: CSCP1Message) -> tuple[str, Any, dict[str
     return str(value / 10), None, {}
 ```
 
-The `@cscp_requestable` decorator registers the command with the command registry, and the comment block in the beginning is
+The `@cscp_requestable()` decorator registers the command with the command registry, and the comment block in the beginning is
 the description of the command, available from the command registry. The command is called via
 `constellation.MySatellite.get_channel_reading([1])` in the Controller, to read channel 1.
 
@@ -211,20 +211,23 @@ Steady as well as transitional states can be listed. An empty list of states all
 :::{tab-item} Python
 :sync: python
 
-In Python, this is handled by adding a method with the signature
+In Python, it is possible to specify a list of allowed states in the first argument of the decorator:
 
 ```python
-def _COMMAND_is_allowed(self, request: CSCP1Message) -> bool:
+@cscp_requestable([SatelliteState.ORBIT, SatelliteState.RUN])
+def COMMAND(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
 ```
 
-to the satellite. If this exists, it will be called before the method of the custom command is called, to determine whether
-it is allowed or not. An example is shown below, limiting the usage of the `get_channel_reading` command to the states
-`INIT` and `ORBIT`:
+An example is shown below, limiting the usage of the `get_channel_reading` command to all states except {bdg-secondary}`NEW`, {bdg-secondary}`initializing`, {bdg-secondary}`reconfiguring` and {bdg-secondary}`ERROR`:
 
 ```python
-def _get_channel_reading_is_allowed(self, request: CSCP1Message) -> bool:
-    """Allow in the states INIT and ORBIT, but not during RUN"""
-    return self.fsm.current_state.id in ["INIT", "ORBIT"]
+@cscp_requestable(states_except([SatelliteState.NEW, SatelliteState.initializing, SatelliteState.reconfiguring, SatelliteState.ERROR]))
+def get_channel_reading(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
+    """Read the value of the channel given by the first supplied argument."""
+    paramList = request.payload
+    channel = paramList[0]
+    value = _device.read(channel)
+    return str(value / 10), None, {}
 ```
 
 :::

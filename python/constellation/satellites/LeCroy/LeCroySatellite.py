@@ -109,17 +109,13 @@ class LeCroySatellite(TransmitterSatellite):
         self.log.info(f"Stopping the run after {self._num_triggers_acquired} event(s)")
         return "Stopped acquisition"
 
-    @cscp_requestable
+    @cscp_requestable([SatelliteState.RUN])
     def get_num_triggers(self, request: CSCP1Message) -> tuple[str, int, dict[str, Any]]:
-        if self.fsm.state == SatelliteState.RUN:
-            return f"Number of triggers: {self._num_triggers_acquired}", self._num_triggers_acquired, {}
-        return "Not running", -1, {}
+        return f"Number of triggers: {self._num_triggers_acquired}", self._num_triggers_acquired, {}
 
-    @schedule_metric("", 10)
+    @schedule_metric("", 10, [SatelliteState.RUN])
     def NUM_TRIGGERS(self) -> int | None:
-        if self.fsm.state == SatelliteState.RUN:
-            return self._num_triggers_acquired
-        return None
+        return self._num_triggers_acquired
 
     def _configure_sequences(self, num_sequences: int):
         self._num_sequences = num_sequences
