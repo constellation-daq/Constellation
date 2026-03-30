@@ -138,7 +138,7 @@ class EtrocReceiver(ReceiverSatellite):
             return  # Safety check: drop data if the file isn't open yet
 
         # DataRecords can contain multiple blocks. We loop through them to get our bytes.
-        for raw_bytes in data_record:
+        for raw_bytes in data_record.blocks:
 
             # 1. INSTANT DECODING (Zero-Copy)
             # We tell NumPy to lay a view over the raw bytes and treat them
