@@ -12,7 +12,7 @@ from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
 from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.monitoring import schedule_metric
-from constellation.core.protocol.cscp1 import SatelliteState
+from constellation.core.protocol.cscp1 import SatelliteState, states_except
 from constellation.core.satellite import Satellite
 
 from .Keithley2410 import Keithley2410
@@ -169,62 +169,38 @@ class Keithley(Satellite):
 
         self.log.info(f"Ramped output voltage to {self.device.get_voltage()}V")
 
-    @cscp_requestable
+    @cscp_requestable(
+        states_except([SatelliteState.NEW, SatelliteState.initializing, SatelliteState.reconfiguring, SatelliteState.ERROR])
+    )
     def identify(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Identify device (includes serial number)"""
         return self.device.identify(), None, {}
 
-    @cscp_requestable
+    @cscp_requestable(
+        states_except([SatelliteState.NEW, SatelliteState.initializing, SatelliteState.reconfiguring, SatelliteState.ERROR])
+    )
     def in_compliance(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Check if current is in compliance"""
         in_compliance = self.device.in_compliance()
         is_str = "is" if in_compliance else "is not"
         return f"Device {is_str} in compliance", in_compliance, {}
 
-    def _in_compliance_is_allowed(self, request: CSCP1Message) -> bool:
-        return self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]
-
-    @cscp_requestable
+    @cscp_requestable(
+        states_except([SatelliteState.NEW, SatelliteState.initializing, SatelliteState.reconfiguring, SatelliteState.ERROR])
+    )
     def read_output(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Read voltage and current output"""
         voltage, current, timestamp = self.device.read_output()
         return f"Output: {voltage}V, {current}A", {"voltage": voltage, "current": current, "timestamp": timestamp}, {}
 
-    def _read_output_is_allowed(self, request: CSCP1Message) -> bool:
-        return self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]
-
     @schedule_metric("V", 5)
     def VOLTAGE(self) -> float | None:
-        if self.fsm.state in [
-            SatelliteState.INIT,
-            SatelliteState.ORBIT,
-            SatelliteState.starting,
-            SatelliteState.stopping,
-            SatelliteState.RUN,
-        ]:
-            return self.device.read_output()[0]
-        return None
+        return self.device.read_output()[0]
 
     @schedule_metric("A", 5)
     def CURRENT(self) -> float | None:
-        if self.fsm.state in [
-            SatelliteState.INIT,
-            SatelliteState.ORBIT,
-            SatelliteState.starting,
-            SatelliteState.stopping,
-            SatelliteState.RUN,
-        ]:
-            return self.device.read_output()[1]
-        return None
+        return self.device.read_output()[1]
 
     @schedule_metric("", 5)
     def IN_COMPLIANCE(self) -> float | None:
-        if self.fsm.state in [
-            SatelliteState.INIT,
-            SatelliteState.ORBIT,
-            SatelliteState.starting,
-            SatelliteState.stopping,
-            SatelliteState.RUN,
-        ]:
-            return self.device.in_compliance()
-        return None
+        return self.device.in_compliance()

@@ -15,6 +15,7 @@ import pyvisa.constants
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
 from constellation.core.message.cscp1 import CSCP1Message
+from constellation.core.protocol.cscp1 import SatelliteState, states_except
 from constellation.core.satellite import Satellite
 
 
@@ -59,9 +60,6 @@ class LakeShore218(Satellite):
             )
 
     def _get_temp(self, channel: int) -> float | None:
-        # Check that _serial exists (required for metrics before INIT)
-        if not hasattr(self, "_serial"):
-            return None
         # Lock required since serial not thread safe
         with self._lock:
             # Check if input is enabled (return "0" or "1")
@@ -70,7 +68,7 @@ class LakeShore218(Satellite):
         # Return None if not enabled
         return None
 
-    @cscp_requestable
+    @cscp_requestable(states_except([SatelliteState.NEW, SatelliteState.initializing, SatelliteState.ERROR]))
     def get_temp(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         channel = 0
         try:
