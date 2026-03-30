@@ -51,7 +51,7 @@ void LoadedCppSatellite::start(std::string_view group,
                                std::string_view satellite_name,
                                Level /*log_level*/,
                                const std::vector<networking::Interface>& interfaces) {
-    const auto canonical_name = to_string(getTypeName()) + " " + to_string(satellite_name);
+    const auto canonical_name = to_string(getTypeName()) + '.' + to_string(satellite_name);
     constellation_setup_chirp(group, canonical_name, interfaces);
     satellite_ = satellite_generator_(getTypeName(), satellite_name);
 }
