@@ -245,7 +245,7 @@ class EtrocReceiver(ReceiverSatellite):
                         status2 = (payload_20bit >> 8) & 0xFF
                         reset_counter = payload_20bit & 0xFF
 
-                        self.log.info(f"Link Status: {status1:04b} {status2:08b}, Reset Counter: {reset_counter}")
+                        # self.log.info(f"Link Status: {status1:04b} {status2:08b}, Reset Counter: {reset_counter}")
                         self.translate_state[2] = payload_20bit
 
                     if not self.skip_fillers:
