@@ -87,7 +87,6 @@ group_name = "edda"
 
 # Create controller
 ctrl = ScriptableController(group_name)
-constellation = ctrl.constellation
 
 # Load configuration
 cfg = load_config(config_file_path)
@@ -96,6 +95,8 @@ cfg = load_config(config_file_path)
 ctrl.await_satellites(["Sputnik.s1", "Sputnik.s2"])
 
 # Initialize and reconfigure loop goes here as above
+ctrl.constellation.initialize(cfg)
+...
 ```
 
 ## Scanning until a Telemetry Condition is met
@@ -158,7 +159,6 @@ group_name = "edda"
 
 # Create controller
 ctrl = ScriptableController(group_name)
-constellation = ctrl.constellation
 
 # Load configuration
 cfg = load_config(config_file_path)
@@ -167,9 +167,9 @@ cfg = load_config(config_file_path)
 ctrl.await_satellites(["AidaTLU.2020", "Caribou.SPARC", "Keithley.Bias"])
 
 # Initialize and launch
-constellation.initialize(cfg)
+ctrl.constellation.initialize(cfg)
 ctrl.await_state(SatelliteState.INIT)
-constellation.launch()
+ctrl.constellation.launch()
 ctrl.await_state(SatelliteState.ORBIT)
 
 # Scan over bias voltages
@@ -182,13 +182,13 @@ for voltage in voltages:
     last_state_change = ctrl.get_last_state_change(["Keithley.Bias"])
 
     # Send reconfigure command
-    constellation.Keithley.Bias.reconfigure(recfg)
+    ctrl.constellation.Keithley.Bias.reconfigure(recfg)
 
     # Wait until all states are back in the ORBIT state while ensuring Keithley.Bias changed state
     ctrl.await_state_change(SatelliteState.ORBIT, last_state_change)
 
     # Start the run
-    constellation.start(f"voltage{str(voltage).replace('.', '_')}")
+    ctrl.constellation.start(f"voltage{str(voltage).replace('.', '_')}")
     ctrl.await_state(SatelliteState.RUN)
 
     # Wait until 1M triggers are collected
@@ -196,10 +196,10 @@ for voltage in voltages:
         time.sleep(1)
 
     # Stop the run and await ORBIT state of all satellites
-    constellation.stop()
+    ctrl.constellation.stop()
     ctrl.await_state(SatelliteState.ORBIT)
 
 # Land and shutdown satellites
-constellation.land()
-constellation.shutdown()
+ctrl.constellation.land()
+ctrl.constellation.shutdown()
 ```
