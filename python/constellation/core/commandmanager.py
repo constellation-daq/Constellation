@@ -79,7 +79,7 @@ class CommandReceiver(BaseSatelliteFrame):
     - map (dictionary) (e.g. for meta information)
 
     Inheriting classes need to decorate such command methods with
-    '@cscp_requestable()' to make them callable through CSCP requests.
+    `@cscp_requestable()` to make them callable through CSCP requests.
 
     """
 
@@ -207,13 +207,13 @@ class CommandReceiver(BaseSatelliteFrame):
 
         Arguments:
 
-        - method [str]: name of the method.
+        - method (`str`): name of the method.
 
-        - doc [str]: a short string providing documentation to the command. If
+        - doc (`str`): a short string providing documentation to the command. If
           no `doc` argument is given, the doc-string of the method will be
           used instead.
 
-        - allowed_states [list[SatelliteState]]: list of states in which the command is allowed
+        - allowed_states (`list[SatelliteState]`): list of states in which the command is allowed
 
         """
         if not doc:
