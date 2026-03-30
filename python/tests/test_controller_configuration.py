@@ -185,7 +185,7 @@ def test_ctrl_config_invalid_two_satellite_configs():
 
 
 def _timetz(*args) -> datetime.time:
-    return datetime.datetime(2025, 12, 7, *args).astimezone(datetime.UTC).timetz()
+    return datetime.datetime.combine(datetime.date.today(), datetime.time(*args)).astimezone(datetime.UTC).timetz()
 
 
 def test_ctrl_config_valid_toml():
