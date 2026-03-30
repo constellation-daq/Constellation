@@ -43,13 +43,15 @@ ctrl.await_state(SatelliteState.ORBIT)
 for ivl in range(0, 100, 10):
     # Reconfigure one of the satellites to the new parameter value
     recfg = {"interval": ivl}
-    constellation.Sputnik.reconfigure(recfg)
 
-    # Wait a bit to ensure Sputnik is in reconfiguring state
-    time.sleep(0.1)
+    # Store last state change for Sputnik to ensure it reached reconfiguring
+    last_state_change = ctrl.get_last_state_change(["Sputnik.One"])
 
-    # Wait until all states are back in the ORBIT state
-    ctrl.await_state(SatelliteState.ORBIT)
+    # Send reconfigure command
+    constellation.Sputnik.One.reconfigure(recfg)
+
+    # Wait until all states are back in the ORBIT state while ensuring Sputnik.One changed state
+    ctrl.await_state_change(SatelliteState.ORBIT, last_state_change)
 
     # Repeat this measurement four times
     for run in range(1, 4):
@@ -134,7 +136,7 @@ import time
 from constellation.core.controller import ScriptableController
 from constellation.core.controller_configuration import load_config
 from constellation.core.listener import MonitoringListener
-from constellation.core.message.cscp1 import SatelliteState
+from constellation.core.protocol.cscp1 import SatelliteState
 
 
 # Custom controller which listens to metrics
@@ -162,7 +164,7 @@ constellation = ctrl.constellation
 cfg = load_config(config_file_path)
 
 # Wait until all satellites are connected
-ctrl.await_satellites(["AidaTLU.2020", "Caribou.SPARC", "Keithley.2410"])
+ctrl.await_satellites(["AidaTLU.2020", "Caribou.SPARC", "Keithley.Bias"])
 
 # Initialize and launch
 constellation.initialize(cfg)
@@ -175,13 +177,15 @@ voltages = [-1.2, -2.4, -3.6, -4.8]
 for voltage in voltages:
     # Reconfigure Keithley with new voltage
     recfg = {"voltage": voltage}
-    constellation.Keithley.reconfigure(recfg)
 
-    # Wait a bit to ensure Keithley is in reconfiguring state
-    time.sleep(0.1)
+    # Store last state change for Keithley to ensure it reached reconfiguring
+    last_state_change = ctrl.get_last_state_change(["Keithley.Bias"])
 
-    # Wait until all states are back in the ORBIT state
-    ctrl.await_state(SatelliteState.ORBIT)
+    # Send reconfigure command
+    constellation.Keithley.Bias.reconfigure(recfg)
+
+    # Wait until all states are back in the ORBIT state while ensuring Keithley.Bias changed state
+    ctrl.await_state_change(SatelliteState.ORBIT, last_state_change)
 
     # Start the run
     constellation.start(f"voltage{str(voltage).replace('.', '_')}")

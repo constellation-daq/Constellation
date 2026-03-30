@@ -426,6 +426,31 @@ def controller():
 
 
 @pytest.fixture
+def satellite():
+    """Create a satellite instance."""
+
+    class MySatellite(Satellite):
+        def do_reconfigure(self, config) -> None:
+            time.sleep(0.1)  # TODO replace with pass once extrasystoles are fixed
+
+    s = MySatellite(
+        name="satellite",
+        group="mockstellation",
+        cmd_port=11111,
+        hb_port=22222,
+        mon_port=MON_PORT,
+        interface=[get_loopback_interface_name()],
+    )
+    t = threading.Thread(target=s.run_satellite)
+    t.start()
+    # give the threads a chance to start
+    time.sleep(0.1)
+    yield s
+    # teardown
+    s.reentry()
+
+
+@pytest.fixture
 def rawconfig_toml():
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_cfg.toml")
     yield load_config(path)
