@@ -23,6 +23,7 @@ The prerequisites can be installed as follows:
 
 ::::{tab-set}
 :::{tab-item} Debian/Ubuntu
+:sync: debian
 
 ```sh
 sudo apt install python3 python3-venv
@@ -30,6 +31,7 @@ sudo apt install python3 python3-venv
 
 :::
 :::{tab-item} Alma
+:sync: alma
 
 ```sh
 sudo dnf install python3.11
@@ -38,6 +40,7 @@ alias python3=python3.11
 
 :::
 :::{tab-item} Fedora
+:sync: fedora
 
 ```sh
 sudo dnf install python3
@@ -45,6 +48,7 @@ sudo dnf install python3
 
 :::
 :::{tab-item} MacOS
+:sync: macos
 
 ```sh
 brew install python
@@ -89,6 +93,7 @@ The prerequisites can be installed as follows:
 
 ::::{tab-set}
 :::{tab-item} Debian/Ubuntu
+:sync: debian
 
 Starting with Ubuntu 24.04 and Debian 12 or newer, the official packages can be used:
 
@@ -106,8 +111,8 @@ sudo apt install qtbase5-dev libqt5svg5-dev libqt5charts5-dev
 export CXX="g++-12"
 ```
 
-```{note}
-Since Ubuntu 22.04 does not offer Qt6, `build_gui` needs to be set to `qt5` (see also [Build Options](#build-options)).
+```{attention}
+Since Ubuntu 22.04 does not offer Qt6, `-Dbuild_gui=qt5` needs to be passed in the build setup (see also [Build Options](#build-options)).
 ```
 
 Ubuntu 20.04 requires newer versions of GCC and Meson than available from the standard package repositories. They are available in official PPAs:
@@ -121,8 +126,8 @@ sudo apt install qtbase5-dev libqt5svg5-dev libqt5charts5-dev
 export CXX="g++-13"
 ```
 
-```{note}
-Since Ubuntu 20.04 does not offer Qt6, `build_gui` needs to be set to `qt5` (see also [Build Options](#build-options)).
+```{attention}
+Since Ubuntu 20.04 does not offer Qt6, `-Dbuild_gui=qt5` needs to be passed in the build setup (see also [Build Options](#build-options)).
 ```
 
 ```{warning}
@@ -130,17 +135,8 @@ Ubuntu 20.04 is not officially supported.
 ```
 
 :::
-:::{tab-item} Fedora
-
-For Fedora the official packages can be used:
-
-```sh
-sudo dnf install meson gcc-c++
-sudo dnf install qt6-qtbase-devel qt6-qtsvg-devel qt6-qtcharts-devel
-```
-
-:::
 :::{tab-item} Alma
+:sync: alma
 
 AlmaLinux 9 requires the CRB repository for Meson, which can be enabled via:
 
@@ -162,12 +158,24 @@ To use the latest GCC a terminal session has to be started with the `scl` comman
 scl enable gcc-toolset-14 bash
 ```
 
-```{note}
-Since AlmaLinux 9 does not offer Qt6, `build_gui` needs to be set to `qt5` (see also [Build Options](#build-options)).
+```{attention}
+Since AlmaLinux 9 does not offer Qt6, `-Dbuild_gui=qt5` needs to be passed in the build setup (see also [Build Options](#build-options)).
+```
+
+:::
+:::{tab-item} Fedora
+:sync: fedora
+
+For Fedora the official packages can be used:
+
+```sh
+sudo dnf install meson gcc-c++
+sudo dnf install qt6-qtbase-devel qt6-qtsvg-devel qt6-qtcharts-devel
 ```
 
 :::
 :::{tab-item} MacOS
+:sync: macos
 
 Building on MacOS requires the installation of the XCode Command Line Tools via:
 
@@ -207,6 +215,7 @@ export LDFLAGS="-L$(brew --prefix)/opt/llvm/lib/c++ -L$(brew --prefix)/opt/llvm/
 
 :::
 :::{tab-item} Windows
+:sync: windows
 
 Running Constellation natively on Windows is still a work in progress.
 However, it is possible to run Constellation through [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
