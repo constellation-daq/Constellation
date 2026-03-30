@@ -13,6 +13,7 @@ from constellation.core.commandmanager import CommandReceiver, cscp_requestable
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.network import get_loopback_interface_name
+from constellation.core.protocol.cscp1 import SatelliteState, states_except
 
 from .conftest import DEFAULT_SEND_PORT
 
@@ -25,23 +26,17 @@ def mock_cmdreceiver(mock_zmq_context, mock_chirp_transmitter):
     ctx.flip_queues()
 
     class MockCommandReceiver(CommandReceiver):
-        @cscp_requestable
+        @cscp_requestable()
         def get_state(self, msg):
             return "state", "good", None
 
-        @cscp_requestable
+        @cscp_requestable(states_except([SatelliteState.ERROR]))
         def fcnallowed(self, msg):
             return "allowed", "allowed passed", None
 
-        def _fcnallowed_is_allowed(self, msg):
-            return True
-
-        @cscp_requestable
+        @cscp_requestable()
         def fcnnotallowed(self, msg):
-            return "notallowed", "yes", None
-
-        def _fcnnotallowed_is_allowed(self, msg):
-            return False
+            return None
 
     cr = MockCommandReceiver("mock_satellite", cmd_port=CMD_PORT, interface=[get_loopback_interface_name()])
     cr._add_com_thread()
@@ -140,7 +135,7 @@ def test_cmd_unique_commands(mock_cmdreceiver):
     """Test that commands from different classes do not mix."""
 
     class MockOtherCommandReceiver(CommandReceiver):
-        @cscp_requestable
+        @cscp_requestable()
         def get_unique_value(self, msg):
             return 42, None, None
 

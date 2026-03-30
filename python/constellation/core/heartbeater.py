@@ -123,7 +123,7 @@ class HeartbeatSender(SatelliteStateHandler):
         # clean up
         self._hb_tm.close()
 
-    @cscp_requestable
+    @cscp_requestable()
     def get_role(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Return the current role of the Satellite.
 

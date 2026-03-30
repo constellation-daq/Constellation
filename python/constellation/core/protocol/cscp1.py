@@ -42,6 +42,15 @@ class SatelliteState(Enum):
         return bool(((self.value & 0x0F) << 4) == state.value)
 
 
+def states_except(disallowed_states: list[SatelliteState]) -> list[SatelliteState]:
+    """Get list of all states except states from a given list"""
+    allowed_states: list[SatelliteState] = []
+    for enum_entry in SatelliteState:
+        if enum_entry not in disallowed_states:
+            allowed_states.append(enum_entry)
+    return allowed_states
+
+
 def is_valid_satellite_name(satellite_name: str) -> bool:
     """Checks if a satellite name is valid
 

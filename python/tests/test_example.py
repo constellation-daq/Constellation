@@ -107,8 +107,7 @@ def test_mariner_command(mock_cmd_transmitter, mariner_satellite):
     time.sleep(0.2)
     req = sender.get_message()
     assert isinstance(req, CSCP1Message)
-    assert "not ready" in req.verb_msg.lower()
-    assert req.verb_type == CSCP1Message.Type.SUCCESS
+    assert req.verb_type == CSCP1Message.Type.INVALID
     assert not req.payload
 
     payload = {"voltage": 1000, "current": 3, "sample_period": 1}
