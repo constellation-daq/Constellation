@@ -47,17 +47,25 @@ class i2c_connection:
         # 2. Simplified Delay Tracking
         self.fc_delays = {addr: {'clk': 1, 'data': 1} for addr in chip_addresses}
 
-        # 3. Hardware Connection
-        self.conn = i2c_gui2.USB_ISS_Helper(port, clock, dummy_connect=False)
+        # 3. Build YOUR specific logger manually
+        self.logger = logging.getLogger("I2C_Manager")
+        self.logger.setLevel(logging.INFO)
+        self.logger.propagate = False  # Prevents it from touching the global root
 
-        # Configure logging
-        logging.basicConfig(
-            level=logging.INFO,
-            stream=sys.stdout,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
-        self.logger = logging.getLogger(__name__)
+        if not self.logger.handlers:
+            handler = logging.StreamHandler(sys.stdout)
+            formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
+
+        # 4. Build the dummy logger for the chip object
+        self.i2c_logger = logging.getLogger("Silent_Chip")
+        self.i2c_logger.setLevel(logging.CRITICAL)
+        self.i2c_logger.propagate = False
+        if not self.i2c_logger.handlers:
+            self.i2c_logger.addHandler(logging.NullHandler())
+
+        self.conn = i2c_gui2.USB_ISS_Helper(port, clock, dummy_connect=False)
 
     # ==========================================
     # THE GATEKEEPER
@@ -71,7 +79,7 @@ class i2c_connection:
                 ws_addr = None
 
             # Use self.logger here instead of self.chip_logger
-            self._chips[addr] = i2c_gui2.ETROC2_Chip(addr, ws_addr, self.conn, self.logger)
+            self._chips[addr] = i2c_gui2.ETROC2_Chip(addr, ws_addr, self.conn, self.i2c_logger)
 
         return self._chips[addr]
 
