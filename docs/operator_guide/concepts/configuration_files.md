@@ -353,7 +353,7 @@ This means, global parameters are overwritten by satellite-type default paramete
 ```yaml
 _default:
   _autonomy:
-    role: ESSENTIAL
+    role: NONE
 
 Sputnik:
   _default:
@@ -361,7 +361,7 @@ Sputnik:
       role: TRANSIENT
   One:
     _autonomy:
-      role: NONE
+      role: ESSENTIAL
   Two:
 
 Mariner:
