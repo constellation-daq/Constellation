@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 import logging
 import time, sys
@@ -516,3 +517,146 @@ class i2c_connection:
         for addr in self.chip_addresses:
             fc_values = self.check_invalid_fc(addr)
             self.logger.info(f"  Chip {hex(addr)} Invalid FC Counter: {fc_values}")
+
+    # ==========================================
+    # LEVEL 1: WAVEFORM SAMPLER (WS) METHODS
+    # ==========================================
+    def ws_start_sampling(self, addr: int):
+        """Initializes and starts the Waveform Sampler for a single chip."""
+        chip = self._resolve_chip(addr)
+
+        # 1. State Machine Reset & Start
+        chip.read_register("Waveform Sampler", "Config", "regOut1F")
+        chip["Waveform Sampler", "Config", "regOut1F"] = 0x22
+        chip.write_register("Waveform Sampler", "Config", "regOut1F")
+        chip["Waveform Sampler", "Config", "regOut1F"] = 0x0b
+        chip.write_register("Waveform Sampler", "Config", "regOut1F")
+
+        # 2. Memory Reset Toggle
+        chip.read_decoded_value("Waveform Sampler", "Config", 'mem_rstn')
+        chip.set_decoded_value("Waveform Sampler", "Config", 'mem_rstn', 0)
+        chip.write_decoded_value("Waveform Sampler", "Config", 'mem_rstn')
+        chip.set_decoded_value("Waveform Sampler", "Config", 'mem_rstn', 1)
+        chip.write_decoded_value("Waveform Sampler", "Config", 'mem_rstn')
+
+        # 3. Calibration Disables
+        chip.read_decoded_value("Waveform Sampler", "Config", 'DDT')
+        chip.set_decoded_value("Waveform Sampler", "Config", 'DDT', 0)        # Disable Time Skew Cal
+        chip.write_decoded_value("Waveform Sampler", "Config", 'DDT')
+
+        chip.read_register("Waveform Sampler", "Config", "regOut0D")
+        chip.set_decoded_value("Waveform Sampler", "Config", 'CTRL', 2)       # CTRL default = 0x10
+        chip.write_decoded_value("Waveform Sampler", "Config", 'CTRL')
+        chip.set_decoded_value("Waveform Sampler", "Config", 'comp_cali', 0)  # Disable Comparator Cal
+        chip.write_decoded_value("Waveform Sampler", "Config", 'comp_cali')
+
+        self.logger.info(f"  WS Sampling STARTED for {hex(addr)}")
+
+    def ws_stop_sampling(self, addr: int):
+        """Stops the Waveform Sampler state machine."""
+        chip = self._resolve_chip(addr)
+        chip.read_register("Waveform Sampler", "Config", "regOut1F")
+        chip["Waveform Sampler", "Config", "regOut1F"] = 0x09
+        chip.write_register("Waveform Sampler", "Config", "regOut1F")
+        self.logger.info(f"  WS Sampling STOPPED for {hex(addr)}")
+
+    def ws_read_data(self, addr: int) -> pd.DataFrame:
+        """
+        Reads the 1024-step memory from the Waveform Sampler and parses it instantly.
+        """
+        # Automatically look up the paired WS address
+        idx = self.chip_addresses.index(addr)
+        ws_addr = self.ws_addresses[idx]
+
+        if ws_addr is None:
+            self.logger.warning(f"  Cannot read WS for {hex(addr)} - No WS address assigned.")
+            return pd.DataFrame()
+
+        chip = self._resolve_chip(addr)
+        i2c_controller = chip._i2c_connection
+
+        # Enable I2C read mode
+        chip.read_decoded_value("Waveform Sampler", "Config", 'rd_en_I2C')
+        chip.set_decoded_value("Waveform Sampler", "Config", 'rd_en_I2C', 1)
+        chip.write_decoded_value("Waveform Sampler", "Config", 'rd_en_I2C')
+
+        max_steps = 1024
+        base_data = []
+        coeff = 0.085
+        time_coeff = 0.390625
+        addr_regs = [0x00, 0x00]
+
+        for address in range(max_steps):
+            addr_regs[0] = ((address & 0b11) << 6)
+            addr_regs[1] = ((address & 0b1111111100) >> 2)
+            i2c_controller.write_device_memory(ws_addr, 0x1C, addr_regs, 8)
+            tmp_data = i2c_controller.read_device_memory(ws_addr, 0x20, 2, 8)
+
+            data_int = (tmp_data[0] >> 2) | (tmp_data[1] << 6)
+            pointer = (data_int >> 13) & 1
+            Dout_S1 = (data_int >> 7) & 0x3F
+
+            Dout_S2 = (((data_int >> 6) & 1) * 24 +
+                       ((data_int >> 5) & 1) * 16 +
+                       ((data_int >> 4) & 1) * 10 +
+                       ((data_int >> 3) & 1) * 6 +
+                       ((data_int >> 2) & 1) * 4 +
+                       ((data_int >> 1) & 1) * 2 +
+                        (data_int & 1))
+
+            base_data.append({
+                "Data Address": address, "Data": data_int, "Raw Data": f"{data_int:014b}",
+                "pointer": pointer, "Dout_S1": Dout_S1, "Dout_S2": Dout_S2,
+                "Dout": Dout_S1 - (coeff * Dout_S2),
+            })
+
+        df = pd.DataFrame(base_data)
+        channels = 8
+        steps_per_ch = len(df) // channels
+
+        df['Channel'] = np.repeat(np.arange(1, channels + 1), steps_per_ch)
+        df['Step'] = np.tile(np.arange(steps_per_ch), channels)
+
+        pointer_mask = (df['Channel'] == channels) & (df['pointer'] != 0)
+        if pointer_mask.any():
+            pointer_step = df.loc[pointer_mask, 'Step'].iloc[0]
+            df['Step'] = (df['Step'] - (pointer_step + 1)) % steps_per_ch
+
+        df['Time Index'] = df['Step'] * channels + (channels - df['Channel'])
+        df['Time [ns]'] = df['Time Index'] * time_coeff
+
+        df = df.sort_values('Time Index').set_index('Time Index').drop(columns=['Step'])
+
+        # Disable I2C read mode
+        chip.set_decoded_value("Waveform Sampler", "Config", 'rd_en_I2C', 0)
+        chip.write_decoded_value("Waveform Sampler", "Config", 'rd_en_I2C')
+
+        self.logger.info(f"  WS Data Read COMPLETE for {hex(addr)}")
+        return df
+
+
+    # ==========================================
+    # LEVEL 2: BATCH WS OPERATIONS
+    # ==========================================
+    def batch_ws_start_sampling(self):
+        """Starts the Waveform Sampler on all registered chips."""
+        self.logger.info("Batch starting WS sampling...")
+        for addr in self.chip_addresses:
+            self.ws_start_sampling(addr)
+
+    def batch_ws_stop_sampling(self):
+        """Stops the Waveform Sampler on all registered chips."""
+        self.logger.info("Batch stopping WS sampling...")
+        for addr in self.chip_addresses:
+            self.ws_stop_sampling(addr)
+
+    def batch_ws_read_data(self) -> dict:
+        """
+        Reads WS data from all chips.
+        Returns a dictionary mapping chip addresses to their DataFrames.
+        """
+        self.logger.info("Batch reading WS data...")
+        ws_results = {}
+        for addr, name in zip(self.chip_addresses, self.chip_names):
+            ws_results[name] = self.ws_read_data(addr)
+        return ws_results

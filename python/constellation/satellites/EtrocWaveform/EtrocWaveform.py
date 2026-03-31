@@ -220,7 +220,7 @@ class EtrocWaveform(Satellite):
         cmd_interpret.write_config_reg_decoded(self.connection_socket, "timestamp", modified_timestamp)
         time.sleep(0.1)
 
-        self.i2c_conn.start_ws_sampling()
+        self.i2c_conn.batch_ws_start_sampling()
         cmd_interpret.write_pulse_reg_decoded(self.connection_socket, "ws_clear_pulse")
         cmd_interpret.write_pulse_reg_decoded(self.connection_socket, "clear_ws_block")
         cmd_interpret.write_config_reg_decoded(self.connection_socket, "active_channel", self.ws_active_channel)
@@ -260,10 +260,10 @@ class EtrocWaveform(Satellite):
                 cmd_interpret.write_pulse_reg_decoded(self.connection_socket, "clear_ws_block")
                 continue
 
-            for chip_address, ws_address, chip_name in zip(self.chip_addresses, self.ws_addresses, self.chip_names):
-                df = self.i2c_conn.read_chip_ws(chip_address, ws_address)
+            dfs = self.i2c_conn.batch_ws_read_data()
 
-                # --- NEW: Ultra-fast, zero-padded filename construction ---
+            for chip_name, df in dfs.items():
+
                 # Example: WS_rawData_c1_0005.csv
                 filename = f"WS_rawData_{chip_name}_{self.file_counter:04d}.csv"
                 csv_path = self.run_dir / filename
@@ -276,7 +276,7 @@ class EtrocWaveform(Satellite):
                 self.file_counter += 1
 
             # Restart WS cycle
-            self.i2c_conn.start_ws_sampling()
+            self.i2c_conn.batch_ws_start_sampling()
             cmd_interpret.write_pulse_reg_decoded(self.connection_socket, "ws_clear_pulse")
             cmd_interpret.write_pulse_reg_decoded(self.connection_socket, "clear_ws_block")
 
