@@ -66,6 +66,9 @@ class i2c_connection:
         if not self.i2c_logger.handlers:
             self.i2c_logger.addHandler(logging.NullHandler())
 
+        logging.getLogger("I2c_Log").setLevel(logging.CRITICAL)
+        logging.getLogger("I2c_Log").propagate = False
+
         self.conn = i2c_gui2.USB_ISS_Helper(port, clock, dummy_connect=False)
 
     # ==========================================
