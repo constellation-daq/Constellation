@@ -13,6 +13,28 @@ RED   = "\033[31m"
 RESET = '\033[0m'
 
 # =======================================================================
+# THE CONSTELLATION BOUNCER: Intercept and drop all i2c_gui2 logs
+# =======================================================================
+class I2CSilenceFilter(logging.Filter):
+    def filter(self, record):
+        # 1. Block if the logger is explicitly named by the library
+        if record.name and ("i2c_gui2" in record.name or "USB" in record.name):
+            return False
+        # 2. Block if the library used the Root Logger (Catch by file path!)
+        if record.pathname and "i2c_gui2" in record.pathname:
+            return False
+        return True
+
+# Attach the bouncer to Constellation's global handlers
+root_logger = logging.getLogger()
+for handler in root_logger.handlers:
+    # Prevent adding multiple filters if the wrapper is re-imported
+    if not any(isinstance(f, I2CSilenceFilter) for f in handler.filters):
+        handler.addFilter(I2CSilenceFilter())
+
+# =======================================================================
+
+# =======================================================================
 # WORKAROUND: Prevent i2c_gui2 from crashing on Constellation's TRACE level
 # =======================================================================
 _saved_attrs = {}
@@ -65,9 +87,6 @@ class i2c_connection:
         self.i2c_logger.propagate = False
         if not self.i2c_logger.handlers:
             self.i2c_logger.addHandler(logging.NullHandler())
-
-        logging.getLogger("I2c_Log").setLevel(logging.CRITICAL)
-        logging.getLogger("I2c_Log").propagate = False
 
         self.conn = i2c_gui2.USB_ISS_Helper(port, clock, dummy_connect=False)
 
