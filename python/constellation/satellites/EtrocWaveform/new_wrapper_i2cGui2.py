@@ -1,6 +1,5 @@
 import pandas as pd
 
-import i2c_gui2
 import logging
 import time, sys
 
@@ -11,6 +10,28 @@ from tqdm import tqdm
 GREEN = '\033[32m'
 RED   = "\033[31m"
 RESET = '\033[0m'
+
+# =======================================================================
+# WORKAROUND: Prevent i2c_gui2 from crashing on Constellation's TRACE level
+# =======================================================================
+_saved_attrs = {}
+for attr in ['TRACE', 'trace']:
+    if hasattr(logging, attr):
+        _saved_attrs[attr] = getattr(logging, attr)
+        delattr(logging, attr)
+
+_logger_cls = logging.getLoggerClass()
+if hasattr(_logger_cls, 'trace'):
+    _saved_attrs['cls_trace'] = getattr(_logger_cls, 'trace')
+    delattr(_logger_cls, 'trace')
+
+import i2c_gui2
+
+# Restore Constellation's original TRACE settings for the framework
+if 'TRACE' in _saved_attrs: logging.TRACE = _saved_attrs['TRACE']
+if 'trace' in _saved_attrs: logging.trace = _saved_attrs['trace']
+if 'cls_trace' in _saved_attrs: setattr(_logger_cls, 'trace', _saved_attrs['cls_trace'])
+# =======================================================================
 
 class i2c_connection:
     def __init__(self, port: str, chip_addresses: list, ws_addresses: list, chip_names: list, clock: int = 100):
