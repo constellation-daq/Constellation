@@ -158,7 +158,7 @@ config_file_path = "/path/to/config.toml"
 group_name = "edda"
 
 # Create controller
-ctrl = ScriptableController(group_name)
+ctrl = MyController(group_name)
 
 # Load configuration
 cfg = load_config(config_file_path)
