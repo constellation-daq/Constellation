@@ -99,8 +99,10 @@ namespace constellation::pools {
     void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::checkPoolException() {
         // If exception has been thrown, disconnect from all remote sockets and propagate it
         if(exception_ptr_) {
+            const auto exception_ptr_copy = exception_ptr_;
+            exception_ptr_ = nullptr;
             disconnect_all();
-            std::rethrow_exception(exception_ptr_);
+            std::rethrow_exception(exception_ptr_copy);
         }
     }
 
