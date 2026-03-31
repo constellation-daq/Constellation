@@ -315,7 +315,7 @@ class BaseController(CHIRPManager, HeartbeatChecker):
         return self.heartbeat_states
 
     @property
-    def state_changes(self) -> dict[str, datetime]:
+    def last_state_change(self) -> dict[str, datetime]:
         """Return a dictionary of connected Satellite's last state change.
 
         Based on heartbeat information.
@@ -389,8 +389,17 @@ class BaseController(CHIRPManager, HeartbeatChecker):
             return prefix + "All " + res[0]
         return prefix + ", ".join(res)
 
+    def get_last_state_change(self, satellites: list[str]) -> dict[str, datetime]:
+        """Return a dictionary of selected connected Satellite's last state change."""
+        last_state_change: dict[str, datetime] = {}
+        for satellite in satellites:
+            if satellite not in self.last_state_change:
+                raise Exception(f"Satellite {satellite} not known to controller")
+            last_state_change[satellite] = self.last_state_change[satellite]
+        return last_state_change
+
     def await_state(self, target: SatelliteState, timeout: int = 60) -> None:
-        """Blocks until the desired global SatelliteState of the controller satellites is reached."""
+        """Blocks until the desired global state of the connected satellites is reached."""
         self.log.info("Awaiting global state %s", target)
         start = time.time()
         while not all([state == target for state in self.states.values()]):
@@ -399,6 +408,39 @@ class BaseController(CHIRPManager, HeartbeatChecker):
             if any([state == SatelliteState.ERROR for state in self.states.values()]):
                 raise Exception(f"ERROR state detected while waiting for state {target.name}")
             time.sleep(0.1)
+
+    def await_state_change(self, target: SatelliteState, last_state_change: dict[str, datetime], timeout: int = 60) -> None:
+        """Blocks until the desired global state of the connected satellites is reached with check for state changes."""
+
+        # Copy dict so that we can modify it for the next iteration
+        last_state_change_copy = last_state_change.copy()
+
+        start = time.time()
+
+        while last_state_change:
+            # Check that last extrasystole is more recent than the timestamp given in the dict
+            for satellite, last_change in last_state_change.items():
+                new_last_change = self.last_state_change[satellite]
+                if new_last_change > last_change:
+                    # New extrasystole found, remove from map for next iteration
+                    del last_state_change_copy[satellite]
+                    self.log.trace("State change registered for %s", satellite)
+
+            # Copy dict with removed entries for next iteration
+            last_state_change = last_state_change_copy.copy()
+
+            # Check for timeout
+            if time.time() - start > timeout:
+                raise Exception(
+                    f"Timeout after {timeout}s while waiting for state {target.name}: "
+                    f"{last_state_change.keys()} never changed state"
+                )
+
+            time.sleep(0.1)
+
+        # Once all sent an extrasystole, await state as usual with remaining timeout
+        remaining_timeout = timeout - round(time.time() - start)
+        self.await_state(target, remaining_timeout)
 
     def await_satellites(self, satellites: list[str], timeout: int = 60) -> None:
         """Blocks until all desired satellites are connected."""

@@ -43,13 +43,15 @@ ctrl.await_state(SatelliteState.ORBIT)
 for ivl in range(0, 100, 10):
     # Reconfigure one of the satellites to the new parameter value
     recfg = {"interval": ivl}
-    constellation.Sputnik.reconfigure(recfg)
 
-    # Wait a bit to ensure Sputnik is in reconfiguring state
-    time.sleep(0.1)
+    # Store last state change for Sputnik to ensure it reached reconfiguring
+    last_state_change = ctrl.get_last_state_change(["Sputnik.One"])
 
-    # Wait until all states are back in the ORBIT state
-    ctrl.await_state(SatelliteState.ORBIT)
+    # Send reconfigure command
+    constellation.Sputnik.One.reconfigure(recfg)
+
+    # Wait until all states are back in the ORBIT state while ensuring Sputnik.One changed state
+    ctrl.await_state_change(SatelliteState.ORBIT, last_state_change)
 
     # Repeat this measurement four times
     for run in range(1, 4):
@@ -85,7 +87,6 @@ group_name = "edda"
 
 # Create controller
 ctrl = ScriptableController(group_name)
-constellation = ctrl.constellation
 
 # Load configuration
 cfg = load_config(config_file_path)
@@ -94,6 +95,8 @@ cfg = load_config(config_file_path)
 ctrl.await_satellites(["Sputnik.s1", "Sputnik.s2"])
 
 # Initialize and reconfigure loop goes here as above
+ctrl.constellation.initialize(cfg)
+...
 ```
 
 ## Scanning until a Telemetry Condition is met
@@ -134,7 +137,7 @@ import time
 from constellation.core.controller import ScriptableController
 from constellation.core.controller_configuration import load_config
 from constellation.core.listener import MonitoringListener
-from constellation.core.message.cscp1 import SatelliteState
+from constellation.core.protocol.cscp1 import SatelliteState
 
 
 # Custom controller which listens to metrics
@@ -155,19 +158,18 @@ config_file_path = "/path/to/config.toml"
 group_name = "edda"
 
 # Create controller
-ctrl = ScriptableController(group_name)
-constellation = ctrl.constellation
+ctrl = MyController(group_name)
 
 # Load configuration
 cfg = load_config(config_file_path)
 
 # Wait until all satellites are connected
-ctrl.await_satellites(["AidaTLU.2020", "Caribou.SPARC", "Keithley.2410"])
+ctrl.await_satellites(["AidaTLU.2020", "Caribou.SPARC", "Keithley.Bias"])
 
 # Initialize and launch
-constellation.initialize(cfg)
+ctrl.constellation.initialize(cfg)
 ctrl.await_state(SatelliteState.INIT)
-constellation.launch()
+ctrl.constellation.launch()
 ctrl.await_state(SatelliteState.ORBIT)
 
 # Scan over bias voltages
@@ -175,16 +177,18 @@ voltages = [-1.2, -2.4, -3.6, -4.8]
 for voltage in voltages:
     # Reconfigure Keithley with new voltage
     recfg = {"voltage": voltage}
-    constellation.Keithley.reconfigure(recfg)
 
-    # Wait a bit to ensure Keithley is in reconfiguring state
-    time.sleep(0.1)
+    # Store last state change for Keithley to ensure it reached reconfiguring
+    last_state_change = ctrl.get_last_state_change(["Keithley.Bias"])
 
-    # Wait until all states are back in the ORBIT state
-    ctrl.await_state(SatelliteState.ORBIT)
+    # Send reconfigure command
+    ctrl.constellation.Keithley.Bias.reconfigure(recfg)
+
+    # Wait until all states are back in the ORBIT state while ensuring Keithley.Bias changed state
+    ctrl.await_state_change(SatelliteState.ORBIT, last_state_change)
 
     # Start the run
-    constellation.start(f"voltage{str(voltage).replace('.', '_')}")
+    ctrl.constellation.start(f"voltage{str(voltage).replace('.', '_')}")
     ctrl.await_state(SatelliteState.RUN)
 
     # Wait until 1M triggers are collected
@@ -192,10 +196,10 @@ for voltage in voltages:
         time.sleep(1)
 
     # Stop the run and await ORBIT state of all satellites
-    constellation.stop()
+    ctrl.constellation.stop()
     ctrl.await_state(SatelliteState.ORBIT)
 
 # Land and shutdown satellites
-constellation.land()
-constellation.shutdown()
+ctrl.constellation.land()
+ctrl.constellation.shutdown()
 ```

@@ -98,7 +98,7 @@ def test_satellite_hb_state(mock_controller, mock_satellite):
     assert len(ctrl.constellation.satellites) == 1, "Timed out while waiting for Satellite to be found"
 
     assert ctrl.states["Satellite.mock_satellite".lower()] == SatelliteState.NEW
-    assert ctrl.state_changes["Satellite.mock_satellite"] == satellite.fsm.last_changed
+    assert ctrl.last_state_change["Satellite.mock_satellite"] == satellite.fsm.last_changed
 
 
 def test_satellite_init_w_fullcfg(mock_controller, mock_example_satellite, rawconfig_toml):
@@ -121,3 +121,16 @@ def test_satellite_init_w_fullcfg(mock_controller, mock_example_satellite, rawco
         del exp_config[key]
 
     assert satellite._config._dictionary == exp_config
+
+
+def test_satellite_await(controller, satellite):
+    """Test await satellites and states."""
+    controller.await_satellites(["MySatellite.satellite"], timeout=4)
+    controller.constellation.initialize({})
+    controller.await_state(SatelliteState.INIT, timeout=2)
+    controller.constellation.launch()
+    controller.await_state(SatelliteState.ORBIT, timeout=2)
+
+    last_state_change = controller.get_last_state_change(["MySatellite.satellite"])
+    controller.constellation.MySatellite.satellite.reconfigure({})
+    controller.await_state_change(SatelliteState.ORBIT, last_state_change, timeout=2)
