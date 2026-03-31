@@ -3,7 +3,7 @@ etrocwaveform_sat_files = files(
   '__main__.py',
   'EtrocWaveform.py',
   'cmd_interpret.py',
-  'wrapper_i2cGui2.py',
+  'new_wrapper_i2cGui2.py',
 )
 
 py.install_sources(etrocwaveform_sat_files,

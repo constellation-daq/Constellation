@@ -8,7 +8,7 @@ from constellation.core.cscp import CSCP1Message
 from constellation.core.configuration import Configuration
 from constellation.core.satellite import Satellite
 from . import cmd_interpret
-from .wrapper_i2cGui2 import i2c_connection
+from .new_wrapper_i2cGui2 import i2c_connection
 from typing import Any
 from pathlib import Path
 import time, socket
@@ -143,26 +143,11 @@ class EtrocWaveform(Satellite):
         # 1. Improved error reporting for socket creation/connection
 
         self.i2c_conn = i2c_connection(self.i2c_port, self.chip_addresses, self.ws_addresses, self.chip_names)
-
-        for chip_address in self.chip_addresses:
-
-            self.i2c_conn.calibratePLL(chip_address)
-            self.i2c_conn.asyResetGlobalReadout(chip_address)
-            self.i2c_conn.asyAlignFastcommand(chip_address)
-            self.log.info("SUCCESS: PLL and FC calibration completed for all chips")
-
-            self.i2c_conn.set_chip_peripherals(chip_address)
-            self.log.info("SUCCESS: Peripheral registers are configured")
-
-            self.i2c_conn.disable_all_pixels(chip_address, 'high')
-            self.log.info("SUCCESS: All 256 pixels are disabled and set to high power mode")
-
-            bl_nw_output = self.i2c_conn.auto_cal_single_pixel(chip_address, row=0, col=14)
-            self.log.info(f"Calibration results: {bl_nw_output}")
-
-            self.i2c_conn.config_single_pixel(chip_address, row=0, col=14, Qsel=30, QInjEn=True, Bypass_THCal=True,
-                                              power_mode='high', baseline=bl_nw_output['baseline'], offset=self.offset)
-            self.log.info("SUCCESS: Pixel (14, 0) is configured for charge injection")
+        self.i2c_conn.batch_PLL_FC_calibration()
+        self.i2c_conn.batch_set_chip_peripherals()
+        self.i2c_conn.batch_disable_all_chips(power_mode='high')
+        self.i2c_conn.batch_auto_calibrate_chip(pixel_list=[(0, 14)])
+        self.i2c_conn.batch_enable_pixels(pixel_list=[(0, 14)], offset=self.offset)
 
         try:
             self.connection_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
