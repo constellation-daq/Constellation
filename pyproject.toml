@@ -52,6 +52,7 @@ SatellitePyDevNullReceiver = "constellation.satellites.PyDevNullReceiver.__main_
 SatellitePyRandomTransmitter = "constellation.satellites.PyRandomTransmitter.__main__:main"
 SatelliteEtrocTransmitter = "constellation.satellites.EtrocTransmitter.__main__:main"
 SatelliteEtrocReceiver = "constellation.satellites.EtrocReceiver.__main__:main"
+SatelliteEtrocWaveform = "constellation.satellites.EtrocWaveform.__main__:main"
 
 [project.urls]
 Homepage = "https://constellation.pages.desy.de/"
