@@ -132,7 +132,7 @@ void TransmitterSatellite::initializing_transmitter(Configuration& config) {
     data_license_ = config_data.get<std::string>("license", "ODC-By-1.0");
     LOG(cdtp_logger_, INFO) << "Data will be stored under license " << data_license_;
 
-    data_transmission_disabled_ = config_data.get<bool>("disable_transmission", false);
+    disable_data_transmission(config_data.get<bool>("disable_transmission", false));
     LOG_IF(WARNING, data_transmission_disabled_.load()) << "Data transmission disabled, all data are dropped locally";
 }
 
@@ -180,7 +180,7 @@ void TransmitterSatellite::reconfiguring_transmitter(const Configuration& partia
 
         const auto disable_opt = config_data.getOptional<bool>("disable_transmission");
         if(disable_opt.has_value()) {
-            data_transmission_disabled_ = disable_opt.value();
+            disable_data_transmission(disable_opt.value());
             LOG_IF(WARNING, disable_opt.value()) << "Data transmission disabled, all data are dropped locally";
         }
     }
