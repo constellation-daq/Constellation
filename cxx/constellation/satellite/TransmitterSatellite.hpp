@@ -108,6 +108,13 @@ namespace constellation::satellite {
          */
         TransmitterSatellite(std::string_view type, std::string_view name);
 
+        /**
+         * @brief Enable or disable transmission of data
+         *
+         * @param enable If online reconfiguration support should be enabled
+         */
+        void disable_data_transmission(bool disable = true);
+
     private:
         // Needs access to transmitter specific functions
         friend BaseSatellite;
@@ -244,6 +251,7 @@ namespace constellation::satellite {
         networking::Port cdtp_port_;
         log::Logger cdtp_logger_;
 
+        std::atomic<bool> data_transmission_disabled_ {false};
         std::chrono::seconds data_bor_timeout_ {};
         std::chrono::seconds data_eor_timeout_ {};
         std::chrono::seconds data_msg_timeout_ {};

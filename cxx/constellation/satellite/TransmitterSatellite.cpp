@@ -97,6 +97,18 @@ void TransmitterSatellite::set_send_timeout(std::chrono::milliseconds timeout) {
     }
 }
 
+void TransmitterSatellite::disable_data_transmission(bool disable) {
+
+    // Announce service departure via CHIRP
+    auto* chirp_manager = ManagerLocator::getCHIRPManager();
+    if(chirp_manager != nullptr) {
+        const auto success = disable ? chirp_manager->unregisterService(CHIRP::DATA, cdtp_port_)
+                                     : chirp_manager->registerService(CHIRP::DATA, cdtp_port_);
+        LOG_IF(DEBUG, success) << "Successfully " << (disable ? "un" : "") << "registered data transmission service";
+        data_transmission_disabled_ = disable;
+    }
+}
+
 CDTP2Message::DataRecord TransmitterSatellite::newDataRecord(std::size_t blocks) {
     // Increase sequence counter and return new message
     return {++seq_, {}, blocks};
@@ -184,6 +196,12 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     set_run_metadata_tag("time_start", std::chrono::system_clock::now());
     set_run_metadata_tag("license", data_license_);
 
+    // Check if we need to send a BOR
+    if(data_transmission_disabled_) {
+        LOG(cdtp_logger_, DEBUG) << "Data transmission disabled, skipping BOR message";
+        return;
+    }
+
     // Create CDTP2 BOR message
     const CDTP2BORMessage msg {getCanonicalName(), std::move(bor_tags_), config};
 
@@ -210,6 +228,11 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
 }
 
 void TransmitterSatellite::send_eor() {
+    if(data_transmission_disabled_) {
+        LOG(cdtp_logger_, DEBUG) << "Data transmission disabled, skipping EOR message";
+        return;
+    }
+
     // Create CDTP2 EOR message
     const CDTP2EORMessage msg {getCanonicalName(), std::move(eor_tags_), std::move(run_metadata_)};
 
