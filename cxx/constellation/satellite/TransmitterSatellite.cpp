@@ -208,6 +208,18 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     // Check if we need to send a BOR
     if(data_transmission_disabled_) {
         LOG(cdtp_logger_, DEBUG) << "Data transmission disabled, skipping BOR message";
+
+        // Start a sending thread that simply drops data:
+        sending_thread_ = std::jthread([this](const std::stop_token& stop_token) {
+            LOG(DEBUG) << "Started sending thread to discard data";
+            while(!stop_token.stop_requested()) {
+                while(!data_record_queue_.was_empty()) {
+                    data_record_queue_.pop();
+                }
+                std::this_thread::yield();
+            }
+        });
+
         return;
     }
 
