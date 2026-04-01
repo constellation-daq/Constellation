@@ -114,6 +114,35 @@ action is be taken. If a record can not be sent immediately, the sending functio
 the run is aborted due to a data sending timeout.
 ```
 
+## *Not* Transmitting Data
+
+In some cases, data transmission might not be intended at all times.
+Satellite operators are able to switch off data transmission from any satellite using the `_data.disable_transmission` configuration key.
+However, sometimes it is necessary to switch off data transmission programmatically.
+An example would be a satellite that, depending on its configuration, controls an instrument that produces data, like an ADC, or one that does not such as a power supply.
+
+For this purpose, the transmission of data can be forced off in the satellite code by calling
+
+::::{tab-set}
+:::{tab-item} C++
+:sync: cxx
+
+```cpp
+disable_data_transmission();
+```
+
+:::
+:::{tab-item} Python
+:sync: python
+
+```python
+# TODO
+```
+
+:::
+::::
+
+
 ## Data Format & Performance
 
 Constellation makes no assumption on the data stored in data records. All data is stored in block, handled as binary blob
