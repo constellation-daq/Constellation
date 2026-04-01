@@ -5,6 +5,7 @@ Parameters to control [data transmission](../operator_guide/concepts/data.md) in
 
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
+| `disable_transmission` | Boolean | Disable data transmission. This parameter turns off transmission of data to receiver satellites and instead ignores and drops all data records. | `false` |
 | `bor_timeout` | Unsigned integer | Timeout in seconds to send the BOR message. The satellite will attempt for this interval to send the message and goes into `ERROR` state if it fails to do so. A possible reason for failure is that no receiver satellite connected to this satellite and is receiving data. | 10 |
 | `eor_timeout` | Unsigned integer |  Timeout in seconds to send the EOR message. The satellite will attempt for this interval to send the message and goes into `ERROR` state if it fails to do so. | 10 |
 | `data_timeout` | Unsigned integer | Timeout in seconds to send the data message. The satellite will attempt for this interval to send the message and goes into `ERROR` state if it fails to do so. | 10 |

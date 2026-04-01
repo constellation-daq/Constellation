@@ -111,7 +111,7 @@ namespace constellation::satellite {
         /**
          * @brief Enable or disable transmission of data
          *
-         * @param enable If online reconfiguration support should be enabled
+         * @param disable If data transmission should be disabled and all data dropped locally
          */
         void disable_data_transmission(bool disable = true);
 
