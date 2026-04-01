@@ -165,3 +165,12 @@ information in the payload:
   metadata such as total transmitted bytes, run identifier, or timestamp of the run end.
 
 If a data sending satellite provide the relevant information, it should add `timestamp_begin` and `timestamp_end` tags to DATA messages in [CDTP](./protocols.md#data-transmission), containing integer values with the timestamps in picoseconds counted since the start of the measurement marking the begin and end of this data record, respectively.
+
+In addition, the sending satellite **should** provide the following EOR tags
+
+* `data_records` indicating the sequence number of the last sent data record
+* `condition` and `condition_code`, indicating the run condition of the sender in clear text and as code
+* `version` representing the Constellation library version used by the sending satellite
+* `version_full` representing the full version name of the Constellation library used by the sending satellite
+* `run_id` indicating the run identifier of the just finished run
+* `license` indicating the data license chosen by the user for the data set recorded during this run
