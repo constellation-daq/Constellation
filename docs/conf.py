@@ -197,7 +197,7 @@ for path in satellite_files:
     satellite_type, satellite_category = copy_satellite_docs.convert_satellite_readme_repo(path, docsdir / "satellites")
     satellites.setdefault(satellite_category, []).append(f"{satellite_type} <{slugify(satellite_type, lowercase=False)}>")
 
-# Remove news from toc if news/index.md does not exist
+# Do not parse external satellites when requested via env variable
 document_ext_satellites = os.getenv("DOC_EXTERNAL_SATELLITES", "true").lower() == "true"
 if not document_ext_satellites:
     logger.info("Building documentation without external satellites", color="yellow")
