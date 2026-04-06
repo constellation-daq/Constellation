@@ -22,14 +22,14 @@ successfully been executed, and it is followed by a end-of-run (EOR) message sen
 
 Data is sent in three steps. First, a data record is created.
 If known already, C++ offers the possibility to pre-allocate the number of blocks it will contain.
-Subsequently, these blocks are added to the message:
+Subsequently, these blocks are added to the record:
 
 ::::{tab-set}
 :::{tab-item} C++
 :sync: cxx
 
 ```cpp
-// Creating a new data message with two blocks pre-allocated:
+// Creating a new data record with two blocks pre-allocated:
 auto data_record = newDataRecord(2);
 data_record.addBlock(std::move(data_0));
 data_record.addBlock(std::move(data_1));
@@ -53,7 +53,7 @@ data_record.add_block(data_1)
 For C++, move semantics `std::move` are strongly encouraged here in order to avoid copying memory as described below.
 ```
 
-Finally, the message is sent to the connected receiver:
+Finally, the record is sent to the connected receiver:
 
 ::::{tab-set}
 :::{tab-item} C++
@@ -147,7 +147,7 @@ Data rate benchmarks can be found in the application developer guide under
 
 ## Metadata
 
-Constellation provides the option to attach metadata to each message sent by the satellite. There are three possibilities:
+Constellation provides the option to attach metadata to each record sent by the satellite. There are three possibilities:
 
 * Metadata available at the beginning of the run such as additional hardware information or firmware revisions can be attached
   to the begin-of-run (BOR) message. This has to be performed in the `starting()` / {py:func}`do_starting() <core.satellite.Satellite.do_starting>` function:
@@ -195,7 +195,7 @@ Constellation provides the option to attach metadata to each message sent by the
   :sync: python
 
   ```python
-  def do_stoping(self) -> str:
+  def do_stopping(self) -> str:
       self.eor = {"something": "interesting", "more_important": "stuff"}
       return "Stopped"
   ```
@@ -204,16 +204,16 @@ Constellation provides the option to attach metadata to each message sent by the
   ::::
 
   In addition to these user-provided tags, the payload of the EOR message contains aggregate data on the run provided by the
-  framework such as the total number of messages sent.
+  framework such as the total number of records sent.
 
-* Finally, metadata can be attached to each individual data message sent during the run:
+* Finally, metadata can be attached to each individual data record sent during the run:
 
   ::::{tab-set}
   :::{tab-item} C++
   :sync: cxx
 
   ```cpp
-  // Create a new message
+  // Create a new record
   auto msg = newDataRecord();
 
   // Add timestamps in picoseconds
