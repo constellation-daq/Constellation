@@ -224,7 +224,7 @@ class CommandReceiver(BaseSatelliteFrame):
         self._cmds[method] = doc
 
     @cscp_requestable()
-    def get_commands(self, _request: CSCP1Message | None = None) -> tuple[str, dict[str, str], None]:
+    def get_commands(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Return all commands supported by the Satellite.
 
         No payload argument.
@@ -239,10 +239,10 @@ class CommandReceiver(BaseSatelliteFrame):
         for key, value in self._cmds.items():
             if not key.startswith("_"):
                 public_cmds[key] = value
-        return f"{len(public_cmds)} commands known", public_cmds, None
+        return f"{len(public_cmds)} commands known", public_cmds, {}
 
     @cscp_requestable()
-    def _get_commands(self, _request: CSCP1Message | None = None) -> tuple[str, dict[str, str], None]:
+    def _get_commands(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Return all hidden commands supported by the Satellite.
 
         No payload argument.
@@ -257,19 +257,19 @@ class CommandReceiver(BaseSatelliteFrame):
         for key, value in self._cmds.items():
             if key.startswith("_"):
                 hidden_cmds[key] = value
-        return f"{len(hidden_cmds)} commands known", hidden_cmds, None
+        return f"{len(hidden_cmds)} commands known", hidden_cmds, {}
 
     @cscp_requestable()
-    def get_name(self, _request: CSCP1Message) -> tuple[str, None, None]:
+    def get_name(self, _request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Return the canonical name of the Satellite.
 
         No payload argument.
 
         """
-        return self.name, None, None
+        return self.name, None, {}
 
     @cscp_requestable()
-    def shutdown(self, _request: CSCP1Message) -> tuple[str, None, None]:
+    def shutdown(self, _request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Queue the Satellite's reentry.
 
         No payload argument.
@@ -286,4 +286,4 @@ class CommandReceiver(BaseSatelliteFrame):
         # previously queued actions (e.g. state transitions) have been
         # completed.
         self.task_queue.put((reentry_timer, [self]))
-        return f"{self.name} queued for reentry", None, None
+        return f"{self.name} queued for reentry", None, {}
