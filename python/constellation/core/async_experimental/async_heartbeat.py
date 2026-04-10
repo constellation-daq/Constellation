@@ -1,13 +1,14 @@
 import asyncio
+import time
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable
+from typing import Callable
 from uuid import UUID
 
 import zmq
 import zmq.asyncio
 
-from constellation.core.chp import CHPMessageFlags, CHPRole, chp_decode_message
+from constellation.core.chp import CHPRole, chp_decode_message
 from constellation.core.protocol.cscp1 import SatelliteState
 
 
@@ -17,21 +18,21 @@ class HeartbeatState:
     host: UUID
     name: str
     state: SatelliteState = SatelliteState.DEAD
-    last_refresh: float = field(default_factory=lambda: asyncio.get_event_loop().time())
+    last_refresh: float = field(default_factory=time.monotonic)
     last_statechange: datetime = field(default_factory=datetime.now)
     interval_ms: int = 2000
     lives: int = 3
     role: CHPRole = CHPRole.DYNAMIC
 
     def refresh(self) -> None:
-        self.last_refresh = asyncio.get_event_loop().time()
+        self.last_refresh = time.monotonic()
 
     def seconds_since_refresh(self) -> float:
-        return asyncio.get_event_loop().time() - self.last_refresh
+        return time.monotonic() - self.last_refresh
 
 
 class AsyncHeartbeatReceiver:
-    """Async heartbeat receiver with lives/stale connection tracking. Use call_soon_threadsafe() for add_satellite from threads."""
+    """Async heartbeat receiver with lives/stale connection tracking. Call add_satellite() via call_soon_threadsafe() from threads."""
 
     INIT_LIVES = 3
     INIT_INTERVAL = 2000
@@ -58,8 +59,7 @@ class AsyncHeartbeatReceiver:
         sock = self._ctx.socket(zmq.SUB)
         sock.connect(f"tcp://{address}:{port}")
         sock.setsockopt_string(zmq.SUBSCRIBE, "")
-        sock.setsockopt(zmq.RCVTIMEO, 5000)
-        sock.setsockopt(zmq.LINGER, 2000)
+        sock.setsockopt(zmq.LINGER, 0)
 
         self._poller.register(sock, zmq.POLLIN)
         self._sockets[uuid] = sock
@@ -90,10 +90,9 @@ class AsyncHeartbeatReceiver:
 
     async def run(self, stop: asyncio.Event) -> None:
         """Main polling loop. Runs until stop is set."""
-        last_check = asyncio.get_event_loop().time()
+        last_check = time.monotonic()
 
         while not stop.is_set():
-            # Poll for heartbeats
             if self._sockets:
                 events = dict(await self._poller.poll(timeout=50))
                 for uuid, sock in list(self._sockets.items()):
@@ -103,15 +102,13 @@ class AsyncHeartbeatReceiver:
                             self._process_heartbeat(uuid, msg)
                         except zmq.Again:
                             pass
-            else:
-                # No sockets yet (short sleep)
-                await asyncio.sleep(0.05)
 
-            # Periodic stale connection check
-            now = asyncio.get_event_loop().time()
-            if (now - last_check) > 0.3:
-                self._check_stale_connections()
-                last_check = now
+                now = time.monotonic()
+                if (now - last_check) > 0.3:
+                    self._check_stale_connections()
+                    last_check = now
+            else:
+                await asyncio.sleep(0.05)
 
     def _process_heartbeat(self, uuid: UUID, msg: list[bytes]) -> None:
         """Process a received heartbeat message."""
@@ -123,11 +120,9 @@ class AsyncHeartbeatReceiver:
             if hb is None:
                 return
 
-            # Update name if it was unknown
             if hb.name != name:
                 hb.name = name
 
-            # Detect state change
             if state != hb.state:
                 old_state = hb.state
                 hb.state = state
@@ -135,17 +130,14 @@ class AsyncHeartbeatReceiver:
                 if self._on_state_change:
                     self._on_state_change(name, old_state, state)
 
-            # Update tracking
             hb.refresh()
             hb.interval_ms = interval
             hb.role = CHPRole.from_flags(flags)
 
-            # Refresh lives
             if hb.lives != self.INIT_LIVES:
                 hb.lives = self.INIT_LIVES
 
-        except Exception as e:
-            # Malformed heartbeat (ignore)
+        except Exception:
             pass
 
     def _check_stale_connections(self) -> None:
@@ -159,12 +151,10 @@ class AsyncHeartbeatReceiver:
                 hb.lives -= 1
 
                 if hb.lives == 0:
-                    # Satellite is dead
                     if self._on_satellite_dead:
                         self._on_satellite_dead(hb.name)
                     hb.state = SatelliteState.DEAD
                 else:
-                    # Refresh and try again
                     hb.refresh()
 
     def close(self) -> None:
