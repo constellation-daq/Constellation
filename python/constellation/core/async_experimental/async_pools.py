@@ -7,9 +7,15 @@ import zmq.asyncio
 
 
 class AsyncSubscriberPool:
-    """Async ZMQ subscriber pool. All methods must be called from the event loop; use call_soon_threadsafe() from threads."""
-    def __init__(self, ctx: zmq.asyncio.Context):
+    """Async ZMQ subscriber pool. Call all methods from the event loop; use call_soon_threadsafe() from threads."""
+
+    def __init__(
+        self,
+        ctx: zmq.asyncio.Context,
+        callback: Callable[[list[bytes]], None],
+    ) -> None:
         self._ctx = ctx
+        self._callback = callback
         self._sockets: dict[UUID, zmq.asyncio.Socket] = {}
         self._poller = zmq.asyncio.Poller()
         self._topics: list[str] = []
@@ -32,32 +38,8 @@ class AsyncSubscriberPool:
             self._poller.unregister(sock)
             sock.close()
 
-    def subscribe(self, topic: str, host: UUID | None = None) -> None:
-        """Subscribe to a topic on one or all sockets."""
-        if host is not None:
-            sock = self._sockets.get(host)
-            if sock is not None:
-                sock.setsockopt_string(zmq.SUBSCRIBE, topic)
-        else:
-            for sock in self._sockets.values():
-                sock.setsockopt_string(zmq.SUBSCRIBE, topic)
-        if topic not in self._topics:
-            self._topics.append(topic)
-
-    def unsubscribe(self, topic: str, host: UUID | None = None) -> None:
-        """Unsubscribe from a topic on one or all sockets."""
-        if host is not None:
-            sock = self._sockets.get(host)
-            if sock is not None:
-                sock.setsockopt_string(zmq.UNSUBSCRIBE, topic)
-        else:
-            for sock in self._sockets.values():
-                sock.setsockopt_string(zmq.UNSUBSCRIBE, topic)
-        if topic in self._topics:
-            self._topics.remove(topic)
-
     def set_topics(self, new_topics: list[str]) -> None:
-        """Replace all topic subscriptions."""
+        """Replace all topic subscriptions across all sockets."""
         old_set = set(self._topics)
         new_set = set(new_topics)
         for topic in old_set - new_set:
@@ -68,7 +50,7 @@ class AsyncSubscriberPool:
                 sock.setsockopt_string(zmq.SUBSCRIBE, topic)
         self._topics = list(new_topics)
 
-    async def run(self, callback: Callable[[list[bytes]], None], stop: asyncio.Event) -> None:
+    async def run(self, stop: asyncio.Event) -> None:
         """Poll loop. Runs until stop is set."""
         while not stop.is_set():
             if not self._sockets:
@@ -80,7 +62,7 @@ class AsyncSubscriberPool:
             events = dict(await self._poller.poll(timeout=200))
             for sock in events:
                 msg = await sock.recv_multipart()
-                callback(msg)
+                self._callback(msg)
 
     def close(self) -> None:
         """Close all sockets."""
