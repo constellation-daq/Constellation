@@ -547,6 +547,15 @@ void ReceiverSatellite::handle_eor_message(const CDTP2EORMessage& eor_message) {
         apply_run_condition(CDTP::RunCondition::INCOMPLETE);
     }
 
+    // Cross-check sequence number
+    const auto data_records_it = metadata.find("data_records");
+    if(data_records_it != metadata.cend() &&
+       data_transmitter_it->second.seq != data_records_it->second.get<std::uint64_t>()) {
+        LOG(WARNING) << "Sender reports sequence " << data_records_it->second.get<std::uint64_t>()
+                     << " for last data record, but last record received bears sequence " << data_transmitter_it->second.seq;
+        apply_run_condition(CDTP::RunCondition::INCOMPLETE);
+    }
+
     // Mark run as degraded if there run degraded
     if(is_run_degraded()) {
         apply_run_condition(CDTP::RunCondition::DEGRADED);

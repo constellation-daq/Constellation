@@ -585,6 +585,15 @@ class DataReceiver:
         # Check for missed message and update metadata
         if data_transmitter_it.missed > 0:
             self._apply_run_condition(msg, RunCondition.INCOMPLETE)
+
+        # Cross-check sequence number
+        if "data_records" in msg.run_metadata and data_transmitter_it.seq != msg.run_metadata["data_records"]:
+            self.log_cdtp.warning(
+                f"Sender reports sequence {msg.run_metadata['data_records']} for last data record,"
+                " but last record received bears sequence {data_transmitter_it.seq}"
+            )
+            self._apply_run_condition(msg, RunCondition.INCOMPLETE)
+
         # TODO: check degraded
 
         # EOR callback

@@ -185,6 +185,7 @@ class TransmitterSatellite(Satellite):
             condition_code |= RunCondition.DEGRADED
         self._run_metadata["condition_code"] = condition_code.value
         self._run_metadata["condition"] = condition_code.name
+        self._run_metadata["data_records"] = self._dtm.sequence_number
 
     @schedule_metric("B", 5)
     def tx_bytes(self) -> int | None:
