@@ -83,6 +83,20 @@ def test_manager_register(mock_bm):
     assert len(sock._packet_queue) == 3
 
 
+def test_manager_unregister(mock_bm):
+    """Test registering services."""
+    bm, sock = mock_bm
+    bm.register_offer(CHIRPServiceIdentifier.HEARTBEAT, 50000)
+    bm.emit_offers()
+    assert len(sock._packet_queue) == 1
+
+    bm.unregister_offer(50000)
+    bm.emit_offers()
+    assert len(sock._packet_queue) == 2
+    assert len(bm._services_to_unregister) == 0
+    assert len(bm._registered_services) == 0
+
+
 def test_manager_discover(mock_bm):
     """Test discovering services."""
     bm, sock = mock_bm
