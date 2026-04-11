@@ -136,6 +136,7 @@ class CHIRPManager(BaseSatelliteFrame):
 
         # Offered and discovered services
         self._registered_services: dict[int, CHIRPServiceIdentifier] = {}
+        self._services_to_unregister: dict[int, CHIRPServiceIdentifier] = {}
         self.discovered_services: list[DiscoveredService] = []
         self._chirp_thread = None
         self._chirp_callbacks = get_chirp_callbacks(self)
@@ -169,9 +170,18 @@ class CHIRPManager(BaseSatelliteFrame):
 
     def register_offer(self, serviceid: CHIRPServiceIdentifier, port: int) -> None:
         """Register new offered service or overwrite existing service."""
-        if port in self._registered_services:
+        if port in self._registered_services and self._registered_services[port] != serviceid:
+            self._services_to_unregister[port] = self._registered_services[port]
             self.log_chirp.warning("Replacing service registration for port %d", port)
         self._registered_services[port] = serviceid
+
+    def unregister_offer(self, port: int) -> None:
+        """Unregister an offered service."""
+        if port not in self._registered_services:
+            self.log_chirp.debug("No service for port %d to unregister", port)
+        else:
+            self._services_to_unregister[port] = self._registered_services[port]
+            del self._registered_services[port]
 
     def request(self, serviceid: CHIRPServiceIdentifier) -> None:
         """Request specific service.
@@ -189,8 +199,13 @@ class CHIRPManager(BaseSatelliteFrame):
 
         Specify None for all registered services.
         """
+        for port, sid in self._services_to_unregister.copy().items():
+            if serviceid is None or serviceid == sid:
+                self.log_chirp.debug("Sending service DEPART: %s for %s", port, sid)
+                self._beacon.emit(sid, CHIRPMessageType.DEPART, port)
+                del self._services_to_unregister[port]
         for port, sid in self._registered_services.items():
-            if not serviceid or serviceid == sid:
+            if serviceid is None or serviceid == sid:
                 self.log_chirp.debug("Sending service OFFER: %s for %s", port, sid)
                 self._beacon.emit(sid, CHIRPMessageType.OFFER, port)
 

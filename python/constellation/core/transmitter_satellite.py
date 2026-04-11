@@ -49,7 +49,7 @@ class TransmitterSatellite(Satellite):
 
         # Register CHIRP service
         self.register_offer(CHIRPServiceIdentifier.DATA, self.data_port)
-        self.emit_offers()
+        self.emit_offers(CHIRPServiceIdentifier.DATA)
 
     def reentry(self) -> None:
         # Close the socket
