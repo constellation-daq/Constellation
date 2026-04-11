@@ -257,6 +257,7 @@ class DataTransmitter:
 
         # If not transmitting data discard records from queue without sending
         if self._transmission_disabled:
+            self.log_cdtp.debug("Started thread to discard data")
             while not self._stopevt.is_set():
                 try:
                     data_record = self._queue.get(timeout=0.01)
@@ -264,6 +265,7 @@ class DataTransmitter:
                     pass
             return
 
+        self.log_cdtp.debug("Started thread to send data")
         while not self._stopevt.is_set() and self._push_thread_exc is None:
             try:
                 # Get data record from queue

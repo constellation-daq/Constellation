@@ -344,7 +344,7 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
 
     // If not transmitting data discard records from queue without sending
     if(data_transmission_disabled_) {
-        LOG(DEBUG) << "Started sending thread to discard data";
+        LOG(cdtp_logger_, DEBUG) << "Started thread to discard data";
         while(!stop_token.stop_requested()) {
             while(!data_record_queue_.was_empty()) {
                 data_record_queue_.pop();
@@ -355,6 +355,7 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
     }
 
     // Note: stop_sending_loop ensure that queue is empty before stop_request is called
+    LOG(cdtp_logger_, DEBUG) << "Started thread to send data";
     while(!stop_token.stop_requested()) {
         // Try popping an element from the queue
         CDTP2Message::DataRecord data_record;
