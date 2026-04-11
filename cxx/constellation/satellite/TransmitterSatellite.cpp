@@ -105,8 +105,9 @@ void TransmitterSatellite::disable_data_transmission(bool disable) {
         const auto success = disable ? chirp_manager->unregisterService(CHIRP::DATA, cdtp_port_)
                                      : chirp_manager->registerService(CHIRP::DATA, cdtp_port_);
         LOG_IF(DEBUG, success) << "Successfully " << (disable ? "un" : "") << "registered data transmission service";
-        data_transmission_disabled_ = disable;
     }
+
+    data_transmission_disabled_ = disable;
 }
 
 CDTP2Message::DataRecord TransmitterSatellite::newDataRecord(std::size_t blocks) {
