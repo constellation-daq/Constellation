@@ -91,9 +91,9 @@ class SatelliteFSM(StateMachine):
         # current status (i.e. state description)
         self.status = "Satellite not initialized yet."
 
-        # flag indicated a finished state transition;
-        # used by (and acknowledged by) Heartbeater.
-        self.transitioned = False
+        # callbacks on state changes
+        self.state_callbacks: dict[str, Callable[[SatelliteState], None]] = {}
+
         # timestamp for last state change
         self.last_changed = datetime.now(UTC)
         super().__init__()
@@ -102,16 +102,16 @@ class SatelliteFSM(StateMachine):
         """Update the status and set updated flag if the status message is new"""
         if self.status != status:
             self.status = status
-            self.transitioned = True
 
     def before_transition(self, status: str) -> None:
-        """Set status before the state change."""
+        """Set status before the state change"""
         self.status = status
 
     def after_transition(self) -> None:
-        """Set flag indicating state change."""
-        self.transitioned = True
+        """Call state callbacks"""
         self.last_changed = datetime.now(UTC)
+        for callback in self.state_callbacks.values():
+            callback(self.state)
 
     def write_diagram(self, filename: str) -> None:
         """Create a PNG with the FSM schematic."""
@@ -145,6 +145,15 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         self._state_thread_evt: Event | None = None
         self._state_thread_exc: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=1)
         self._state_thread_fut: Future | None = None  # type: ignore[type-arg]
+
+    def register_state_callback(self, callback_id: str, callback: Callable[[SatelliteState], None]) -> None:
+        """Register a callback for state changes"""
+        self.fsm.state_callbacks[callback_id] = callback
+
+    def unregister_state_callback(self, callback_id: str) -> None:
+        """Unregister a callback for state changes"""
+        if id in self.fsm.state_callbacks:
+            del self.fsm.state_callbacks[callback_id]
 
     @debug_log
     @cscp_requestable()
