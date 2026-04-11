@@ -10,10 +10,11 @@ from typing import Any
 
 import zmq
 
-from .chp import CHPRole, CHPTransmitter
+from .chp import CHPMessageFlags, CHPRole, CHPTransmitter
 from .commandmanager import cscp_requestable
 from .fsm import SatelliteStateHandler
 from .message.cscp1 import CSCP1Message
+from .protocol.cscp1 import SatelliteState
 
 
 class HeartbeatSender(SatelliteStateHandler):
@@ -40,8 +41,7 @@ class HeartbeatSender(SatelliteStateHandler):
         # switch to verbose xpub mode to receive all subscription & unsubscription messages:
         socket.setsockopt(zmq.XPUB_VERBOSER, True)
 
-        # Set linger period for socket shutdown to avoid long hangs shutting
-        # down [ms]
+        # Set linger period for socket shutdown to avoid long hangs shutting down [ms]
         socket.setsockopt(zmq.LINGER, 2000)
         # Set maximum time before a recv operation returns with EAGAIN [ms]
         socket.setsockopt(zmq.RCVTIMEO, 5000)
@@ -54,6 +54,9 @@ class HeartbeatSender(SatelliteStateHandler):
 
         self.log_chp_s.info(f"Setting up heartbeater on port {self.hb_port}")
         self._hb_tm = CHPTransmitter(self.name, socket)
+
+        # Register state callback for extrasystoles
+        self.register_state_callback("heartbeater", self._send_extrasystole)
 
     @property
     def role(self) -> CHPRole:
@@ -80,6 +83,15 @@ class HeartbeatSender(SatelliteStateHandler):
         self._com_thread_pool["heartbeat"] = threading.Thread(target=self._run_heartbeat, daemon=True)
         self.log_chp_s.debug("Heartbeat sender thread prepared and added to the pool.")
 
+    def _send_extrasystole(self, state: SatelliteState) -> None:
+        self.log_chp_s.trace("Sending extrasystole")
+        self._hb_tm.send(
+            state.value,
+            self._heartbeat_period,
+            self._role.flags() | CHPMessageFlags.IS_EXTRASYSTOLE,
+            self.fsm.status,
+        )
+
     def _run_heartbeat(self) -> None:
         self.log_chp_s.info("Starting heartbeat sender thread")
         last = time.monotonic()
@@ -89,7 +101,7 @@ class HeartbeatSender(SatelliteStateHandler):
         prev_status = self.fsm.status
         while not self._com_thread_evt.is_set():
             # Wait until we need to send the next heartbeat, stay 20% below configured interval
-            if (time.monotonic() - last > self._heartbeat_period * 0.8 / 1000) or self.fsm.transitioned:
+            if time.monotonic() - last > self._heartbeat_period * 0.8 / 1000:
                 # Update number of subscribers and the associated heartbeat period
                 self._subscribers += self._hb_tm.parse_subscriptions()
                 self._heartbeat_period = min(
@@ -115,7 +127,6 @@ class HeartbeatSender(SatelliteStateHandler):
                     self._role.flags(),
                     self.fsm.status if self.fsm.status != prev_status else None,
                 )
-                self.fsm.transitioned = False
                 prev_status = self.fsm.status
             else:
                 time.sleep(0.1)
