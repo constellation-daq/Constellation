@@ -134,7 +134,7 @@ void TransmitterSatellite::initializing_transmitter(Configuration& config) {
     LOG(cdtp_logger_, INFO) << "Data will be stored under license " << data_license_;
 
     disable_data_transmission(config_data.get<bool>("disable_transmission", false));
-    LOG_IF(WARNING, data_transmission_disabled_.load()) << "Data transmission disabled, all data are dropped locally";
+    LOG_IF(WARNING, data_transmission_disabled_) << "Data transmission disabled, all data are dropped locally";
 }
 
 void TransmitterSatellite::reconfiguring_transmitter(const Configuration& partial_config) {

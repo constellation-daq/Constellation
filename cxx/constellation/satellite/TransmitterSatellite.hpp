@@ -259,7 +259,7 @@ namespace constellation::satellite {
         networking::Port cdtp_port_;
         log::Logger cdtp_logger_;
 
-        std::atomic<bool> data_transmission_disabled_ {false};
+        bool data_transmission_disabled_ {};
         std::chrono::seconds data_bor_timeout_ {};
         std::chrono::seconds data_eor_timeout_ {};
         std::chrono::seconds data_msg_timeout_ {};
