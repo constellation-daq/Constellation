@@ -197,6 +197,14 @@ namespace constellation::satellite {
         CNSTLN_LOCAL void set_send_timeout(std::chrono::milliseconds timeout = std::chrono::milliseconds(-1));
 
         /**
+         * @brief Send the BOR message
+         *
+         * @param config Configuration for the BOR message
+         * @throw SendTimeoutError If BOR send timeout is reached
+         */
+        CNSTLN_LOCAL void send_bor(const config::Configuration& config);
+
+        /**
          * @brief Send the EOR message
          *
          * @throw SendTimeoutError If EOR send timeout is reached

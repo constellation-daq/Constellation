@@ -205,21 +205,20 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     set_run_metadata_tag("time_start", std::chrono::system_clock::now());
     set_run_metadata_tag("license", data_license_);
 
-    // Check if we need to send a BOR
+    // Send BOR
+    send_bor(config);
+
+    // Set timeout for data sending
+    set_send_timeout(data_msg_timeout_);
+
+    // Start sending loop
+    exception_ptr_ = nullptr;
+    sending_thread_ = std::jthread(std::bind_front(&TransmitterSatellite::sending_loop, this));
+}
+
+void TransmitterSatellite::send_bor(const config::Configuration& config) {
     if(data_transmission_disabled_) {
         LOG(cdtp_logger_, DEBUG) << "Data transmission disabled, skipping BOR message";
-
-        // Start a sending thread that simply drops data:
-        sending_thread_ = std::jthread([this](const std::stop_token& stop_token) {
-            LOG(DEBUG) << "Started sending thread to discard data";
-            while(!stop_token.stop_requested()) {
-                while(!data_record_queue_.was_empty()) {
-                    data_record_queue_.pop();
-                }
-                std::this_thread::yield();
-            }
-        });
-
         return;
     }
 
@@ -239,13 +238,6 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
         throw networking::NetworkError(e.what());
     }
     LOG(cdtp_logger_, DEBUG) << "Sent BOR message";
-
-    // Set timeout for data sending
-    set_send_timeout(data_msg_timeout_);
-
-    // Start sending loop
-    exception_ptr_ = nullptr;
-    sending_thread_ = std::jthread(std::bind_front(&TransmitterSatellite::sending_loop, this));
 }
 
 void TransmitterSatellite::send_eor() {
@@ -348,6 +340,18 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
     // Preallocate message (assume worst case 8B scenario)
     const auto max_data_records = (data_payload_threshold_b / 8) + 1;
     auto message = CDTP2Message(getCanonicalName(), CDTP2Message::Type::DATA, max_data_records);
+
+    // If not transmitting data discard records from queue without sending
+    if(data_transmission_disabled_) {
+        LOG(DEBUG) << "Started sending thread to discard data";
+        while(!stop_token.stop_requested()) {
+            while(!data_record_queue_.was_empty()) {
+                data_record_queue_.pop();
+            }
+            std::this_thread::yield();
+        }
+        return;
+    }
 
     // Note: stop_sending_loop ensure that queue is empty before stop_request is called
     while(!stop_token.stop_requested()) {
