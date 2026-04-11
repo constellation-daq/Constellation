@@ -292,6 +292,7 @@ TEST_CASE("Successful run", "[satellite]") {
     config2_receiver["_data"] = std::move(config2_receiver_data);
     auto config2_transmitter = Dictionary();
     auto config2_transmitter_data = Dictionary();
+    config2_transmitter_data["disable_transmission"] = false;
     config2_transmitter_data["bor_timeout"] = 1;
     config2_transmitter_data["data_timeout"] = 1;
     config2_transmitter_data["eor_timeout"] = 1;
@@ -538,6 +539,37 @@ TEST_CASE("Transmitter failure run", "[satellite]") {
     REQUIRE(transmitter.getState() == FSM::State::ERROR);
 
     receiver.exit();
+    transmitter.exit();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+}
+
+TEST_CASE("Transmitter disabled transmission", "[satellite]") {
+    // Create CHIRP manager for data service discovery
+    create_chirp_manager();
+
+    auto transmitter = Transmitter();
+    transmitter.mockChirpService(CHIRP::DATA);
+
+    auto config_transmitter = Dictionary();
+    auto config_transmitter_data = Dictionary();
+    config_transmitter_data["disable_transmission"] = true;
+    config_transmitter["_data"] = std::move(config_transmitter_data);
+
+    transmitter.reactFSM(FSM::Transition::initialize, std::move(config_transmitter));
+    transmitter.reactFSM(FSM::Transition::launch);
+
+    // Start run
+    transmitter.reactFSM(FSM::Transition::start, "test");
+
+    // Send data
+    transmitter.sendData(std::vector<int>({1, 2, 3, 4}));
+
+    // Stop run
+    transmitter.reactFSM(FSM::Transition::stop);
+
+    // Ensure all satellite are happy
+    REQUIRE(transmitter.getState() == FSM::State::ORBIT);
+
     transmitter.exit();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
