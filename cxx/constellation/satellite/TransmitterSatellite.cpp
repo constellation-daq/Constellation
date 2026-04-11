@@ -272,16 +272,16 @@ void TransmitterSatellite::send_eor() {
     LOG(cdtp_logger_, DEBUG) << "Sent EOR message";
 }
 
-void TransmitterSatellite::update_run_metadata(CDTP::RunCondition conditions) {
+void TransmitterSatellite::update_run_metadata(CDTP::RunCondition condition_code) {
     set_run_metadata_tag("time_end", std::chrono::system_clock::now());
     if(mark_run_tainted_) {
-        conditions |= CDTP::RunCondition::TAINTED;
+        condition_code |= CDTP::RunCondition::TAINTED;
     }
     if(is_run_degraded()) {
-        conditions |= CDTP::RunCondition::DEGRADED;
+        condition_code |= CDTP::RunCondition::DEGRADED;
     }
-    set_run_metadata_tag("condition_code", std::to_underlying(conditions));
-    set_run_metadata_tag("condition", enum_name(conditions));
+    set_run_metadata_tag("condition_code", std::to_underlying(condition_code));
+    set_run_metadata_tag("condition", enum_name(condition_code));
     set_run_metadata_tag("data_records", seq_);
 }
 
