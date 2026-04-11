@@ -82,7 +82,8 @@ class Satellite(
 
         # Register metric for announcing new run ids
         self.register_metric("RUN_ID", "", "Current run identifier. Updated when changed.")
-        # TODO: add STATE metric
+        self.register_metric("STATE", "", "Current satellite state. Updated when changed.")
+        self.register_state_callback("telemetry", self._stat_state)
 
         # Add exception handling via threading.excepthook to allow the state
         # machine to reflect exceptions in the communication services threads.
@@ -95,6 +96,10 @@ class Satellite(
         threading.excepthook = self._thread_exception
         # greet
         self.log_satellite.info(f"Satellite {self.name}, version {__version__} ready to launch!")
+
+    def _stat_state(self, state: SatelliteState) -> None:
+        """Metric for the current satellite state"""
+        self.stat("STATE", state.name)
 
     @debug_log
     @chirp_callback(CHIRPServiceIdentifier.HEARTBEAT)
