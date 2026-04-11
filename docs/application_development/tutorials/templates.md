@@ -21,17 +21,17 @@ The following templates are available:
 * Satellite in **C++ with Meson** build system:
 
   * [https://github.com/constellation-daq/template-satellite-cpp-meson](https://github.com/constellation-daq/template-satellite-cpp-meson)
-  * [https://gitlab.desy.de/constellation/templates/satellite-cpp-meson](https://gitlab.desy.de/constellation/templates/satellite-cpp-meson).
+  * [https://gitlab.desy.de/constellation/templates/satellite-cpp-meson](https://gitlab.desy.de/constellation/templates/satellite-cpp-meson)
 
 * Satellite in **C++ with CMake** build system:
 
-  * [https://github.com/constellation-daq/template-satellite-cpp-cmake](https://github.com/constellation-daq/template-satellite-cpp-cmake).
-  * [https://gitlab.desy.de/constellation/templates/satellite-cpp-cmake](https://gitlab.desy.de/constellation/templates/satellite-cpp-cmake).
+  * [https://github.com/constellation-daq/template-satellite-cpp-cmake](https://github.com/constellation-daq/template-satellite-cpp-cmake)
+  * [https://gitlab.desy.de/constellation/templates/satellite-cpp-cmake](https://gitlab.desy.de/constellation/templates/satellite-cpp-cmake)
 
 * Satellite in **Python**:
 
-  * [https://github.com/constellation-daq/template-satellite-python](https://github.com/constellation-daq/template-satellite-python).
-  * [https://gitlab.desy.de/constellation/templates/satellite-python](https://gitlab.desy.de/constellation/templates/satellite-python).
+  * [https://github.com/constellation-daq/template-satellite-python](https://github.com/constellation-daq/template-satellite-python)
+  * [https://gitlab.desy.de/constellation/templates/satellite-python](https://gitlab.desy.de/constellation/templates/satellite-python)
 
 After cloning the repository, the files should first be adapted to the desired
 [satellite type](../../operator_guide/concepts/satellite.md#type-and-name). This can be accomplished using the supplied
