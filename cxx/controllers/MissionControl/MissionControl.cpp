@@ -401,15 +401,15 @@ void MissionControl::update_button_states(CSCP::State state) {
 
     // Enable/disable state buttons
     using enum CSCP::State;
-    btnInit->setEnabled(CSCP::is_one_of_states<NEW, INIT, SAFE, ERROR>(state) && config_exists);
-    btnLand->setEnabled(state == ORBIT);
+    btnInit->setEnabled(CSCP::transitions_from(initializing, state) && config_exists);
+    btnLand->setEnabled(CSCP::transitions_from(landing, state));
     btnConfig->setEnabled(state == INIT);
     btnLoadConf->setEnabled(CSCP::is_one_of_states<NEW, initializing, INIT, SAFE, ERROR>(state));
     btnGenConf->setEnabled(CSCP::is_not_one_of_states<NEW, initializing, ERROR>(state) &&
                            runcontrol_.getConnectionCount() > 0);
     txtConfigFileName->setEnabled(CSCP::is_one_of_states<NEW, initializing, INIT, SAFE, ERROR>(state));
-    btnStart->setEnabled(state == ORBIT);
-    btnStop->setEnabled(state == RUN);
+    btnStart->setEnabled(CSCP::transitions_from(starting, state));
+    btnStop->setEnabled(CSCP::transitions_from(stopping, state));
     btnShutdown->setEnabled(CSCP::is_shutdown_allowed(state));
 
     // Deactivate run identifier fields during run:
