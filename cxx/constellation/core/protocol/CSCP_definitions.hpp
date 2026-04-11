@@ -114,8 +114,17 @@ namespace constellation::protocol::CSCP {
      */
     constexpr bool transitions_from(State transition, State steady) {
         // Origin steady states indicated by the upper four bits
-        return (static_cast<unsigned int>(std::to_underlying(transition)) & 0xF0U) ==
-               (static_cast<unsigned int>(std::to_underlying(steady)));
+        auto retval = (static_cast<unsigned int>(std::to_underlying(transition)) & 0xF0U) ==
+                      (static_cast<unsigned int>(std::to_underlying(steady)));
+
+        // Two exceptions: initializing from INIT/SAFE/ERROR and interrupting from ORBIT/RUN
+        using enum State;
+        if((transition == initializing && (steady == INIT || steady == SAFE || steady == ERROR)) ||
+           (transition == interrupting && (steady == ORBIT || steady == RUN))) {
+            return true;
+        }
+
+        return retval;
     }
 
     /**
