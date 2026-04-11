@@ -128,7 +128,7 @@ For this purpose, the transmission of data can be forced off in the satellite co
 :sync: cxx
 
 ```cpp
-disable_data_transmission();
+disable_data_transmission(true);
 ```
 
 :::
@@ -136,7 +136,7 @@ disable_data_transmission();
 :sync: python
 
 ```python
-# TODO
+self.disable_data_transmission(True)
 ```
 
 :::
