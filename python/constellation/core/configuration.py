@@ -282,6 +282,10 @@ class Section:
         """Get value of key as string"""
         return self.get(key, default_value, return_type=str)
 
+    def get_bool(self, key: str, default_value: bool | None = None) -> bool:
+        """Get value of key as string"""
+        return self.get(key, default_value, return_type=bool)
+
     def get_enum(self, enum: type[T_E], key: str, default_value: T_E | None = None) -> T_E:
         """Get value of key as enum
 
