@@ -31,11 +31,15 @@
   <screenshots>
     <screenshot type="default">
       <image>https://constellation.pages.desy.de/_images/missioncontrol_run.png</image>
-      <caption>MissionControl main window</caption>
+      <caption>MissionControl</caption>
     </screenshot>
     <screenshot>
       <image>https://constellation.pages.desy.de/_images/observatory_debug.png</image>
-      <caption>Observatory logging application</caption>
+      <caption>Observatory</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://constellation.pages.desy.de/_images/telemetryconsole_multiple_visualizations.png</image>
+      <caption>TelemetryConsole</caption>
     </screenshot>
   </screenshots>
   <categories>
