@@ -25,7 +25,7 @@ The main window of TelemetryConsole can be divided into three parts:
 
 - A section to add new visualizations on the top
 - A section to organize, reset and clear the dashboard on the top right
-- A dashboard for the visualizations
+- The dashboard, displaying the metric visualizations
 
 ```{figure} telemetryconsole_empty.png
 TelemetryConsole main window without any metrics
@@ -33,8 +33,7 @@ TelemetryConsole main window without any metrics
 
 ## Initializing the Constellation
 
-In order to control satellites, some satellites need to be started as part of the same group.
-In this tutorial, two `Sputnik` satellites named `One` and `Two` are started.
+In this tutorial, two `Sputnik` satellites named `One` and `Two` are started and initialized.
 
 To initialize the satellites, MissionControl can be used with the following configuration file:
 
@@ -78,6 +77,10 @@ Metrics from different satellites with the same name can be added to the same vi
 TelemetryConsole main window with multiple visualizations
 ```
 
-If TelemetryConsole is closed, the current set of visualizations can be restored on startup.
-On the top right, the {bdg-primary}`Align` button can be used to align the visualizations again after their size have been changed.
-The {bdg-primary}`Reset` button can be used to reset the data from all visualizations and the {bdg-primary}`Clear` button to remove all visualizations.
+## Resetting The Dashboard
+
+On the top right of the application window, the {bdg-primary}`Align` button can be used to reset the alignment of the visualizations after their size have been changed.
+The {bdg-primary}`Reset` button can be used to reset the data from all visualizations and the {bdg-primary}`Clear` button to clear the dashboard and remove all visualizations.
+
+Upon closing the TelemetryConsole, the current dashboard configuration is stored.
+When re-opening the program, the {bdg-primary}`restore Dashboard` button allows to load and restore this set of visualizations.
