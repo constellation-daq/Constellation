@@ -431,7 +431,7 @@ def satellite():
 
     class MySatellite(Satellite):
         def do_reconfigure(self, config) -> None:
-            time.sleep(0.1)  # TODO replace with pass once extrasystoles are fixed
+            pass
 
     s = MySatellite(
         name="satellite",

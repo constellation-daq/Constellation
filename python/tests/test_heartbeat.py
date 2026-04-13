@@ -99,7 +99,7 @@ def test_hb_extrasystoles(mock_heartbeat_sender):
     hbs.fsm.initialized("")
     time.sleep(0.3)
     assert HB_PORT in ctx.packet_queue_out
-    assert len(ctx.packet_queue_out[HB_PORT]) == 2
+    assert len(ctx.packet_queue_out[HB_PORT]) == 3
 
 
 def test_hb_recv_fail(mock_heartbeat_checker):
