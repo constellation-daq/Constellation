@@ -351,6 +351,7 @@ TEST_CASE("Valid TOML file", "[controller]") {
     REQUIRE(global_config.at("int").get<int>() == -42);
     REQUIRE(global_config.at("hexint").get<int>() == 0x33);
     REQUIRE(global_config.at("binint").get<int>() == 0b11);
+    REQUIRE(global_config.at("octint").get<int>() == 010); // octal with 0 prefix
     REQUIRE(global_config.at("float").get<double>() == 3.14);
     REQUIRE(global_config.at("string").get<std::string>() == "global");
     global_config.at("time").get<std::chrono::system_clock::time_point>();
@@ -406,6 +407,7 @@ TEST_CASE("Valid YAML file", "[controller]") {
     REQUIRE(global_config.at("int").get<int>() == -42);
     REQUIRE(global_config.at("hexint").get<int>() == 0x33);
     REQUIRE(global_config.at("binint").get<int>() == 0b11);
+    REQUIRE(global_config.at("octint").get<int>() == 010); // octal with 0 prefix
     REQUIRE(global_config.at("float").get<double>() == 3.14);
     REQUIRE(global_config.at("string").get<std::string>() == "global");
     // TODO(stephan.lachnit): check chrono
