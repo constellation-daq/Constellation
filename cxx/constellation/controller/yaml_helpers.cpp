@@ -13,6 +13,7 @@
 #include <cctype>
 #include <chrono>
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <string>
@@ -111,8 +112,9 @@ bool constellation::controller::parse_yaml_int_with_prefix(const YAML::Node& nod
     ++p;
 
     // prefix selects radix
-    if(p == end)
+    if(p == end) {
         return false;
+    }
 
     auto radix = 0ULL;
     if(*p == 'b' || *p == 'B') {
@@ -140,7 +142,7 @@ bool constellation::controller::parse_yaml_int_with_prefix(const YAML::Node& nod
         if(value > (std::numeric_limits<std::uint64_t>::max() - digit) / radix) {
             return false;
         }
-        value = value * radix + digit;
+        value = (value * radix) + digit;
     }
 
     if(negative) {

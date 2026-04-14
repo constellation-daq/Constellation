@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 
 #include <yaml-cpp/yaml.h>
@@ -57,10 +58,10 @@ namespace constellation::controller {
      * \brief Helper to parse integers with binary (0b) or octal (0o) prefixes
      *
      * @param node YAML node to be parsed
-     * @param value Integer value
+     * @param out Integer value
      *
      * @return True if conversion succeeded, false otherwise
      */
-    bool parse_yaml_int_with_prefix(const YAML::Node& node, std::int64_t& value);
+    bool parse_yaml_int_with_prefix(const YAML::Node& node, std::int64_t& out);
 
 } // namespace constellation::controller
