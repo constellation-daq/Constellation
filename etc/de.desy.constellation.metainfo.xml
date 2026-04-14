@@ -68,6 +68,12 @@
   </supports>
 
   <releases>
+    <release version="0.8.1" date="2026-04-14">
+      <url type="details">https://constellation.pages.desy.de/news/2026-04-14-Patch-Release-0.8.1.html</url>
+      <description>
+        <p>First Patch Release of Constellation Caelum</p>
+      </description>
+    </release>
     <release version="0.8" date="2026-03-31">
         <url type="details">https://constellation.pages.desy.de/news/2026-03-31-Constellation-Release-0.8.html</url>
         <description>
