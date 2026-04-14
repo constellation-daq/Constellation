@@ -108,6 +108,13 @@ namespace constellation::satellite {
          */
         TransmitterSatellite(std::string_view type, std::string_view name);
 
+        /**
+         * @brief Enable or disable transmission of data
+         *
+         * @param disable If data transmission should be disabled and all data dropped locally
+         */
+        void disable_data_transmission(bool disable = true);
+
     private:
         // Needs access to transmitter specific functions
         friend BaseSatellite;
@@ -190,6 +197,14 @@ namespace constellation::satellite {
         CNSTLN_LOCAL void set_send_timeout(std::chrono::milliseconds timeout = std::chrono::milliseconds(-1));
 
         /**
+         * @brief Send the BOR message
+         *
+         * @param config Configuration for the BOR message
+         * @throw SendTimeoutError If BOR send timeout is reached
+         */
+        CNSTLN_LOCAL void send_bor(const config::Configuration& config);
+
+        /**
          * @brief Send the EOR message
          *
          * @throw SendTimeoutError If EOR send timeout is reached
@@ -244,6 +259,7 @@ namespace constellation::satellite {
         networking::Port cdtp_port_;
         log::Logger cdtp_logger_;
 
+        bool data_transmission_disabled_ {};
         std::chrono::seconds data_bor_timeout_ {};
         std::chrono::seconds data_eor_timeout_ {};
         std::chrono::seconds data_msg_timeout_ {};

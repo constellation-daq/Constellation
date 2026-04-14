@@ -80,6 +80,9 @@ class TransmitterSatellite(Satellite):
         super()._pre_initializing_hook(config)
 
         config_data = config.get_section("_data", {})
+        transmission_disabled = config_data.get_bool("disable_transmission", False)
+        self.disable_data_transmission(transmission_disabled)
+        self._dtm.transmission_disabled = transmission_disabled
         self._dtm.bor_timeout = config_data.get_int("bor_timeout", 10, min_val=1)
         self._dtm.data_timeout = config_data.get_int("data_timeout", 10, min_val=1)
         self._dtm.eor_timeout = config_data.get_int("eor_timeout", 10, min_val=1)
@@ -200,6 +203,15 @@ class TransmitterSatellite(Satellite):
         if self._dtm is not None and self._dtm.state == TransmitterState.BOR_RECEIVED:
             return self._dtm.records_transmitted
         return None
+
+    def disable_data_transmission(self, disable: bool) -> None:
+        """Enable or disable transmission of data"""
+        if disable:
+            self.unregister_offer(self.data_port)
+            self.log_cdtp.warning("Data transmission disabled, all data are dropped locally")
+        else:
+            self.register_offer(CHIRPServiceIdentifier.DATA, self.data_port)
+        self._dtm.transmission_disabled = disable
 
     def can_send_record(self) -> bool:
         """Check if a data record can be send immediately"""

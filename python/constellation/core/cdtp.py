@@ -86,6 +86,7 @@ class DataTransmitter:
         self._records_transmitted = 0
         self._state = TransmitterState.NOT_CONNECTED
 
+        self._transmission_disabled = False
         self._queue_size = 32768
         self._payload_threshold = 128
         self._queue = queue.Queue[DataRecord](self._queue_size)
@@ -114,6 +115,15 @@ class DataTransmitter:
     @property
     def state(self) -> TransmitterState:
         return self._state
+
+    @property
+    def transmission_disabled(self) -> bool:
+        """If data transmission is enabled"""
+        return self._transmission_disabled
+
+    @transmission_disabled.setter
+    def transmission_disabled(self, disable: bool) -> None:
+        self._transmission_disabled = disable
 
     @property
     def eor_timeout(self) -> int:
@@ -175,6 +185,10 @@ class DataTransmitter:
 
     def send_bor(self, user_tags: dict[str, Any], configuration: dict[str, Any], flags: int = 0) -> None:
         """Send a beginning-of-run message."""
+        if self._transmission_disabled:
+            self.log_cdtp.debug("Data transmission disabled, skipping BOR message")
+            return
+
         # Adjust send timeout for BOR message
         self.log_cdtp.debug("Sending BOR message with timeout %ss", self._bor_timeout)
         timeout = 1000 * self._bor_timeout if self._bor_timeout >= 0 else -1
@@ -191,6 +205,10 @@ class DataTransmitter:
 
     def send_eor(self, user_tags: dict[str, Any], run_metadata: dict[str, Any], flags: int = 0) -> None:
         """Send an end-of-run message."""
+        if self._transmission_disabled:
+            self.log_cdtp.debug("Data transmission disabled, skipping EOR message")
+            return
+
         # Adjust send timeout for EOR message
         self.log_cdtp.debug("Sending EOR message with timeout %ss", self._eor_timeout)
         timeout = 1000 * self._eor_timeout if self._eor_timeout >= 0 else -1
@@ -237,6 +255,17 @@ class DataTransmitter:
         # Preallocate message
         msg = CDTP2Message(self._name, CDTP2Message.Type.DATA)
 
+        # If not transmitting data discard records from queue without sending
+        if self._transmission_disabled:
+            self.log_cdtp.debug("Started thread to discard data")
+            while not self._stopevt.is_set():
+                try:
+                    data_record = self._queue.get(timeout=0.01)
+                except queue.Empty:
+                    pass
+            return
+
+        self.log_cdtp.debug("Started thread to send data")
         while not self._stopevt.is_set() and self._push_thread_exc is None:
             try:
                 # Get data record from queue

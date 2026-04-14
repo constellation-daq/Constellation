@@ -97,6 +97,19 @@ void TransmitterSatellite::set_send_timeout(std::chrono::milliseconds timeout) {
     }
 }
 
+void TransmitterSatellite::disable_data_transmission(bool disable) {
+
+    // Announce service departure via CHIRP
+    auto* chirp_manager = ManagerLocator::getCHIRPManager();
+    if(chirp_manager != nullptr) {
+        const auto success = disable ? chirp_manager->unregisterService(CHIRP::DATA, cdtp_port_)
+                                     : chirp_manager->registerService(CHIRP::DATA, cdtp_port_);
+        LOG_IF(DEBUG, success) << "Successfully " << (disable ? "un" : "") << "registered data transmission service";
+    }
+
+    data_transmission_disabled_ = disable;
+}
+
 CDTP2Message::DataRecord TransmitterSatellite::newDataRecord(std::size_t blocks) {
     // Increase sequence counter and return new message
     return {++seq_, {}, blocks};
@@ -119,6 +132,9 @@ void TransmitterSatellite::initializing_transmitter(Configuration& config) {
 
     data_license_ = config_data.get<std::string>("license", "ODC-By-1.0");
     LOG(cdtp_logger_, INFO) << "Data will be stored under license " << data_license_;
+
+    disable_data_transmission(config_data.get<bool>("disable_transmission", false));
+    LOG_IF(WARNING, data_transmission_disabled_) << "Data transmission disabled, all data are dropped locally";
 }
 
 void TransmitterSatellite::reconfiguring_transmitter(const Configuration& partial_config) {
@@ -162,6 +178,12 @@ void TransmitterSatellite::reconfiguring_transmitter(const Configuration& partia
             data_license_ = license_opt.value();
             LOG(cdtp_logger_, INFO) << "Data license updated to " << data_license_;
         }
+
+        const auto disable_opt = config_data.getOptional<bool>("disable_transmission");
+        if(disable_opt.has_value()) {
+            disable_data_transmission(disable_opt.value());
+            LOG_IF(WARNING, disable_opt.value()) << "Data transmission disabled, all data are dropped locally";
+        }
     }
 }
 
@@ -184,6 +206,23 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     set_run_metadata_tag("time_start", std::chrono::system_clock::now());
     set_run_metadata_tag("license", data_license_);
 
+    // Send BOR
+    send_bor(config);
+
+    // Set timeout for data sending
+    set_send_timeout(data_msg_timeout_);
+
+    // Start sending loop
+    exception_ptr_ = nullptr;
+    sending_thread_ = std::jthread(std::bind_front(&TransmitterSatellite::sending_loop, this));
+}
+
+void TransmitterSatellite::send_bor(const config::Configuration& config) {
+    if(data_transmission_disabled_) {
+        LOG(cdtp_logger_, DEBUG) << "Data transmission disabled, skipping BOR message";
+        return;
+    }
+
     // Create CDTP2 BOR message
     const CDTP2BORMessage msg {getCanonicalName(), std::move(bor_tags_), config};
 
@@ -200,16 +239,14 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
         throw networking::NetworkError(e.what());
     }
     LOG(cdtp_logger_, DEBUG) << "Sent BOR message";
-
-    // Set timeout for data sending
-    set_send_timeout(data_msg_timeout_);
-
-    // Start sending loop
-    exception_ptr_ = nullptr;
-    sending_thread_ = std::jthread(std::bind_front(&TransmitterSatellite::sending_loop, this));
 }
 
 void TransmitterSatellite::send_eor() {
+    if(data_transmission_disabled_) {
+        LOG(cdtp_logger_, DEBUG) << "Data transmission disabled, skipping EOR message";
+        return;
+    }
+
     // Create CDTP2 EOR message
     const CDTP2EORMessage msg {getCanonicalName(), std::move(eor_tags_), std::move(run_metadata_)};
 
@@ -228,16 +265,16 @@ void TransmitterSatellite::send_eor() {
     LOG(cdtp_logger_, DEBUG) << "Sent EOR message";
 }
 
-void TransmitterSatellite::update_run_metadata(CDTP::RunCondition conditions) {
+void TransmitterSatellite::update_run_metadata(CDTP::RunCondition condition_code) {
     set_run_metadata_tag("time_end", std::chrono::system_clock::now());
     if(mark_run_tainted_) {
-        conditions |= CDTP::RunCondition::TAINTED;
+        condition_code |= CDTP::RunCondition::TAINTED;
     }
     if(is_run_degraded()) {
-        conditions |= CDTP::RunCondition::DEGRADED;
+        condition_code |= CDTP::RunCondition::DEGRADED;
     }
-    set_run_metadata_tag("condition_code", std::to_underlying(conditions));
-    set_run_metadata_tag("condition", enum_name(conditions));
+    set_run_metadata_tag("condition_code", std::to_underlying(condition_code));
+    set_run_metadata_tag("condition", enum_name(condition_code));
     set_run_metadata_tag("data_records", seq_);
 }
 
@@ -305,7 +342,20 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
     const auto max_data_records = (data_payload_threshold_b / 8) + 1;
     auto message = CDTP2Message(getCanonicalName(), CDTP2Message::Type::DATA, max_data_records);
 
+    // If not transmitting data discard records from queue without sending
+    if(data_transmission_disabled_) {
+        LOG(cdtp_logger_, DEBUG) << "Started thread to discard data";
+        while(!stop_token.stop_requested()) {
+            while(!data_record_queue_.was_empty()) {
+                data_record_queue_.pop();
+            }
+            std::this_thread::yield();
+        }
+        return;
+    }
+
     // Note: stop_sending_loop ensure that queue is empty before stop_request is called
+    LOG(cdtp_logger_, DEBUG) << "Started thread to send data";
     while(!stop_token.stop_requested()) {
         // Try popping an element from the queue
         CDTP2Message::DataRecord data_record;

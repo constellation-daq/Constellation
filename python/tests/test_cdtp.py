@@ -640,3 +640,36 @@ def test_data_satellites_invalid_data_transmitter(receiver_satellite: DummyRecei
     # Initialize
     cmd_rx.request_get_response("initialize", {"_data": {"receive_from": ["Spuntik.One", "Spuntik.Two."]}})
     wait_for_state(receiver.fsm, "ERROR", 1)
+
+
+def test_data_satellites_transmitter_disabled_transmission(
+    transmitter_satellite: DummyTransmitterSatellite, cmd_transmitter
+):
+    transmitter = transmitter_satellite
+    cmd_tx, cmd_rx = cmd_transmitter
+
+    # Initialize
+    cmd_tx.request_get_response("initialize", {"_data": {"disable_transmission": True}})
+    wait_for_state(transmitter.fsm, "INIT", 1)
+
+    # Launch
+    cmd_tx.request_get_response("launch")
+    wait_for_state(transmitter.fsm, "ORBIT", 1)
+
+    # Start transmitter
+    cmd_tx.request_get_response("start", "test_run_1")
+    wait_for_state(transmitter.fsm, "RUN")
+
+    # Send data
+    data = b"123"
+    data_record = transmitter.new_data_record()
+    data_record.add_block(data)
+    transmitter.send_data_record(data_record)
+
+    # Stop transmitter
+    cmd_tx.request_get_response("stop")
+    wait_for_state(transmitter.fsm, "ORBIT")
+
+    # Land
+    cmd_tx.request_get_response("land")
+    wait_for_state(transmitter.fsm, "INIT")
