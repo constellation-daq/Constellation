@@ -6,6 +6,9 @@
 [_default]
 bool = true
 int = -42
+hexint = 0x33
+binint = 0b11
+octint = 0o10
 float = 3.14
 string = "global"
 time = 12:34:56
