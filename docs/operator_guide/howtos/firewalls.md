@@ -16,6 +16,16 @@ systemctl stop firewalld
 systemctl disable firewalld
 ```
 
+## Accepts UDP packets on port 7123
+
+The *CHIRP* protocol uses UDP port 7123, which needs to accept incoming packets for network discovery.
+If Constellation nodes such as satellites are not found or do not appear in controller interfaces, the firewall of the
+machine on which this happens might block the corresponding packets. Allowing them works via:
+
+```sh
+firewall-cmd --permanent --add-port=7123/udp
+```
+
 ## Allowing incoming TCP traffic
 
 An alternative approach is to accept all incoming TCP packets on ephemeral ports. For `firewalld` this can be achieved with:
@@ -39,3 +49,6 @@ firewall-cmd --reload
 ```
 
 Again, making this setting permanent requires the additional the `--permanent` argument for `firewall-cmd`.
+
+Alternatively, these settings can also be made for individual zones.
+More information can be found in the [firewalld documentation](https://firewalld.org/documentation/zone/).
