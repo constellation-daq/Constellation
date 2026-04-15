@@ -28,7 +28,7 @@ A detailed technical description, including protocol sequence diagrams, can be f
 Some operating systems come with automatically enabled firewalls and a relatively strict rule set. It might be necessary to
 adjust the firewall configuration to allow Constellation messages to pass. This concerns the following settings:
 
-*CHIRP* communicates over a fixed UDP port as described above. Accordingly, **firewalls must allow incoming and outgoing UDP packets on port 7123**.
+*CHIRP* communicates over a fixed UDP port as described above. Accordingly, **firewalls must allow incoming UDP packets on port 7123**.
 
 All protocols apart from *CHIRP* operate via TCP and use [ephemeral ports](https://en.wikipedia.org/wiki/Ephemeral_port).
 These ports are meant to be used for short amounts of time, i.e. the duration of a communication session and usually do not
@@ -36,7 +36,8 @@ require root or superuser privileges to be used. They are automatically assigned
 
 On the one hand, this means that Constellation nodes can be started from any regular user account
 that has access to the relevant network interfaces.
-On the other hand, communication ports change every time a Constellation node is stopped and started again, and the newly assigned ports are communicated again via *CHIRP*.
-Thus, **firewalls must allow incoming and outgoing TCP packets on ephemeral ports**.
+On the other hand, communication ports change every time a Constellation node is stopped and started again, and the newly assigned ports are bound by the application and communicated to others via *CHIRP*.
+When other nodes start communicating with this port, to the firewall this constitutes an unsolicited inbound connection and is often blocked.
+Thus, **firewalls must allow incoming TCP packets on ephemeral ports**.
 
 A detailed description on how to configure firewalls on different operating systems can be found in the How-To Guide on [Configuring Firewalls](../howtos/firewalls.md).
