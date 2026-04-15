@@ -43,6 +43,7 @@ A **glossary** of commonly used terms and names used in the context of Constella
 
 get_started/whatis
 Installation <get_started/installation>
+FAQ / Common Issues <get_started/faq>
 ```
 
 ```{raw} latex
