@@ -14,6 +14,7 @@ subdir('DevNullReceiver')
 subdir('EudaqNativeWriter')
 subdir('FlightRecorder')
 subdir('Mattermost')
+subdir('NextcloudTalk')
 subdir('RandomTransmitter')
 subdir('Sputnik')
 
