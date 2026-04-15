@@ -12,7 +12,26 @@ satellite instance.
 
 For example the satellite with the canonical name `Sputnik.Device1` represents a satellite of type
 [Sputnik](../../satellites/Sputnik) with the name `Device1`. The satellite `Sputnik.Device2` is of the same type but has a
-different name.
+different name. Similarly, satellites `Sputnik.Device1` and `Mariner.Device1` have the name name but different types.
+
+The canonical name of each satellite in a Constellation has to be unique and must not be used by another satellite.
+
+## The Satellite Executable
+
+Satellites are started from the command line, either with through the `Satellite` executable and its `-t`/`--type` argument,
+or using the dedicated executable which directly include the satellite type, such as `SatelliteSputnik`.
+
+The satellite executable always requires the `-g`/`--group` argument which assigns the satellite to a Constellation. In
+addition, the following arguments can be provided:
+
+* `-h`/`--help`       shows the help message of the executable and exits.
+* `-v`/`--version`    shows the satellite version information and exits.
+* `-n`/`--name`       sets the satellite name. This defaults to the host name of the machine the satellite is started on.
+* `-l`/`--level`      log level for the command line, defaults to `INFO`. A detailed description of the available levels can be found in the [Logging](./logging.md#verbosity-levels) section.
+* `-i`/`--interface`  network interface the satellite communicates over. This argument can be repeated multiple times, it defaults to all available interfaces with multicast capabilities. The available list of interfaces is provided in the `--help` output.
+
+Individual satellites may provide or require additional command line arguments, which can be found via the help message or
+the respective satellite documentation.
 
 ## State and Status
 
