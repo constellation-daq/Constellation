@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 # Shared library prefix: UNIX: "lib", Windows: "lib"
-# Shared library suffixes: POSIX: ".so", MacOS: ".dylib", Windows: ".dll"
+# Shared library suffixes: POSIX: ".so", macOS: ".dylib", Windows: ".dll"
 dso_prefix = 'lib'
 dso_suffix = '.so'
 if host_machine.system() == 'darwin'
