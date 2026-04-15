@@ -6,18 +6,18 @@ It is therefore a common requirement to run satellites as a service in the backg
 Most Linux distributions by now use [systemd](https://systemd.io/) as a system service manager.
 It takes care of running processes in the background, logging their standard and error output and can also be configured to notify a system administrator in the case of an unexpected termination of the process.
 
-Running a satellite as a systemd service is as easy as creating a simple `.service` text file and placing it in the right directory.
-There are two different types of systemd services: user services and system services.
+Running a satellite as a `systemd` service is as easy as creating a simple `.service` text file and placing it in the right directory.
+There are two different types of `systemd` services: user services and system services.
 User services can be created without super user privileges but are typically bound to a user session which might terminate unexpectedly.
 System services should therefore be preferred, if possible.
 
 ## Prerequisites
 
-It is assumed, that the satellite to be run as systemd service is installed within a python virtual environment at `/home/USERNAME/path/to/venv`.
+It is assumed, that the satellite to be run as `systemd` service is installed within a python virtual environment at `/home/USERNAME/path/to/venv`.
 
 ## Writing the systemd service file
 
-Since multiple satellites of the same type but with different names can exist within Constellation, it makes sense to use systemd's [service template syntax](https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Service%20Templates).
+Since multiple satellites of the same type but with different names can exist within Constellation, it makes sense to use the `systemd` [service template syntax](https://www.freedesktop.org/software/systemd/man/latest/systemd.service.html#Service%20Templates).
 It allows to pass one additional parameter to the service when starting it, which can then be accessed within the service file via `%i`.
 
 A typical service file should then look like this:
@@ -33,7 +33,7 @@ EnvironmentFile=/home/USERNAME/some/known/path/env
 ExecStart=/home/USERNAME/path/to/venv/bin/SatelliteSomething -g $CONSTELLATION_GROUP -n %i
 ```
 
-To use systemd's template syntax, it has to be saved as `SatelliteSomething@.service` - the important part being the `@` at the end of the name.
+To use the `systemd` template syntax, it has to be saved as `SatelliteSomething@.service` - the important part being the `@` at the end of the name.
 
 - `Description` should be adapted for the specific satellite.
 - `User` is required to run the service as a non-root user. `USERNAME` needs to
@@ -56,7 +56,7 @@ When used as a user service, the `User=USERNAME` line should be removed, it will
 
 ## Using the service
 
-If the service file was just written, it is necessary to first reload the systemd unit list:
+If the service file was just written, it is necessary to first reload the `systemd` unit list:
 
 ```sh
 systemctl daemon-reload
@@ -84,7 +84,54 @@ systemctl start --user SatelliteSomething@SatelliteName.service
 
 Other useful commands are `systemctl stop` to stop the service, `systemctl status` to display its current status and the last lines of its output and `systemctl enable` to automatically start the service on startup. The `--user` flag needs to be added to every command in the case a user service is used.
 
-Note that systemd only manages the satellite process. A constellation controller is still needed to actually initialize and launch the satellite.
+Note that `systemd` only manages the satellite process. A constellation controller is still needed to actually initialize and launch the satellite.
+
+## Automating the service
+
+`systemd` provides several tools to automate starting and stopping of services.
+
+### Starting after boot
+
+In some cases it might be desirable to automatically start the service after a reboot of the host machine.
+This requires adding additional rules to the service file.
+
+```systemd
+[Unit]
+After = network.target network-online.target
+Wants = network-online.target
+```
+
+These lines will ensure the service is only started after the network has become available and is online.
+To star the service automatically, it needs to run as system service, and can then be added to the boot sequence by appending
+the following to the service file:
+
+```systemd
+[Install]
+WantedBy = multi-user.target
+```
+
+Finally, the service can be enabled to automatic start-up by calling
+
+```sh
+systemctl enable SatelliteSomething@SatelliteName.service
+```
+
+### Automatic restarting
+
+A `systemd` service can also automatically be restarted when it exits. Depending on the configuration chosen, `systemd` will
+restart the service if it failed, or in any case, also after a clean exit:
+
+```systemd
+[Service]
+# Restart the satellite service when it failed/was aborted/froze
+Restart = on-failure
+```
+
+```systemd
+[Service]
+# Restart the satellite always, also when it was shut down cleanly
+Restart = always
+```
 
 ## Managing a system service as a user
 
@@ -102,5 +149,5 @@ polkit.addRule(function(action, subject) {
 });
 ```
 
-This has to be saved as `anything.rules` to `/etc/polkit-1/rules.d/`. It allows the user `USERNAME` to manage any systemd service whose name starts with `Satellite`.
+This has to be saved as `anything.rules` to `/etc/polkit-1/rules.d/`. It allows the user `USERNAME` to manage any `systemd` service whose name starts with `Satellite`.
 Of course, this also requires consistent service file names such that every satellite service starts with `Satellite`.
