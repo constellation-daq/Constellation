@@ -98,7 +98,7 @@ An alternative approach is to accept all incoming TCP packets on ephemeral ports
 :sync: firewalld
 
 ```sh
-firewall-cmd --add-port=32768-60999/tcp
+firewall-cmd --add-port=32768-65535/tcp
 firewall-cmd --reload
 ```
 
@@ -109,7 +109,7 @@ If this setting should be made permanent to also prevail after a reboot of the m
 :sync: ufw
 
 ```sh
-ufw allow 32768:60999/tcp
+ufw allow 32768:65535/tcp
 ```
 
 The changes take effect immediately.
@@ -121,7 +121,7 @@ The changes take effect immediately.
 The following line should be appended to `/etc/pf.conf`:
 
 ```text
-pass in proto tcp to any port 32768:60999
+pass in proto tcp to any port 32768:65535
 ```
 
 The firewall requires a restart.
@@ -140,7 +140,7 @@ The following rule limits incoming TCP packets on ephemeral ports to the subnet 
 :sync: firewalld
 
 ```sh
-firewall-cmd --add-rich-rule='rule family="ipv4" source address="192.168.1.0/24" port port="32768-60999" protocol="tcp" accept'
+firewall-cmd --add-rich-rule='rule family="ipv4" source address="192.168.1.0/24" port port="32768-65535" protocol="tcp" accept'
 firewall-cmd --reload
 ```
 
@@ -154,7 +154,7 @@ More information can be found in the [firewalld documentation](https://firewalld
 :sync: ufw
 
 ```sh
-ufw allow from 192.168.1.0/24 to any port 32768:60999 proto tcp
+ufw allow from 192.168.1.0/24 to any port 32768:65535 proto tcp
 ```
 
 The changes take effect immediately.
@@ -166,7 +166,7 @@ The changes take effect immediately.
 The following line should be appended to `/etc/pf.conf`:
 
 ```text
-pass in proto tcp from 192.168.1.0/24 to any port 32768:60999
+pass in proto tcp from 192.168.1.0/24 to any port 32768:65535
 ```
 
 The firewall requires a restart.
