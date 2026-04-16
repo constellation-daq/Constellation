@@ -26,6 +26,8 @@ When a satellite is started this way, it runs in the foreground until it is term
 or commands need to be a run in a new terminal.
 ```
 
+A detailed description of all available command line arguments can be found in the [Satellite](../concepts/satellite.md#the-satellite-executable) section.
+
 ## Controlling the Satellite
 
 A controller running in the same Constellation group is needed in order to control the satellite started in the first part
