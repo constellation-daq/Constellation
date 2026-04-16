@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD041 -->
-### Parameters inherited from `ReceiverSatellite`
+### Data Transmission
 
-Parameters to control [data transmission](../operator_guide/concepts/data.md) in the `_data` section:
+The following parameters control the [data transmission](../operator_guide/concepts/data.md) of this satellite and have to be provided in the `_data` section:
 
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|

@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-### Metrics inherited from `TransmitterSatellite`
+### Data Transmission
 
 | Metric | Description | Value Type | Interval |
 |--------|-------------|------------|----------|

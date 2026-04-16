@@ -1,7 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-### Parameters inherited from `Satellite`
-
-#### Autonomous Operation
+### Autonomous Operation
 
 Parameters to control [autonomy](../operator_guide/concepts/autonomy.md#satellite-autonomy--roles) in the `_autonomy` section:
 
@@ -10,7 +8,7 @@ Parameters to control [autonomy](../operator_guide/concepts/autonomy.md#satellit
 | `role` | Role name | Role this satellite should take in the Constellation. Accepted values are `ESSENTIAL`, `DYNAMIC`, `TRANSIENT` and `NONE`. | `DYNAMIC` |
 | `max_heartbeat_interval` | Unsigned integer | Maximum interval in seconds between heartbeats to be sent to other Constellation components. The time between heartbeat is adjusted automatically according to the number of nodes in the Constellation but will never exceed this value. | `30` |
 
-#### Conditional Transitions
+### Conditional Transitions
 
 Parameters to control [conditional transitions](../operator_guide/concepts/autonomy.md#conditional-transitions) in the `_conditions` section:
 

@@ -1,4 +1,4 @@
 <!-- markdownlint-disable MD041 -->
 ## Framework Metrics
 
-This satellite inherits the following framework metrics from its base classes:
+This satellite provides the following metrics that are defined by the Constellation framework.
