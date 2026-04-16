@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-### Metrics inherited from `Satellite`
+### Basic Satellite Metrics
 
 | Metric | Description | Value Type | Interval |
 |--------|-------------|------------|----------|

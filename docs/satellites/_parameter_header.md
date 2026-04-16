@@ -1,4 +1,5 @@
 <!-- markdownlint-disable MD041 -->
 ## Framework Parameters
 
-This satellite inherits the following framework parameters from its base classes:
+This satellite interprets the following configuration parameter that are provided through the Constellation framework.
+Parameters have to be placed in their respective configuration section.
