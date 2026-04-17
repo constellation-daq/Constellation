@@ -136,12 +136,16 @@ void MattermostSatellite::send_message(const std::string& text,
             cpr::Header({{"Content-Type", "application/json"}}),
             cpr::Body({"{" + text_json(text) + priority_json(priority) + username_json(username) + card_json(card) + "}"}),
             cpr::Timeout({1s}));
-        if(!response.error) [[likely]] {
+
+        // Status code 0 is library error, codes > 400 are HTTP errors
+        if(response.status_code > 0 && response.status_code < 400) [[likely]] {
             return;
         }
 
         if(attempt == max_retries_) {
-            throw CommunicationError("Failed to send message to Mattermost: " + response.error.message);
+            throw CommunicationError(
+                "Failed to send message to Mattermost: " +
+                (response.error ? response.error.message : "Response " + std::to_string(response.status_code)));
         }
 
         LOG(DEBUG) << "Sending message failed, waiting for " << backoff << " before trying again";
