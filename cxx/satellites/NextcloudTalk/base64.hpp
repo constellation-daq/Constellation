@@ -1,3 +1,4 @@
+// NOLINTBEGIN
 #ifndef BASE64_HPP_
 #define BASE64_HPP_
 
@@ -534,3 +535,4 @@ namespace base64 {
 } // namespace base64
 
 #endif // BASE64_HPP_
+// NOLINTEND
