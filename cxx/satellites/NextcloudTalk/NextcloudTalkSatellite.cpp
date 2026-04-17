@@ -133,12 +133,15 @@ void NextcloudTalkSatellite::send_message(const std::string& text) {
                                                      {"Authorization", "Basic " + auth_}}),
                                         cpr::Body({"{" + text_json(text) + "}"}),
                                         cpr::Timeout({3s}));
-        if(!response.error) [[likely]] {
+        // Status code 201 indicates successful message creation
+        if(response.status_code == 201) [[likely]] {
             return;
         }
 
         if(attempt == max_retries_) {
-            throw CommunicationError("Failed to send message to Nextcloud Talk: " + response.error.message);
+            throw CommunicationError(
+                "Failed to send message to Nextcloud Talk: " +
+                (response.error ? response.error.message : "Response " + std::to_string(response.status_code)));
         }
 
         LOG(DEBUG) << "Sending message failed, waiting for " << backoff << " before trying again";
