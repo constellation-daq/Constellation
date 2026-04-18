@@ -102,7 +102,7 @@ Wants = network-online.target
 ```
 
 These lines will ensure the service is only started after the network has become available and is online.
-To star the service automatically, it needs to run as system service, and can then be added to the boot sequence by appending
+To start the service automatically, it needs to run as system service, and can then be added to the boot sequence by appending
 the following to the service file:
 
 ```systemd
