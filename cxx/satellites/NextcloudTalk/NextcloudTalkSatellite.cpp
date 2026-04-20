@@ -125,13 +125,15 @@ void NextcloudTalkSatellite::send_message(const std::string& text) {
 
     // Try sending with exponential backoff:
     auto backoff = backoff_time_;
+    const auto json_text = text_json(text);
     for(std::size_t attempt = 1; attempt <= max_retries_; ++attempt) {
+        LOG(TRACE) << "Attempting to send text body:\n" << json_text;
         const auto response = cpr::Post(cpr::Url(url_),
                                         cpr::Header({{"Content-Type", "application/json"},
                                                      {"Accept", "application/json"},
                                                      {"OCS-APIRequest", "true"},
                                                      {"Authorization", "Basic " + auth_}}),
-                                        cpr::Body({"{" + text_json(text) + "}"}),
+                                        cpr::Body({"{" + json_text + "}"}),
                                         cpr::Timeout({3s}));
         // Status code 201 indicates successful message creation
         if(response.status_code == 201) [[likely]] {
