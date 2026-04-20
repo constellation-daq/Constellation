@@ -137,8 +137,8 @@ void MattermostSatellite::send_message(const std::string& text,
             cpr::Body({"{" + text_json(text) + priority_json(priority) + username_json(username) + card_json(card) + "}"}),
             cpr::Timeout({1s}));
 
-        // Status code 0 is library error, codes > 400 are HTTP errors
-        if(response.status_code > 0 && response.status_code < 400) [[likely]] {
+        // HTTP code 200 expected
+        if(response.status_code == 200) [[likely]] {
             return;
         }
 
