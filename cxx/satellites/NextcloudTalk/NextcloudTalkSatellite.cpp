@@ -105,8 +105,9 @@ void NextcloudTalkSatellite::log_callback(CMDP1LogMessage msg) {
     }
     // If warning or critical, prefix channel notification and set message priority
     std::string text {msg.getHeader().getSender()};
+    text += " ";
     if(msg.getLogLevel() == WARNING || msg.getLogLevel() == CRITICAL) {
-        text += " @all ";
+        text += "@all ";
     }
 
     // Add log message
