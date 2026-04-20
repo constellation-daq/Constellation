@@ -43,7 +43,13 @@ pfctl -d
 :::
 ::::
 
-## Accept UDP packets on port 7123
+## Adding exceptions to the firewall
+
+Alternatively, the firewall can be configured such that all necessary communication between Constellation nodes is allowed.
+This concerns the network discovery on UDP port 7123 as well as incoming TCP packets on ephemeral ports.
+There are different ways to enable communication, with different levels of restriction on subnets or IP ranges, as described in the following.
+
+### Accept UDP packets on port 7123
 
 The *CHIRP* protocol uses UDP port 7123, which needs to accept incoming packets for network discovery.
 If Constellation nodes such as satellites are not found or do not appear in controller interfaces, the firewall of the
@@ -89,7 +95,7 @@ pfctl -e
 :::
 ::::
 
-## Allow incoming TCP traffic
+### Allow incoming TCP traffic
 
 An alternative approach is to accept all incoming TCP packets on ephemeral ports. This can be achieved with:
 
@@ -129,7 +135,7 @@ The firewall requires a restart.
 :::
 ::::
 
-## Allow incoming TCP traffic from subnet
+### Allow incoming TCP traffic from subnet
 
 In order to further reduce possible attack surfaces, incoming TCP packets can be accepted only from a specific subnet.
 This is especially useful when all other Constellation nodes run in the same subnet and also exclusively communicate over it.
