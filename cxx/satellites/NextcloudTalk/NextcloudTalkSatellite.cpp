@@ -174,9 +174,10 @@ std::string NextcloudTalkSatellite::escape_to_json(std::string text) {
         std::pair {"\f"sv, "\\f"sv},
     };
 
-    for(const auto& [from, to] : replacements)
+    for(const auto& [from, to] : replacements) {
         for(std::string::size_type pos = 0; (pos = text.find(from, pos)) != std::string::npos; pos += to.size()) {
             text.replace(pos, from.size(), to);
         }
+    }
     return text;
 }
