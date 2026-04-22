@@ -9,6 +9,7 @@
 
 #include "NextcloudTalkSatellite.hpp"
 
+#include <array>
 #include <chrono> // IWYU pragma: keep
 #include <cstddef>
 #include <set>
@@ -41,6 +42,7 @@ using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 using namespace std::string_literals;
+using namespace std::string_view_literals;
 
 namespace {
     // NOLINTNEXTLINE(cert-err58-cpp)
@@ -155,15 +157,23 @@ void NextcloudTalkSatellite::send_message(const std::string& text) {
 std::string NextcloudTalkSatellite::text_json(const std::string& text) {
     constexpr const char* prefix = R"("message":")";
     constexpr const char* suffix = R"(")";
-    return prefix + escape_quotes(text) + suffix;
+    return prefix + escape_to_json(text) + suffix;
 }
 
-std::string NextcloudTalkSatellite::escape_quotes(std::string message) {
-    // Escape quotes to generate valid JSON
-    std::string::size_type pos = 0;
-    while((pos = message.find('"', pos)) != std::string::npos) {
-        message.replace(pos, 1, "\\\"");
-        pos += 2;
-    }
-    return message;
+std::string NextcloudTalkSatellite::escape_to_json(std::string text) {
+    static constexpr std::array replacements {
+        std::pair {"\\"sv, "\\\\"sv},
+        std::pair {"\n"sv, "\\n"sv},
+        std::pair {"\r"sv, "\\r"sv},
+        std::pair {"\t"sv, "\\t"sv},
+        std::pair {"\""sv, "\\\""sv},
+        std::pair {"\b"sv, "\\b"sv},
+        std::pair {"\f"sv, "\\f"sv},
+    };
+
+    for(const auto& [from, to] : replacements)
+        for(std::string::size_type pos = 0; (pos = text.find(from, pos)) != std::string::npos; pos += to.size()) {
+            text.replace(pos, from.size(), to);
+        }
+    return text;
 }

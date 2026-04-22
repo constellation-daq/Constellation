@@ -35,7 +35,7 @@ private:
     void log_callback(constellation::message::CMDP1LogMessage msg);
     void send_message(const std::string& text);
     static std::string text_json(const std::string& text);
-    static std::string escape_quotes(std::string message);
+    static std::string escape_to_json(std::string text);
 
 private:
     std::string url_;
