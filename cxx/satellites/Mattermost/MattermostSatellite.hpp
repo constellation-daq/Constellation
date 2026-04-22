@@ -51,7 +51,7 @@ private:
     static std::string priority_json(Priority priority);
     static std::string username_json(std::string_view username);
     static std::string card_json(std::string_view card);
-    static std::string escape_quotes(std::string message);
+    static std::string escape_to_json(std::string text);
 
 private:
     std::string webhook_url_;
