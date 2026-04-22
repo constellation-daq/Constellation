@@ -9,6 +9,7 @@
 
 #include "MattermostSatellite.hpp"
 
+#include <array>
 #include <chrono> // IWYU pragma: keep
 #include <cstddef>
 #include <set>
@@ -39,6 +40,7 @@ using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 using namespace std::string_literals;
+using namespace std::string_view_literals;
 
 namespace {
     // NOLINTNEXTLINE(cert-err58-cpp)
@@ -157,7 +159,7 @@ void MattermostSatellite::send_message(const std::string& text,
 std::string MattermostSatellite::text_json(const std::string& text) {
     constexpr const char* prefix = R"("text":")";
     constexpr const char* suffix = R"(")";
-    return prefix + escape_quotes(text) + suffix;
+    return prefix + escape_to_json(text) + suffix;
 }
 
 std::string MattermostSatellite::priority_json(Priority priority) {
@@ -177,7 +179,7 @@ std::string MattermostSatellite::username_json(std::string_view username) {
     }
     constexpr const char* prefix = R"(,"username":")";
     constexpr const char* suffix = R"(")";
-    return prefix + escape_quotes(std::string(username)) + suffix;
+    return prefix + escape_to_json(std::string(username)) + suffix;
 }
 
 std::string MattermostSatellite::card_json(std::string_view card) {
@@ -186,15 +188,24 @@ std::string MattermostSatellite::card_json(std::string_view card) {
     }
     constexpr const char* prefix = R"(,"props":{"card":")";
     constexpr const char* suffix = R"("})";
-    return prefix + escape_quotes(std::string(card)) + suffix;
+    return prefix + escape_to_json(std::string(card)) + suffix;
 }
 
-std::string MattermostSatellite::escape_quotes(std::string message) {
-    // Escape quotes to generate valid JSON
-    std::string::size_type pos = 0;
-    while((pos = message.find('"', pos)) != std::string::npos) {
-        message.replace(pos, 1, "\\\"");
-        pos += 2;
+std::string MattermostSatellite::escape_to_json(std::string text) {
+    static constexpr std::array replacements {
+        std::pair {"\\"sv, "\\\\"sv},
+        std::pair {"\n"sv, "\\n"sv},
+        std::pair {"\r"sv, "\\r"sv},
+        std::pair {"\t"sv, "\\t"sv},
+        std::pair {"\""sv, "\\\""sv},
+        std::pair {"\b"sv, "\\b"sv},
+        std::pair {"\f"sv, "\\f"sv},
+    };
+
+    for(const auto& [from, to] : replacements) {
+        for(std::string::size_type pos = 0; (pos = text.find(from, pos)) != std::string::npos; pos += to.size()) {
+            text.replace(pos, from.size(), to);
+        }
     }
-    return message;
+    return text;
 }
