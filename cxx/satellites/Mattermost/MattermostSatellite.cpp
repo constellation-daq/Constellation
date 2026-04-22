@@ -115,7 +115,7 @@ void MattermostSatellite::log_callback(CMDP1LogMessage msg) {
     // Add log message
     text += msg.getLogMessage();
     // Add level and topic to card
-    auto card = "**Level**: " + enum_name(msg.getLogLevel()) + "\\n\\n**Topic**: ";
+    auto card = "**Level**: " + enum_name(msg.getLogLevel()) + "\n\n**Topic**: ";
     card += msg.getLogTopic();
     // Try to send message, on failure go to ERROR state
     try {
