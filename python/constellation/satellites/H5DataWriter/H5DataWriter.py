@@ -240,15 +240,33 @@ class H5DataWriter(ReceiverSatellite):
         """Dumps object to JSON with `str` as fallback and encoded to bytes"""
         return json.dumps(obj, separators=(",", ":"), default=str).encode("utf-8")
 
-    def _attrs_convert(self, meta: dict[str, Any]) -> dict[str, Any]:
-        """Convert dictionary values such that they can be stored as attributes"""
+    def _attrs_convert(self, meta: dict[str, Any], _prefix: str = "") -> dict[str, Any]:
+        """
+        Convert and flatten a dictionary such that it can be stored as attributes.
+        Nested keys are joined with dot notation, e.g. {'a': {'b': 1}} -> {'a.b': 1}.
+        """
 
         def _convert(value: Any) -> Any:
             if isinstance(value, datetime.datetime):
                 return str(value)
+            elif isinstance(value, (list, tuple)):
+                try:
+                    return np.array(value)
+                except (ValueError, TypeError):
+                    return str(value)
+            elif value is None:
+                return "None"
             return value
 
-        return {key: _convert(value) for key, value in meta.items()}
+        result = {}
+        for key, value in meta.items():
+            full_key = f"{_prefix}.{key}" if _prefix else key
+            if isinstance(value, dict):
+                # Recursive conversion, passing current key as prefix
+                result.update(self._attrs_convert(value, _prefix=full_key))
+            else:
+                result[full_key] = _convert(value)
+        return result
 
     @schedule_metric("bool", 5)
     def concurrent_reading_enabled(self) -> bool | None:
