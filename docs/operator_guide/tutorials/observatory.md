@@ -10,10 +10,13 @@ It is recommend to read through the tutorial on how to [use MissionControl](./mi
 ## Starting Observatory
 
 Observatory is started using the `Observatory` command or by searching for it in the application overview if installed
-system-wide. On startup, the group name of the Constellation which should be controlled needs to be provided.
+system-wide. On startup, the group name of the Constellation which should be controlled needs to be provided as
+demonstrated in {numref}`fig-obs-startup`.
 
 ```{figure} qtgui_startup.png
 :scale: 50 %
+:align: center
+:name: fig-obs-startup
 Observatory startup window
 ```
 
@@ -21,13 +24,15 @@ Observatory startup window
 Alternatively, Observatory can be started with a group directly using the `-g GROUP` command line argument.
 ```
 
-The main window of Observatory can be divided into three parts:
+The main window of Observatory, shown in {numref}`fig-obs-empty`, can be divided into three parts:
 
 - A filter section on top to search through and filter already received messages in the interface
 - A subscription section on the right to select which log messages to receive
 - A list of all log messages
 
 ```{figure} observatory_empty.png
+:align: center
+:name: fig-obs-empty
 Observatory main window without log messages
 ```
 
@@ -35,9 +40,11 @@ Observatory main window without log messages
 
 In order to control satellites, some satellites need to be started as part of the same group. In this tutorial,
 two `Sputnik` satellites named `One` and `Two`, a `RandomTransmitter` named `Sender` and a `EudaqNativeWriter`
-named `Receiver` are started.
+named `Receiver` are started and show up in Observatory as show in {numref}`fig-obs-new`.
 
 ```{figure} observatory_new.png
+:align: center
+:name: fig-obs-new
 Observatory main window after satellites are started
 ```
 
@@ -60,17 +67,21 @@ output_directory = "/tmp/test"
 Make sure to create the output directory for the `EudaqNativeWriter`.
 ```
 
-After the (failed) initialization, various log messages are shown. Log messages with log level `STATUS` are shown in green,
-log messages with log level `WARNING` in orange and log message with log level `CRITICAL` in red. Additionally, in the bottom
-right corner of the window a message counter is shown.
+After the (failed) initialization, various log messages are displayed as demonstrated in {numref}`fig-obs-init`. Log messages with
+log level `STATUS` are shown in green, log messages with log level `WARNING` in orange and log message with log level
+`CRITICAL` in red. Additionally, in the bottom right corner of the window a message counter is shown.
 
 ```{figure} observatory_init.png
+:align: center
+:name: fig-obs-init
 Observatory main window after initialization
 ```
 
-To further inspect a log messages, it is possible to double-click on them to open details about the log message.
+To further inspect a log messages, it is possible to double-click on them to open the details dialog about the log message show in {numref}`fig-obs-details`.
 
 ```{figure} observatory_message_detail.png
+:align: center
+:name: fig-obs-details
 Log message details
 ```
 
@@ -100,9 +111,11 @@ The level of log messages to be received by this logger can be adjusted with the
 in the subscription section on the right.
 After adjusting the subscription, new log messages of selected level and all higher levels are received when generated e.g.
 by launching the satellites.
-For debugging purposes, it can be useful to increase the log level beyond the default log level:
+For debugging purposes, it can be useful to increase the log level beyond the default log level as demonstrated in {numref}`fig-obs-debug`.
 
 ```{figure} observatory_debug.png
+:align: center
+:name: fig-obs-debug
 Observatory main window with debug messages
 ```
 
@@ -115,13 +128,14 @@ The log level selection offered directly next to the sender name allows to chang
 of that sender, for `Sputnik.One` this would be `SPUTNIK`. This is usually the log topic under which instrument code will log
 information.
 
-It is also possible to increase the verbosity for a specific log topic of a sender. For example, to see heartbeating in
-action it is possible to increase the verbosity of the `LINK` topic to `TRACE` for the `Sputnik.One` sender. This is achieved
-by clicking on the name of the sender in the subscription window on the right and the adjusting the log level for the topic.
-A list of common log topics is provided in [the logging section](../concepts/logging.md#log-topics).
+It is also possible to increase the verbosity for a specific log topic of a sender. For example, to see heart-beating in
+action it is possible to increase the verbosity of the `LINK` topic to `TRACE` for the `Sputnik.One` sender.
+This is achieved by clicking on the name of the sender in the subscription window on the right and the adjusting the log level for the topic as done in {numref}`fig-obs-extra`. A list of common log topics is provided in [the logging section](../concepts/logging.md#log-topics).
 
 ```{figure} observatory_extra_subscription.png
-Observatory main window with trace messages for heartbeating
+:align: center
+:name: fig-obs-extra
+Observatory main window with trace messages for heart-beating
 ```
 
 ```{important}
@@ -140,17 +154,21 @@ list of the interface:
 - Filtering by text matching log messages
 
 For example, to find the `LINK` messages referring to `RandomTransmitter.Sender`, messages can be filtered using text matching
-the name of that satellite.
+the name of that satellite as demonstrated in as done in {numref}`fig-obs-filter`.
 
 ```{figure} observatory_text_filter.png
+:align: center
+:name: fig-obs-filter
 Observatory main window with message filtering by matching text
 ```
 
-All filters can be reset by clicking the {bdg-primary}`Reset` button next to the text filter.
-
 Filters can be applied simultaneously. For example, it is possible to filter for all log messages with level `WARNING` or
-higher from `RandomTransmitter.Sender` with the log topic `FSM`.
+higher from `RandomTransmitter.Sender` with the log topic `FSM` as shown in as done in {numref}`fig-obs-multi`.
 
 ```{figure} observatory_multi_filter.png
+:align: center
+:name: fig-obs-multi
 Observatory main window with message filtering by log level, sender and log topic
 ```
+
+All filters can be reset by clicking the {bdg-primary}`Reset` button next to the text filter.
