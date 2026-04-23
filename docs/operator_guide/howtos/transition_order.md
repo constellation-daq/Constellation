@@ -1,6 +1,6 @@
 # Configuring a Transition Order
 
-This how-to guide walks through steps required to configure a startup order of satellites in a Constellation and provides
+This how-to guide walks through steps required to configure a transition order for satellites in a Constellation and provides
 example configurations for different situations.
 Conditional transitions are used to ensure that a transition is completed only after specified satellites have reached
 required states.
@@ -8,8 +8,7 @@ These conditions are expressed through special configuration keys `require_<tran
 section.
 
 ```{seealso}
-The concept of conditional transitions is described in detail in the
-[Autonomy Section](../concepts/autonomy.md#conditional-transitions)
+Details on the functionality of conditional transitions can be found in the [Autonomy Section](../concepts/autonomy.md#conditional-transitions)
 ```
 
 ## Tips & Caveats
