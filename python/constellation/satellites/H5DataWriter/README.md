@@ -51,7 +51,7 @@ sudo dnf install hdf5-devel
 ```
 
 :::
-:::{tab-item} MacOS
+:::{tab-item} macOS
 
 ```sh
 brew install hdf5

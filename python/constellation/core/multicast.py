@@ -52,7 +52,7 @@ class MulticastSocket:
         # Ensure socket can be bound by other programs
         self._recv_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-        # Set SO_REUSEPORT on MacOS to mirror C++ asio behavior
+        # Set SO_REUSEPORT on macOS to mirror C++ asio behavior
         if sys.platform == "darwin":
             self._recv_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
 

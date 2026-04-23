@@ -18,12 +18,11 @@ corresponding [Appendix](../../protocols/index).
 ### Network Discovery
 
 A common nuisance in volatile networking environments with devices appearing and disappearing is the discovery of available
-devices and services. Constellation uses its *CHIRP* protocol to find other nodes on the same network.
-It is an IPv4 protocol intended to be used on local networks only which uses a set of defined beacon UDP messages to announce
-or request services.
+devices and services. Constellation uses its *CHIRP* protocol to automatically find other nodes on the same network.
 The protocol is defined such that at any time of the operation, new nodes can join and request information on a particular
 service from the already running Constellation participants.
-When services are shut down, the a special beacon will prompt other nodes to disconnect.
+More information on the network discovery protocol, ephemeral ports and firewalls can be found in the
+[Network Discovery Section](./discovery.md).
 
 All other protocols use *CHIRP* in order to find the other nodes of the Constellation.
 

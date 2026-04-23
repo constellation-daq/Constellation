@@ -47,7 +47,7 @@ sudo dnf install python3
 ```
 
 :::
-:::{tab-item} MacOS
+:::{tab-item} macOS
 :sync: macos
 
 ```sh
@@ -174,16 +174,16 @@ sudo dnf install qt6-qtbase-devel qt6-qtsvg-devel qt6-qtcharts-devel
 ```
 
 :::
-:::{tab-item} MacOS
+:::{tab-item} macOS
 :sync: macos
 
-Building on MacOS requires the installation of the XCode Command Line Tools via:
+Building on macOS requires the installation of the XCode Command Line Tools via:
 
 ```sh
 xcode-select --install
 ```
 
-For MacOS Sequoia (version 15) or newer, the XCode clang compiler can be used. The Apple clang version needs to be 17.0.0
+For macOS Sequoia (version 15) or newer, the XCode clang compiler can be used. The Apple clang version needs to be 17.0.0
 or newer, which can be checked via:
 
 ```sh
@@ -196,7 +196,7 @@ Additionally, Meson and Qt from [Homebrew](https://brew.sh/) are required:
 brew install meson qt
 ```
 
-For older MacOS versions, the LLVM compiler toolchain from Homebrew is required:
+For older macOS versions, the LLVM compiler toolchain from Homebrew is required:
 
 ```sh
 brew install llvm lld

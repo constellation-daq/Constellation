@@ -17,6 +17,7 @@ pxar
 pxarCore
 DTB
 Mattermost
+macOS
 XCode
 Zenodo
 Indico

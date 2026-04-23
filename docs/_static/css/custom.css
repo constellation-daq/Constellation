@@ -119,6 +119,7 @@ div.highlight-c\+\+ > div.highlight::before { content: "C++"; }
 div.highlight-javascript > div.highlight::before { content: "JavaScript"; }
 div.highlight-json > div.highlight::before { content: "JSON"; }
 div.highlight-meson > div.highlight::before { content: "meson"; }
+div.highlight-powershell > div.highlight::before { content: "PowerShell"; }
 div.highlight-python > div.highlight::before { content: "Python"; }
 div.highlight-sh > div.highlight::before { content: "Shell"; }
 div.highlight-systemd > div.highlight::before { content: "systemd"; }
