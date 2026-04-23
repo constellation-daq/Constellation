@@ -10,10 +10,13 @@ It is recommend to read through the tutorial on how to [start and control a sing
 ## Starting MissionControl
 
 MissionControl is started using the `MissionControl` command or by searching for it in the application overview if
-installed system-wide. On startup, the group name of the Constellation which should be controlled needs to be provided.
+installed system-wide. On startup, the group name of the Constellation which should be controlled needs to be provided as
+demonstrated in {numref}`fig-mc-startup`.
 
 ```{figure} qtgui_startup.png
 :scale: 50 %
+:align: center
+:name: fig-mc-startup
 MissionControl startup window
 ```
 
@@ -21,13 +24,15 @@ MissionControl startup window
 Alternatively, MissionControl can be started with a group directly using the `-g GROUP` command line argument.
 ```
 
-The main window of MissionControl can be divided into three parts:
+The main window of MissionControl, shown in {numref}`fig-mc-empty`, can be divided into three parts:
 
 - Information about the entire Constellation on top
 - A section for controlling the entire Constellation
 - A list of all connected satellites
 
 ```{figure} missioncontrol_empty.png
+:align: center
+:name: fig-mc-empty
 MissionControl main window without satellites
 ```
 
@@ -35,7 +40,7 @@ MissionControl main window without satellites
 
 In order to control satellites, some satellites need to be started as part of the same group. In this tutorial,
 three `Sputnik` satellites named `One`, `Two` and `Three`, a `RandomTransmitter` named `Sender` and a `EudaqNativeWriter`
-named `Receiver` are started.
+named `Receiver` are started. After starting, the satellites show up in the list of connected satellites as shown in {numref}`fig-mc-new`.
 
 ```{note}
 MissionControl does not start satellites. The five satellites required for this tutorial need to be started in a terminal as
@@ -43,6 +48,8 @@ shown in the [tutorial for a single satellite](single_satellite.md).
 ```
 
 ```{figure} missioncontrol_new.png
+:align: center
+:name: fig-mc-new
 MissionControl main window with satellites in NEW state
 ```
 
@@ -84,7 +91,8 @@ initialization for the `EudaqNativeWriter` satellite failed, which resulted in t
 
 Before moving on to rectifying this issue, it is worth taking a look at the top part of the window. Besides the information
 about the group and number of connected satellites, there is also a state information. This includes the lowest state of all
-satellites. If the state is "mixed", meaning that not all satellites have the same state, the lowest state is followed by "≊".
+satellites. If the state is "mixed", meaning that not all satellites have the same state, the lowest state is followed by "≊"
+as show in {numref}`fig-mc-init`.
 
 ```{seealso}
 More details on the Constellation finite state machine and its different states and transitions can be found in the
@@ -92,6 +100,8 @@ More details on the Constellation finite state machine and its different states 
 ```
 
 ```{figure} missioncontrol_init_first.png
+:align: center
+:name: fig-mc-init
 MissionControl main window after first initialization
 ```
 
@@ -141,10 +151,12 @@ More details on controlling single satellites are provided later in this tutoria
 ## Recording Data
 
 The next step is to start recording data. In order to do this, the satellites first need to be launched to the {bdg-secondary}`ORBIT`
-state. In this state, the configuration send during the initialization is fully applied such that the satellites are ready
+state. In this state, shown in {numref}`fig-mc-orbit`, the configuration send during the initialization is fully applied such that the satellites are ready
 for immediate data taking. The satellites can be launched by clicking the {bdg-primary}`Launch` button.
 
 ```{figure} missioncontrol_orbit.png
+:align: center
+:name: fig-mc-orbit
 MissionControl main window after launching
 ```
 
@@ -159,9 +171,11 @@ the current or next run identifier is shown.
 More information on Constellation data concepts, runs and their properties can be found in the [Data Processing section](../concepts/data.md) of this guide.
 ```
 
-A new run can be started by clicking the {bdg-primary}`Start` button.
+A new run can be started by clicking the {bdg-primary}`Start` button, and satellites enter their {bdg-secondary}`RUN` state as shown in {numref}`fig-mc-run`.
 
 ```{figure} missioncontrol_run.png
+:align: center
+:name: fig-mc-run
 MissionControl main window in RUN state
 ```
 
@@ -177,30 +191,37 @@ state, which is done by clicking the {bdg-primary}`Land` button.
 
 ## Controlling Individual Satellites
 
-With MissionControl it is also possible to control satellites individually when required. Commands to individual satellites can be sent by right-clicking on the respective satellite from list, and by picking the desired command from the context menu. The menu provides access to all commands that satellite offers, and also
+With MissionControl it is also possible to control satellites individually when required. Commands to individual satellites can be sent by right-clicking on the respective satellite from the list, and by picking the desired command from the context menu shown in {numref}`fig-mc-cmd`. The menu provides access to all commands that satellite offers, and also
 allows to send custom commands which might not be publicly advertised by the satellite.
 
 ```{figure} missioncontrol_single_command.png
+:align: center
+:name: fig-mc-cmd
 Sending a command to a single satellite
 ```
 
 In this tutorial, the configuration of the `RandomTransmitter` satellite is retrieved from the running instance.
-After the command is sent, a window appears containing the "payload" of the satellite response, which in this case is a
+After the command is sent, a window appears containing the "payload" of the satellite response, which in the case shown in {numref}`fig-mc-response` is a
 dictionary with the configuration. A satellite might also reply with a string, which is shown in the *last message* column of in the satellite list.
 
 ```{figure} missioncontrol_single_response.png
 :scale: 50 %
+:align: center
+:name: fig-mc-response
 Response window of the command
 ```
 
 ## Inspecting Satellite Details
 
 To inspect details about a single satellite, for example its IP address, details can be shown by double-clicking on a
-satellite in the list. A new window opens which contains some information about its connection. It also contains a list of
+satellite in the list. A new window opens which contains some information about its connection as shown in {numref}`fig-mc-details`.
+It also contains a list of
 all available commands.
 
 ```{figure} missioncontrol_satellite_details.png
 :scale: 33 %
+:align: center
+:name: fig-mc-details
 Window for connection details of a satellite
 ```
 
