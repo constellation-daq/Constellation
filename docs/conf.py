@@ -203,6 +203,8 @@ if not document_ext_satellites:
     logger.info("Building documentation without external satellites", color="yellow")
 else:
     # Retrieve satellites from Constellation organization:
+    logger.info("Retrieving documentation for external satellites", color="yellow")
+
     gl = gitlab.Gitlab("https://gitlab.desy.de")
     gitlab_satellites = []
     try:
