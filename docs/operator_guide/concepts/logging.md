@@ -94,9 +94,11 @@ standardized log topics used by the framework:
 
 The *Observatory* listener is a flexible logger for Constellation based on [Qt](https://www.qt.io/).
 This logger is a pure user interface and does not provide any storage facilities or cache of log messages.
-Its main window is structured in three parts:
+Its main window is shown in {numref}`fig-log-obs` and structured in three parts.
 
 ```{figure} ../tutorials/observatory_debug.png
+:align: center
+:name: fig-log-obs
 Main window of the *Observatory* log listener interface
 ```
 

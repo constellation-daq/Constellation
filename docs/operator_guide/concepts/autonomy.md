@@ -79,11 +79,12 @@ If, for example, Satellite `Sputnik.Second` receives the condition `require_star
 the {bdg-secondary}`starting` transitional states but wait until satellite `Sputnik.First` has successfully completed the transition, and
 `Sputnik.Second` receives the state `RUN` from `Sputnik.First` via the
 [heartbeat protocol](../../framework_reference/protocols.md#autonomous-operation) before progressing through its own {bdg-secondary}`starting` state. This can
-be visualized as follows:
+be visualized as shown in {numref}`fig-auto-timing`.
 
 ```plantuml
 :caption: Timing diagram of a conditional transition from {bdg-secondary}`ORBIT` to {bdg-secondary}`RUN` states
 :align: center
+:name: fig-auto-timing
 @startuml
 hide time-axis
 concise "Sputnik.First - State" as S1
@@ -119,11 +120,12 @@ highlight 300 to 800 : Conditional Waiting
 @enduml
 ```
 
-In state diagrams, this additional condition can be denoted as follows:
+In state diagrams, this additional condition can be denoted as displayed in {numref}`fig-auto-state`.
 
 ```plantuml
 :caption: State diagram for conditional transitions
 :align: center
+:name: fig-auto-state
 @startuml
 hide empty description
 
