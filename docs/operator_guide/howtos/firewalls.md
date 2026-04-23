@@ -73,10 +73,10 @@ machine on which this happens might block the corresponding packets. Allowing th
 :sync: firewalld
 
 ```sh
-firewall-cmd --permanent --add-port=7123/udp
+firewall-cmd --add-port=7123/udp
 ```
 
-The changes take effect immediately.
+If this setting should be made permanent to also prevail after a reboot of the machine, the `--permanent` argument has to be passed to `firewall-cmd`.
 
 :::
 :::{tab-item} `ufw` (Ubuntu)
@@ -146,8 +146,6 @@ If this setting should be made permanent to also prevail after a reboot of the m
 ufw allow 32768:65535/tcp
 ```
 
-The changes take effect immediately.
-
 :::
 :::{tab-item} `pf` (macOS)
 :sync: macos
@@ -158,7 +156,12 @@ The following line should be appended to `/etc/pf.conf`:
 pass in proto tcp to any port 32768:65535
 ```
 
-The firewall requires a restart.
+Afterwards, the configuration must be reloaded and the firewall restarted for the new settings to take effect:
+
+```sh
+pfctl -f /etc/pf.conf
+pfctl -e
+```
 
 :::
 :::{tab-item} Windows
@@ -193,7 +196,7 @@ firewall-cmd --add-rich-rule='rule family="ipv4" source address="192.168.1.0/24"
 firewall-cmd --reload
 ```
 
-Again, making this setting permanent requires the additional the `--permanent` argument for `firewall-cmd`.
+If this setting should be made permanent to also prevail after a reboot of the machine, the `--permanent` argument has to be passed to `firewall-cmd`.
 
 Alternatively, these settings can also be made for individual zones.
 More information can be found in the [firewalld documentation](https://firewalld.org/documentation/zone/).
@@ -206,8 +209,6 @@ More information can be found in the [firewalld documentation](https://firewalld
 ufw allow from 192.168.1.0/24 to any port 32768:65535 proto tcp
 ```
 
-The changes take effect immediately.
-
 :::
 :::{tab-item} `pf` (macOS)
 :sync: macos
@@ -218,7 +219,12 @@ The following line should be appended to `/etc/pf.conf`:
 pass in proto tcp from 192.168.1.0/24 to any port 32768:65535
 ```
 
-The firewall requires a restart.
+Afterwards, the configuration must be reloaded and the firewall restarted for the new settings to take effect:
+
+```sh
+pfctl -f /etc/pf.conf
+pfctl -e
+```
 
 :::
 :::{tab-item} Windows
