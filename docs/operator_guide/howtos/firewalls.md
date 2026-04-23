@@ -41,6 +41,18 @@ pfctl -d
 ```
 
 :::
+:::{tab-item} Windows
+:sync: windows
+
+```powershell
+Set-NetFirewallProfile -Profile Domain, Public, Private -Enabled False
+```
+
+```{note}
+When using WSL, the firewall within the installed Linux distribution also needs to be disabled.
+```
+
+:::
 ::::
 
 ## Adding exceptions to the firewall
@@ -51,7 +63,8 @@ There are different ways to enable communication, with different levels of restr
 
 ### Accept UDP packets on port 7123
 
-The *CHIRP* protocol uses UDP port 7123, which needs to accept incoming packets for network discovery.
+The *CHIRP* protocol uses UDP port 7123 with the multicast address `239.192.7.123`,
+which needs to accept incoming packets for network discovery.
 If Constellation nodes such as satellites are not found or do not appear in controller interfaces, the firewall of the
 machine on which this happens might block the corresponding packets. Allowing them works via:
 
@@ -93,6 +106,21 @@ pfctl -e
 ```
 
 :::
+:::{tab-item} Windows
+:sync: windows
+
+```powershell
+New-NetFirewallRule -DisplayName "Allow Inbound UDP 7123 on 239.192.7.123" `
+  -Direction Inbound -Protocol UDP `
+  -RemoteAddress 239.192.7.123 -LocalPort 7123 `
+  -Action Allow
+```
+
+```{note}
+When using WSL, the corresponding firewall rule for installed Linux distribution also needs to be applied.
+```
+
+:::
 ::::
 
 ### Allow incoming TCP traffic
@@ -131,6 +159,21 @@ pass in proto tcp to any port 32768:65535
 ```
 
 The firewall requires a restart.
+
+:::
+:::{tab-item} Windows
+:sync: windows
+
+```powershell
+New-NetFirewallRule -DisplayName "Allow Inbound TCP Ephemeral Ports" `
+  -Direction Inbound -Protocol TCP `
+  -LocalPort 32768-65535 `
+  -Action Allow
+```
+
+```{note}
+When using WSL, the corresponding firewall rule for installed Linux distribution also needs to be applied.
+```
 
 :::
 ::::
@@ -176,6 +219,22 @@ pass in proto tcp from 192.168.1.0/24 to any port 32768:65535
 ```
 
 The firewall requires a restart.
+
+:::
+:::{tab-item} Windows
+:sync: windows
+
+```powershell
+New-NetFirewallRule -DisplayName "Allow Inbound TCP Ephemeral Ports from 192.168.1.0/24" `
+  -Direction Inbound -Protocol TCP `
+  -RemoteAddress 192.168.1.0/24 `
+  -LocalPort 32768-65535 `
+  -Action Allow
+```
+
+```{note}
+When using WSL, the corresponding firewall rule for installed Linux distribution also needs to be applied.
+```
 
 :::
 ::::
