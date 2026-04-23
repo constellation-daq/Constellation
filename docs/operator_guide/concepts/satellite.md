@@ -102,6 +102,9 @@ steady states. Steady here indicates that the satellite will remain in this stat
 a controller, or a failure mode is activated. The simplified state diagram for normal operation mode can be drawn like this:
 
 ```plantuml
+:caption: Steady states of the Satellite Finite State Machine
+:align: center
+:scale: 80%
 @startuml
 hide empty description
 
@@ -150,6 +153,8 @@ The method is called once upon entering the {bdg-secondary}`RUN` state, and shou
 controller or by a failure mode.
 
 ```plantuml
+:caption: The {bdg-secondary}`RUN` state of the Satellite Finite State Machine
+:align: center
 @startuml
 hide empty description
 
@@ -177,6 +182,8 @@ that they are entered by a state transition initiated through CSCP or a failure 
 of the action. Such a transition diagram is shown below:
 
 ```plantuml
+:caption: The concept of transitional states in the Satellite FSM
+:align: center
 @startuml
 hide empty description
 
@@ -209,6 +216,8 @@ changed by a few volts - and instead of the time-consuming operation ramping dow
 the voltage is ramped directly from its current value to the target value in the {bdg-secondary}`reconfiguring` transitional state:
 
 ```plantuml
+:caption: Reconfiguring a Satellite via the {bdg-secondary}`reconfiguring` transition
+:align: center
 @startuml
 hide empty description
 

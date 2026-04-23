@@ -82,6 +82,8 @@ the {bdg-secondary}`starting` transitional states but wait until satellite `Sput
 be visualized as follows:
 
 ```plantuml
+:caption: Timing diagram of a conditional transition from {bdg-secondary}`ORBIT` to {bdg-secondary}`RUN` states
+:align: center
 @startuml
 hide time-axis
 concise "Sputnik.First - State" as S1
@@ -120,6 +122,8 @@ highlight 300 to 800 : Conditional Waiting
 In state diagrams, this additional condition can be denoted as follows:
 
 ```plantuml
+:caption: State diagram for conditional transitions
+:align: center
 @startuml
 hide empty description
 
