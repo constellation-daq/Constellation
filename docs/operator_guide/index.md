@@ -34,11 +34,6 @@ will be denominated e.g. by {bdg-secondary}`ORBIT`. Sequences of keystrokes are 
 
 A **glossary** of commonly used terms and names used in the context of Constellation is provided [in the Concepts section](glossary.md) of this guide.
 
-```{warning}
-This software framework is still under construction and no stable version has been released yet.
-Features, protocols and the behavior of individual components may still change.
-```
-
 ```{raw} latex
 \part{Get started}
 ```
