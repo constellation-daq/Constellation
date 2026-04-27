@@ -34,6 +34,7 @@ class HeartbeatState:
         self.last_refresh = time.monotonic()
         self.last_statechange = datetime(2000, 1, 1)
         self.state = SatelliteState.DEAD
+        self.status: str = ""
         self.failed: threading.Event = evt
 
     def refresh(self, ts: datetime | None = None) -> None:
@@ -180,6 +181,11 @@ class HeartbeatChecker(BaseSatelliteFrame):
         return res
 
     @property
+    def heartbeat_status(self) -> dict[str, str]:
+        """Return a dictionary of the last status message received from each Satellite."""
+        return {hb.name: hb.status for hb in self._remote_heartbeat_states.values()}
+
+    @property
     def heartbeat_state_changes(self) -> dict[str, datetime]:
         """Return a dictionary of the times of the last state changes."""
         res = {}
@@ -221,6 +227,8 @@ class HeartbeatChecker(BaseSatelliteFrame):
                 )
                 hb.interval = interval
                 hb.role = CHPRole.from_flags(flags)
+                if status:
+                    hb.status = status
                 # refresh lives
                 if hb.lives != self.HB_INIT_LIVES:
                     self.log_chp.trace(

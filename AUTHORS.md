@@ -23,3 +23,4 @@ The following authors, in alphabetical order, have developed or contributed to C
 * Annika Vauth, Universität Hamburg, [annika.vauth](https://gitlab.desy.de/annika.vauth)
 * Håkan Wennlöf, Deutsches Elektronen-Synchrotron DESY, [hwennlof](https://gitlab.desy.de/hwennlof)
 * David Leppla-Weber, Deutsches Elektronen-Synchrotron DESY, [david.leppla-weber](https://gitlab.desy.de/david.leppla-weber)
+* Simon Koch, CERN, [sfkoch](https://gitlab.cern.ch/sfkoch)
