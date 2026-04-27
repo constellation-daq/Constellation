@@ -309,7 +309,7 @@ namespace constellation::config {
         /**
          * @brief Get literal value of a key as string
          *
-         * @warning This does not mark the key as used, and thus should never be used to retrieve a configuration value.
+         * @warning This marks the key as used.
          *
          * @param key Key to get values of
          * @return Literal value of the key

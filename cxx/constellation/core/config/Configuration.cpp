@@ -223,7 +223,9 @@ std::vector<std::string> Section::getKeys() const {
 std::string Section::getText(std::string_view key) const {
     const auto key_lc = transform(key, ::tolower);
     try {
-        return dictionary_->at(key_lc).to_string();
+        auto value = dictionary_->at(key_lc).to_string();
+        mark_used(key_lc);
+        return value;
     } catch(const std::out_of_range&) {
         throw MissingKeyError(*this, key);
     }
