@@ -111,11 +111,6 @@ if get_option('default_library') == 'static'
 elif get_option('default_library') == 'both'
   error('Building both static and shared libraries is not possible')
 endif
-# clang flags
-if cpp.get_id() == 'clang'
-  # Qt uses C++26 extensions exposed by clang even when using pre-C++26, leading to warnings
-  constellation_private_args += cpp.get_supported_arguments('-Wno-c++26-extensions')
-endif
 # Windows flags
 if host_machine.system() == 'windows'
   # Disable parts of Windows API with conflicting macro definitions

@@ -10,9 +10,13 @@ qt = import(qt_version)
 qt_raw_dep = dependency(qt_version, modules: ['Core', 'Gui', 'Widgets', 'Svg'])
 qt_args = []
 
-# Workaround for GCC 16 with Qt
+# Workaround for GCC 16 with Qt using incomplete classes
 if cpp.get_id() == 'gcc' and cpp.version().version_compare('>=16')
   qt_args += cpp.get_supported_arguments('-Wno-sfinae-incomplete')
+endif
+# Workaround for clang with Qt using C++26 extensions exposed by clang even when using pre-C++26
+if cpp.get_id() == 'clang' and qt_raw_dep.version().version_compare('>=6.10')
+  constellation_private_args += cpp.get_supported_arguments('-Wno-c++26-extensions')
 endif
 
 qt_dep = declare_dependency(
