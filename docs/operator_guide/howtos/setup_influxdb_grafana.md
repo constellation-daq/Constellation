@@ -50,9 +50,11 @@ docker compose down
 ## Setting up InfluxDB
 
 InfluxDB can be accessed via [`http://localhost:8086`](http://localhost:8086).
-When first visiting the website, a page for setup appears:
+When first visiting the website, a page for setup appears as shown in {numref}`fig-influxdb-setup`.
 
 ```{figure} influxdb_setup.png
+:align: center
+:name: fig-influxdb-setup
 InfluxDB setup page
 ```
 
@@ -62,30 +64,36 @@ then the configuration can be finalized by clicking "Configure Later".
 
 ````{tip}
 It is recommended to setup a maximum duration for which monitoring data is stored.
-This can be done by going to "Load Data" → "Buckets", and then opening the settings for the "constellation" bucket.
+This can be done by going to "Load Data" → "Buckets", and then opening the settings for the "constellation" bucket as shown in {numref}`fig-influxdb-bucket`.
 
 ```{figure} influxdb_bucket.png
+:align: center
+:name: fig-influxdb-bucket
 InfluxDB bucket settings
 ```
 ````
 
 Finally, it is recommended to create a custom API token for Grafana, that only reads from the "constellation" bucket.
-This can be done by going to "Load Data" → "API Token", and clicking "Generate API Token" → "Custom API Token".
+This can be done by going to "Load Data" → "API Token", and clicking "Generate API Token" → "Custom API Token" as shown in {numref}`fig-api-key`.
 
 ```{figure} influxdb_api_key.png
+:align: center
+:name: fig-api-key
 InfluxDB custom API token settings
 ```
-
 
 ## Setting up Grafana
 
 Grafana can be accessed via [`http://localhost:3000`](http://localhost:3000).
 The default username and password are both `admin`.
 
-First, InfluxDB needs to be added as a data source. This can be done by clicking on "Connections" → "Data sources" and then
-"Add data source". On the page InfluxDB can be selected:
+First, InfluxDB needs to be added as a data source.
+This can be done by clicking on "Connections" → "Data sources" and then "Add data source".
+On that page InfluxDB can be selected as shown in {numref}`fig-grafana-add-influxdb`.
 
 ```{figure} grafana_add_influxdb.png
+:align: center
+:name: fig-grafana-add-influxdb
 Grafana add data source
 ```
 
@@ -98,7 +106,11 @@ On the configuration page, the following settings need to be adjusted:
 - `Default Bucket`: `constellation`
 - `Min time interval`: `1s`
 
+An example configuration is shown in {numref}`fig-grafana-setup-influxdb`.
+
 ```{figure} grafana_setup_influxdb.png
+:align: center
+:name: fig-grafana-setup-influxdb
 Grafana InfluxDB settings
 ```
 
@@ -153,19 +165,23 @@ Now, the `Mariner` should send a `BRIGHTNESS` metric to the `Influx` satellite, 
 ### Creating a Query
 
 To add a visualization in the dashboard, a Flux query needs to be made to the database. The easiest way to do this is using
-the InfluxDB Data Explorer. There, the bucket (`constellation`), the measurement (sending satellite) and the filed (metric)
-can be chosen. On the right, the aggregate function should be set to "last" and then the query can be submitted.
+the InfluxDB Data Explorer shown in {numref}`fig-influxdb-query-builder`.
+There, the bucket (`constellation`), the measurement (sending satellite) and the filed (metric) can be chosen.
+On the right, the aggregate function should be set to "last" and then the query can be submitted.
 
 ```{figure} influxdb_query_builder.png
+:align: center
+:name: fig-influxdb-query-builder
 InfluxDB Query Builder
 ```
 
-The Flux query can be copied by switching to the "Script Editor":
+The Flux query can be copied by switching to the "Script Editor" as shown in {numref}`fig-influxdb-query-script`.
 
 ```{figure} influxdb_query_script.png
+:align: center
+:name: fig-influxdb-query-script
 InfluxDB Script Editor
 ```
-
 
 Monitoring data can also be transformed in the Query for example to change the units.
 To multiply a value by `0.01`, this can be added in front of the `yield` part of the query:
@@ -198,24 +214,31 @@ It should be noted that dashboards need to be saved manually, so it is recommend
 clicking "Save dashboard" in the top right corner, where a title for dashboard can be given.
 
 In the top right corner new visualizations can be added. After selecting InfluxDB, the visualization panel editor opens
-where the Flux query can be pasted:
+where the Flux query can be pasted as shown in {numref}`fig-grafana-panel-editor`.
 
 ```{figure} grafana_panel_editor.png
+:align: center
+:name: fig-grafana-panel-editor
 Grafana panel editor
 ```
 
 To get a first view of the monitoring data, the query needs to be refreshed by clicking "Refresh" above the panel.
-Left of the "Refresh" button, the time range can be adjusted. The panel can be further adjusted using the right side bar,
-for example with a proper title, a unit (under "Standard options"), showing the last value (under "Legend" → "Values"),
-adding a warning threshold, and not connecting values far apart ("Graph styles" → "Disconnected values"):
+Left of the "Refresh" button, the time range can be adjusted.
+The panel can be further adjusted using the right side bar as shown in {numref}`fig-grafana-panel-editor-final`.
+For example, a proper title and a unit (under "Standard options") can be added, the last value can be shown (under "Legend" → "Values"),
+a warning for values above or below a threshold can be added, and values far apart in time can be disconnected ("Graph styles" → "Disconnected values").
 
 ```{figure} grafana_panel_editor_final.png
+:align: center
+:name: fig-grafana-panel-editor-final
 Grafana panel editor after edits
 ```
 
 Finally, the dashboard needs to be saved with the new panel. To automatically refresh the dashboard, the right triangle next
-to the "Refresh" button in dashboard overview can be extended to select a refresh interval:
+to the "Refresh" button in dashboard overview can be extended to select a refresh interval as shown in {numref}`fig-grafana-dashboard`.
 
 ```{figure} grafana_dashboard.png
+:align: center
+:name: fig-grafana-dashboard
 Grafana dashboard
 ```

@@ -2,8 +2,11 @@
 
 Controllers are the main interfaces through which operators can set up and alter the state of a Constellation.
 Currently, the framework provides two different controllers, a graphical user interface and a scriptable interactive command-line interface.
+Controllers connect directly to individual satellites as show in {numref}`fig-ctrl-schema`.
 
 ```{figure} CSCP.svg
+:align: center
+:name: fig-ctrl-schema
 Schematic drawing of CSCP
 ```
 
@@ -14,7 +17,7 @@ A detailed technical description, including protocol sequence diagrams, can be f
 
 ## Graphical Controller
 
-The *MissionControl* graphical user interface is a general purpose controller for Constellation based on [Qt](https://www.qt.io/) which allows loading and parsing of configuration files, deduction of the configuration from a running Constellation, and common control of all active satellites as well as each individual satellite.
+The *MissionControl* graphical user interface, displayed in {numref}`fig-ctrl-mc`, is a general purpose controller for Constellation based on [Qt](https://www.qt.io/) which allows loading and parsing of configuration files, deduction of the configuration from a running Constellation, and common control of all active satellites as well as each individual satellite.
 This section briefly describes these features and the user interface.
 
 ```{seealso}
@@ -22,6 +25,8 @@ The tutorials section provides a step-by-step guide on [Using MissionControl](..
 ```
 
 ```{figure} ../tutorials/missioncontrol_run.png
+:align: center
+:name: fig-ctrl-mc
 Main window of the MissionControl controller
 ```
 

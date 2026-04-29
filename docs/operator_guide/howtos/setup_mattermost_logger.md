@@ -11,18 +11,23 @@ opened by clicking the button in the top left from the Mattermost team which con
 Mattermost main window
 ```
 
-On the integrations page, incoming webhooks has to be selected, and then "Add Incoming Webhook" in the top right.
+On the integrations page, incoming webhooks has to be selected, and then "Add Incoming Webhook" in the top right as shown in {numref}`fig-mattermost-integrations`.
 
 ```{figure} mattermost_integrations.png
+:align: center
+:name: fig-mattermost-integrations
 Mattermost integrations window
 ```
 
-In the creation screen a name for the webhook and a username have to be given. The username is the actual name displayed in
-the channel. For use with Constellation, a channel for the webhook has to be selected. It is also possible to add a profile
-picture for the integration. For the Constellation logo
-`https://gitlab.desy.de/constellation/constellation/-/raw/main/docs/logo/logo_small.png` can be used.
+In the creation screen shown in {numref}`fig-mattermost-new-incoming-webhook` a name for the webhook and a username have to be given.
+The username is the actual name displayed in the channel.
+For use with Constellation, a channel for the webhook has to be selected.
+It is also possible to add a profile picture for the integration.
+For the Constellation logo `https://gitlab.desy.de/constellation/constellation/-/raw/main/docs/logo/logo_small.png` can be used.
 
 ```{figure} mattermost_new_incoming_webhook.png
+:align: center
+:name: fig-mattermost-new-incoming-webhook
 Mattermost new incoming webhook window
 ```
 
@@ -61,17 +66,23 @@ The satellites can be initialized with the configuration using:
 constellation.initialize(cfg)
 ```
 
-Now a log message should appear in the channel for which the webhook was created:
+Now a log message should appear in the channel for which the webhook was created.
+A demo of this is shown in {numref}`fig-mattermost-logger-connected`.
 
 ```{figure} mattermost_logger_connected.png
+:align: center
+:name: fig-mattermost-logger-connected
 Mattermost channel with logger connected
 ```
 
 In the default configuration, messages with log level `WARNING`, `STATUS` and `CRITICAL` are logged, the start and end of a
 run and when an interruption is triggered. To avoid clutter from state changes, the logger ignores log messages with the
-topic `FSM` by default. In practice a log might look like this:
+topic `FSM` by default.
+A demo with log messages is shown in {numref}`fig-mattermost-demo-logs`.
 
 ```{figure} mattermost_demo_logs.png
+:align: center
+:name: fig-mattermost-demo-logs
 Mattermost channel with some log messages
 ```
 
@@ -87,9 +98,11 @@ Note that in many cases such as state changes, log messages are emitted from eac
 with the same content. This is the reason why the `FSM` topic is ignored by default. The set of ignored topics can be changed
 with the `ignore_topics` parameter.
 
-A log with `INFO` log level and no ignored topics might look like this:
+A demo with `INFO` log level and no ignored topics is shown in {numref}`fig-mattermost-high-verbosity`.
 
 ```{figure} mattermost_high_verbosity.png
+:align: center
+:name: fig-mattermost-high-verbosity
 Mattermost channel with high verbosity logging
 ```
 

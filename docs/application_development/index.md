@@ -5,11 +5,6 @@
 \addcontentsline{toc}{chapter}{Preface}
 ```
 
-```{warning}
-This software framework is still under construction and no stable version has been released yet.
-Features, protocols and the behavior of individual components may still change.
-```
-
 ```{raw} latex
 \part{Introduction}
 ```

@@ -148,6 +148,12 @@ latex_documents = [
     ("framework_reference/index", "framework_development_guide.tex", None, doc_author, "manual", False),
 ]
 
+# Enable figure numbering
+numfig = True
+numfig_format = {
+    "figure": "Figure %s",
+}
+
 # myst settings
 myst_heading_anchors = 4
 myst_fence_as_directive = ["plantuml"]
@@ -203,6 +209,8 @@ if not document_ext_satellites:
     logger.info("Building documentation without external satellites", color="yellow")
 else:
     # Retrieve satellites from Constellation organization:
+    logger.info("Retrieving documentation for external satellites", color="yellow")
+
     gl = gitlab.Gitlab("https://gitlab.desy.de")
     gitlab_satellites = []
     try:

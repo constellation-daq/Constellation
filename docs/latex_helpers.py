@@ -19,6 +19,7 @@ preamble = r"""
     \renewcommand{\headrulewidth}{0pt}
     \renewcommand{\footrulewidth}{0pt}
   }
+  \setlength{\headheight}{14pt}
 \makeatother
 """
 

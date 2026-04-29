@@ -99,9 +99,13 @@ into the different failure modes.
 
 In regular operation, i.e. without unexpected incidents in the Constellation, the satellite FSM will transition between four
 steady states. Steady here indicates that the satellite will remain in this state until either a transition is initiated by
-a controller, or a failure mode is activated. The simplified state diagram for normal operation mode can be drawn like this:
+a controller, or a failure mode is activated. The simplified state diagram for normal operation mode can be drawn as shown in {numref}`fig-fsm-steady`.
 
 ```plantuml
+:caption: Steady states of the Satellite Finite State Machine
+:align: center
+:scale: 80%
+:name: fig-fsm-steady
 @startuml
 hide empty description
 
@@ -147,9 +151,12 @@ The {bdg-secondary}`RUN` state is special in that this is where the operation of
 and telemetry data are distributed.
 Satellite implementations interact with the {bdg-secondary}`RUN` state through the `running` function.
 The method is called once upon entering the {bdg-secondary}`RUN` state, and should exit as soon as a state change is requested either by a
-controller or by a failure mode.
+controller or by a failure mode as shown in {numref}`fig-fsm-run`.
 
 ```plantuml
+:caption: The {bdg-secondary}`RUN` state of the Satellite Finite State Machine
+:align: center
+:name: fig-fsm-run
 @startuml
 hide empty description
 
@@ -174,9 +181,12 @@ the {bdg-secondary}`RUN` state, the returned run identifier is empty.
 
 Instrument code of the individual satellites is executed in so-called transitional states. They differ from steady states in
 that they are entered by a state transition initiated through CSCP or a failure mode, but exited automatically upon completion
-of the action. Such a transition diagram is shown below:
+of the action. Such a transition diagram is shown in {numref}`fig-fsm-transit`.
 
 ```plantuml
+:caption: The concept of transitional states in the Satellite FSM
+:align: center
+:name: fig-fsm-transit
 @startuml
 hide empty description
 
@@ -206,9 +216,12 @@ In addition, the optional {bdg-secondary}`reconfiguring` transitional state enab
 without having to pass through the {bdg-secondary}`INIT` state. A typical example for reconfiguration is a high-voltage power supply unit,
 which is slowly ramped up to its target voltage in the {bdg-secondary}`launching` state. Between runs, the applied voltage is supposed to be
 changed by a few volts - and instead of the time-consuming operation ramping down via the {bdg-secondary}`landing` transition and ramping up again,
-the voltage is ramped directly from its current value to the target value in the {bdg-secondary}`reconfiguring` transitional state:
+the voltage is ramped directly from its current value to the target value in the {bdg-secondary}`reconfiguring` transitional state as shown in {numref}`fig-fsm-reconf`.
 
 ```plantuml
+:caption: Reconfiguring a Satellite via the {bdg-secondary}`reconfiguring` transition
+:align: center
+:name: fig-fsm-reconf
 @startuml
 hide empty description
 
