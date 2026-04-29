@@ -59,8 +59,13 @@ InfluxDB setup page
 ```
 
 Here, "constellation" as should be chosen as the initial bucket name.
-After clicking "Continue", a page with an API key appears. The API key should be copied for use in the `Influx` satellite,
-then the configuration can be finalized by clicking "Configure Later".
+After clicking "Continue", a page with an API key appears.
+
+```{important}
+The API key shown on this page must be copied for use in the `Influx` satellite.
+```
+
+Then the configuration can be finalized by clicking "Configure Later".
 
 ````{tip}
 It is recommended to setup a maximum duration for which monitoring data is stored.
@@ -101,6 +106,7 @@ On the configuration page, the following settings need to be adjusted:
 
 - `Query language`: `Flux`
 - `URL`: `http://influxdb:8086`
+- `Basic auth`: off
 - `Organization`: InfluxDB organization name
 - `Token`: Custom API token created for Grafana
 - `Default Bucket`: `constellation`
@@ -183,30 +189,6 @@ The Flux query can be copied by switching to the "Script Editor" as shown in {nu
 InfluxDB Script Editor
 ```
 
-Monitoring data can also be transformed in the Query for example to change the units.
-To multiply a value by `0.01`, this can be added in front of the `yield` part of the query:
-
-```text
-  |> map(fn: (r) => ({ r with _value: r._value * 0.01 }))
-```
-
-In this particular case with the `Mariner` satellite, this wouldn't work since `_value` is an integer, which needs to be
-transformed to a float first with `float(v: r._value)`. The final query would then be:
-
-```text
-from(bucket: "constellation")
-  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
-  |> filter(fn: (r) => r["_measurement"] == "Mariner.Nine")
-  |> filter(fn: (r) => r["_field"] == "BRIGHTNESS")
-  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)
-  |> map(fn: (r) => ({ r with _value: float(v: r._value) * 0.01 }))
-  |> yield(name: "last")
-```
-
-```{seealso}
-For more details on creating queries, see [InfluxDB's Flux documentation](https://docs.influxdata.com/influxdb/v2/query-data/flux/).
-```
-
 ### Adding a Visualization
 
 First, a new dashboard needs to be created in Grafana by clicking on "Dashboards" and then "Create dashboard".
@@ -241,4 +223,76 @@ to the "Refresh" button in dashboard overview can be extended to select a refres
 :align: center
 :name: fig-grafana-dashboard
 Grafana dashboard
+```
+
+## Advanced Visualizations
+
+### Transforming Data
+
+Monitoring data can also be transformed in the Query for example to change the units.
+To multiply a value by `0.01`, this can be added in front of the `yield` part of the query:
+
+```text
+  |> map(fn: (r) => ({ r with _value: r._value * 0.01 }))
+```
+
+````{note}
+Integer and floating point types can not be multiplied with each other in the Flux query language.
+If an integer needs to be changed to a float `float(v: r._value)` can be used:
+
+```text
+  |> map(fn: (r) => ({ r with _value: float(r._value) * 0.01 }))
+```
+````
+
+An example of full query with transformed values would be:
+
+```text
+from(bucket: "constellation")
+  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+  |> filter(fn: (r) => r["_measurement"] == "Mariner.Nine")
+  |> filter(fn: (r) => r["_field"] == "BRIGHTNESS")
+  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)
+  |> map(fn: (r) => ({ r with _value: float(v: r._value) * 0.01 }))
+  |> yield(name: "last")
+```
+
+```{seealso}
+For more details on creating queries, see [InfluxDB's Flux documentation](https://docs.influxdata.com/influxdb/v2/query-data/flux/).
+```
+
+### Displaying Text
+
+Text can be displayed using a `Stat` visualization using the following query:
+
+```text
+from(bucket: "constellation")
+  |> range(start: 0, stop: v.timeRangeStop)
+  |> filter(fn: (r) => r["_measurement"] == "Mariner.Nine")
+  |> filter(fn: (r) => r["_field"] == "RUN_ID")
+  |> group()
+  |> last()
+  |> keep(columns: ["_value"])
+```
+
+To display the text, `Fields` need to changed to `_value` under `Value options`.
+
+### Displaying Rates
+
+Rates can be displayed using the `aggregate.rate` method:
+
+```text
+import "experimental/aggregate"
+
+from(bucket: "constellation")
+  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+  |> filter(fn: (r) => r["_measurement"] == "PyDevNullReceiver.Receiver" or r["_measurement"] == "PyRandomTransmitter.Sender")
+  |> filter(fn: (r) => r["_field"] == "RX_BYTES" or r["_field"] == "TX_BYTES")
+  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)
+  |> aggregate.rate(
+    every: 30s,
+    unit: 1s,
+    groupColumns: ["_measurement", "_field"],
+  )
+  |> yield(name: "last")
 ```
