@@ -6,7 +6,6 @@ This module provides classes for managing CSCP requests/replies within
 Constellation Satellites.
 """
 
-import sys
 import threading
 import time
 from collections.abc import Callable
@@ -260,30 +259,10 @@ class CommandReceiver(BaseSatelliteFrame):
         return f"{len(hidden_cmds)} commands known", hidden_cmds, {}
 
     @cscp_requestable()
-    def get_name(self, _request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
+    def get_name(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Return the canonical name of the Satellite.
 
         No payload argument.
 
         """
         return self.name, None, {}
-
-    @cscp_requestable()
-    def shutdown(self, _request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
-        """Queue the Satellite's reentry.
-
-        No payload argument.
-
-        """
-
-        # initialize shutdown with delay (so that CSCP response reaches
-        # Controller)
-        def reentry_timer(_sat: BaseSatelliteFrame) -> None:
-            time.sleep(0.5)
-            sys.exit(0)
-
-        # This command is put into the queue: it will only execute after
-        # previously queued actions (e.g. state transitions) have been
-        # completed.
-        self.task_queue.put((reentry_timer, [self]))
-        return f"{self.name} queued for reentry", None, {}

@@ -9,7 +9,7 @@ import threading
 import time
 import traceback
 from concurrent.futures import Future
-from queue import Empty
+from queue import Empty, ShutDown
 from typing import Any
 
 from . import __version__
@@ -121,47 +121,36 @@ class Satellite(
 
         """
         while self._com_thread_evt and not self._com_thread_evt.is_set():
-            # TODO: add check for heartbeatchecker: if any entries in hb.get_failed, trigger action
             try:
-                # blocking call but with timeout to prevent deadlocks
-                task = self.task_queue.get(block=True, timeout=0.5)
-                callback = task[0]
-                args = task[1]
                 try:
-                    callback(*args)
-                except Exception as e:
-                    # TODO consider whether to go into error state if anything goes wrong here
-                    self.log_satellite.exception(
-                        "Caught exception handling task '%s' with args '%s': %s",
-                        callback,
-                        args,
-                        repr(e),
-                    )
-            except Empty:
-                # nothing to process
-                pass
+                    # blocking call but with timeout to prevent deadlocks
+                    task = self.task_queue.get(block=True, timeout=0.5)
+                    callback = task[0]
+                    args = task[1]
+                    try:
+                        self.log_satellite.trace(f"Executing {callback}")
+                        callback(*args)
+                    except Exception as e:
+                        # TODO consider whether to go into error state if anything goes wrong here
+                        self.log_satellite.exception(
+                            "Caught exception handling task '%s' with args '%s': %s",
+                            callback,
+                            args,
+                            repr(e),
+                        )
+                except Empty:
+                    # nothing to process
+                    time.sleep(0.01)
+                except ShutDown:
+                    break
+
             except KeyboardInterrupt:
                 # break line before logging to avoid broken line due to ctrl+c
                 print()
                 self.log_satellite.warning("Satellite caught KeyboardInterrupt, shutting down.")
-                # time to shut down
-                break
-            time.sleep(0.01)
 
-    def reentry(self) -> None:
-        """Orderly shutdown and destroy the Satellite."""
-        # can only exit from certain state, go into ERROR if not the case
-        self.log_satellite.info("Satellite on reentry course for self-destruction.")
-        if self.fsm.state not in [
-            SatelliteState.NEW,
-            SatelliteState.INIT,
-            SatelliteState.SAFE,
-            SatelliteState.ERROR,
-        ]:
-            err_msg = "Performing controlled re-entry and self-destruction."
-            self.fsm.failure(err_msg)
-            self._wrap_failure(err_msg)
-        super().reentry()
+                # shut down satellite
+                self.shutdown()
 
     @handle_error
     @debug_log
@@ -549,6 +538,33 @@ class Satellite(
         """
         cfg_dict = self._config._dictionary
         return "Dictionary attached in payload", cfg_dict, {}
+
+    @cscp_requestable()
+    def shutdown(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
+        """Queue the Satellite's reentry.
+
+        No payload argument.
+        """
+        self.log_satellite.status("Satellite on reentry course for self-destruction")
+
+        def transition_wrapper(self, target: str):
+            getattr(self.fsm, target)(f"{target.capitalize()} requested")
+            self._start_transition(getattr(self, f"_wrap_{target}"), None)
+
+        # Go safely back to INIT state
+        try:
+            if self.fsm.state == SatelliteState.RUN:
+                transition_wrapper(self, "stop")
+                transition_wrapper(self, "land")
+            if self.fsm.state == SatelliteState.ORBIT:
+                transition_wrapper(self, "land")
+        except Exception:
+            pass
+
+        # Shut down queue which triggers program exit
+        self.task_queue.shutdown()
+
+        return f"{self.name} queued for reentry", None, {}
 
 
 # -------------------------------------------------------------------------
