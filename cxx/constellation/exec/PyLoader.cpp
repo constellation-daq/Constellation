@@ -7,6 +7,13 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+// clang-format off
+#ifdef CNSTLN_EXEC_PYTHON
+#define PY_SSIZE_T_CLEAN
+#include <Python.h> // IWYU pragma: keep
+#endif
+// clang-format on
+
 #include "PyLoader.hpp"
 
 #include <cassert>
@@ -14,10 +21,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-#ifdef CNSTLN_EXEC_PYTHON
-#include <Python.h> // IWYU pragma: keep
-#endif
 
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/utils/string.hpp"
