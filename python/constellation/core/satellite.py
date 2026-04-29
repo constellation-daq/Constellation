@@ -9,7 +9,7 @@ import threading
 import time
 import traceback
 from concurrent.futures import Future
-from queue import Empty, ShutDown
+from queue import Empty
 from typing import Any
 
 from . import __version__
@@ -122,6 +122,10 @@ class Satellite(
         """
         while self._com_thread_evt and not self._com_thread_evt.is_set():
             try:
+                # Work around queue shutdown only being available in Python 3.13 or newer
+                if getattr(self.task_queue, "_shutdown", False):
+                    break
+
                 try:
                     # blocking call but with timeout to prevent deadlocks
                     task = self.task_queue.get(block=True, timeout=0.5)
@@ -141,8 +145,6 @@ class Satellite(
                 except Empty:
                     # nothing to process
                     time.sleep(0.01)
-                except ShutDown:
-                    break
 
             except KeyboardInterrupt:
                 # break line before logging to avoid broken line due to ctrl+c
@@ -562,7 +564,7 @@ class Satellite(
             pass
 
         # Shut down queue which triggers program exit
-        self.task_queue.shutdown()
+        setattr(self.task_queue, "_shutdown", True)  # noqa: B010
 
         return f"{self.name} queued for reentry", None, {}
 
