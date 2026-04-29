@@ -122,6 +122,11 @@ if host_machine.system() == 'windows'
   constellation_private_deps += cpp.find_library('iphlpapi')
 endif
 
+# Workaround for GCC/libstdc++ 15/16 when compiling with optimized flags
+if cpp.get_id() == 'gcc'and cpp.version().version_compare('>=15') and cpp.version().version_compare('<17') and get_option('buildtype') in ['debugoptimized', 'release']
+  constellation_private_args += cpp.get_supported_arguments('-Wno-maybe-uninitialized')
+endif
+
 constellation_inc = include_directories('.')
 
 # RPATH for non-default install locations
