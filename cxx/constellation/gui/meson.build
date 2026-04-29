@@ -7,7 +7,18 @@ endif
 
 qt_version = get_option('build_gui')
 qt = import(qt_version)
-qt_dep = dependency(qt_version, modules: ['Core', 'Gui', 'Widgets', 'Svg'])
+qt_raw_dep = dependency(qt_version, modules: ['Core', 'Gui', 'Widgets', 'Svg'])
+qt_args = []
+
+# Workaround for GCC 16 with Qt
+if cpp.get_id() == 'gcc' and cpp.version().version_compare('>=16')
+  qt_args += cpp.get_supported_arguments('-Wno-sfinae-incomplete')
+endif
+
+qt_dep = declare_dependency(
+  dependencies: qt_raw_dep,
+  compile_args: qt_args,
+)
 
 ui_files = qt.compile_ui(sources: ['QConnectionDialog.ui', 'QCommandDialog.ui', 'QResponseDialog.ui', 'QLogMessageDialog.ui'])
 moc_files = qt.compile_moc(headers: ['QController.hpp', 'QConnectionDialog.hpp', 'QCommandDialog.hpp', 'QResponseDialog.hpp', 'QLogLevelComboBox.hpp', 'QLogMessageDialog.hpp'])
