@@ -323,6 +323,8 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         timeout = self._conditional_transition_timeout
         timeout_start = time.time()
 
+        self.dbg_msg_logged: set[str] = set()
+
         # Wait for remote states to match condition:
         while True:
             satisfied = True
@@ -342,7 +344,9 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
                 # Check if condition is fulfilled:
                 if not self.fsm.state.transitions_to(self.heartbeat_states[name]):
                     msg = f"Awaiting state from {name}, currently: {self.heartbeat_states[name]}"
-                    self.log_fsm.debug(msg)
+                    if msg not in self.dbg_msg_logged:
+                        self.log_fsm.debug(msg)
+                        self.dbg_msg_logged.add(msg)
                     self.fsm.set_status(msg)
                     satisfied = False
                     break
