@@ -1,21 +1,17 @@
 import asyncio
 import threading
-import time
 from concurrent.futures import ThreadPoolExecutor
 from uuid import UUID
 
 import zmq
 import zmq.asyncio
 
-from constellation.core.chirp import (
-    CHIRPBeaconTransmitter,
-    CHIRPMessageType,
-    CHIRPServiceIdentifier,
-)
+from constellation.core.chirp import CHIRPMessageType, CHIRPServiceIdentifier
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.message.cmdp1 import CMDP1LogMessage, CMDP1Message, CMDP1StatMessage
 from constellation.core.network import get_interface_addresses
 
+from .async_chirp import AsyncCHIRPProtocol
 from .async_heartbeat import AsyncHeartbeatReceiver
 from .async_pools import AsyncSubscriberPool
 
@@ -23,9 +19,10 @@ from .async_pools import AsyncSubscriberPool
 class CombinedBridge:
     """Combined async bridge.
 
-    CHIRP discovery runs in a dedicated thread since it uses raw UDP multicast.
-    Heartbeat tracking, CMDP receiving, and CSCP commands all run in the
-    asyncio event loop.
+    All components run in the asyncio event loop. CHIRP uses
+    asyncio.DatagramProtocol so no dedicated thread is needed for discovery.
+    CSCP commands run in a single-thread executor to keep blocking REQ socket
+    operations off the event loop without risking concurrent socket access.
     """
 
     def __init__(self, group: str, loop: asyncio.AbstractEventLoop) -> None:
@@ -36,7 +33,6 @@ class CombinedBridge:
         self._sync_ctx = zmq.Context()
 
         self._stop = asyncio.Event()
-        self._stop_thread = threading.Event()
 
         self._heartbeat = AsyncHeartbeatReceiver(
             self._ctx,
@@ -61,6 +57,7 @@ class CombinedBridge:
         self._cscp_executor = ThreadPoolExecutor(max_workers=1)
 
         self._discovered: dict[UUID, dict] = {}
+        self._chirp_protocol: AsyncCHIRPProtocol | None = None
 
         self.stats = {
             "state_changes": 0,
@@ -69,10 +66,29 @@ class CombinedBridge:
             "commands_sent": 0,
         }
 
-    def start(self) -> None:
-        """Start the CHIRP discovery thread."""
-        self._chirp_thread = threading.Thread(target=self._chirp_loop, daemon=True)
-        self._chirp_thread.start()
+    async def start(self) -> None:
+        """Set up async CHIRP and emit initial service requests."""
+        interface_addresses = get_interface_addresses(None)
+        recv_socket = AsyncCHIRPProtocol.create_recv_socket(interface_addresses)
+
+        self._chirp_protocol = AsyncCHIRPProtocol(
+            name="CombinedBridge.Bridge",
+            group=self.group,
+            interface_addresses=interface_addresses,
+            on_offer=self._on_chirp_offer,
+            on_depart=self._on_chirp_depart,
+        )
+
+        await self._loop.create_datagram_endpoint(
+            lambda: self._chirp_protocol,
+            sock=recv_socket,
+        )
+
+        self._chirp_protocol.emit(CHIRPServiceIdentifier.HEARTBEAT, CHIRPMessageType.REQUEST)
+        await asyncio.sleep(0.1)
+        self._chirp_protocol.emit(CHIRPServiceIdentifier.MONITORING, CHIRPMessageType.REQUEST)
+        await asyncio.sleep(0.1)
+        self._chirp_protocol.emit(CHIRPServiceIdentifier.CONTROL, CHIRPMessageType.REQUEST)
 
     async def run(self) -> None:
         """Run heartbeat and CMDP components concurrently."""
@@ -88,7 +104,6 @@ class CombinedBridge:
         send_command calls never interleave on the same socket.
         """
         def _send() -> str:
-            # Lock protects _transmitters dict which is modified from CHIRP thread
             with self._transmitter_lock:
                 ct = self._transmitters.get(canonical_name)
             if ct is None:
@@ -100,8 +115,7 @@ class CombinedBridge:
                 return f"ERROR: {e}"
 
         self.stats["commands_sent"] += 1
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(self._cscp_executor, _send)
+        return await self._loop.run_in_executor(self._cscp_executor, _send)
 
     def shutdown(self) -> None:
         """Stop all components.
@@ -110,9 +124,8 @@ class CombinedBridge:
         contexts while sockets are still open.
         """
         self._stop.set()
-        self._stop_thread.set()
-        if hasattr(self, "_chirp_thread"):
-            self._chirp_thread.join(timeout=2)
+        if self._chirp_protocol is not None:
+            self._chirp_protocol.close()
         self._cscp_executor.shutdown(wait=True)
         self._heartbeat.close()
         self._cmdp_pool.close()
@@ -121,6 +134,48 @@ class CombinedBridge:
                 ct.close()
         self._ctx.term()
         self._sync_ctx.term()
+
+    def _on_chirp_offer(self, uuid: UUID, address: str, port: int, service: CHIRPServiceIdentifier) -> None:
+        """Handle a CHIRP OFFER. Called from datagram_received on the event loop."""
+        if uuid not in self._discovered:
+            self._discovered[uuid] = {}
+
+        if service in self._discovered[uuid]:
+            return
+
+        self._discovered[uuid][service] = (address, port)
+
+        if service == CHIRPServiceIdentifier.HEARTBEAT:
+            name = self._transmitter_uuids.get(uuid, f"Unknown-{str(uuid)[:8]}")
+            print(f"  [CHIRP]  HEARTBEAT from {address}:{port}")
+            self._heartbeat.add_satellite(uuid, address, port, name)
+
+        elif service == CHIRPServiceIdentifier.MONITORING:
+            print(f"  [CHIRP]  MONITORING from {address}:{port}")
+            self._cmdp_pool.add_socket(uuid, address, port)
+
+        elif service == CHIRPServiceIdentifier.CONTROL:
+            print(f"  [CHIRP]  CONTROL from {address}:{port}")
+            self._loop.create_task(self._setup_transmitter(uuid, address, port))
+
+    def _on_chirp_depart(self, uuid: UUID, service: CHIRPServiceIdentifier) -> None:
+        """Handle a CHIRP DEPART. Called from datagram_received on the event loop."""
+        if uuid not in self._discovered:
+            return
+
+        self._discovered[uuid].pop(service, None)
+
+        if service == CHIRPServiceIdentifier.HEARTBEAT:
+            print(f"  [CHIRP]  DEPART HEARTBEAT {uuid}")
+            self._heartbeat.remove_satellite(uuid)
+
+        elif service == CHIRPServiceIdentifier.MONITORING:
+            print(f"  [CHIRP]  DEPART MONITORING {uuid}")
+            self._cmdp_pool.remove_socket(uuid)
+
+        elif service == CHIRPServiceIdentifier.CONTROL:
+            print(f"  [CHIRP]  DEPART CONTROL {uuid}")
+            self._cleanup_transmitter(uuid)
 
     def _on_state_change(self, name: str, old_state, new_state) -> None:
         self.stats["state_changes"] += 1
@@ -145,102 +200,31 @@ class CombinedBridge:
         except Exception:
             pass
 
-    def _chirp_loop(self) -> None:
-        """Discover and track satellites via CHIRP."""
-        beacon = CHIRPBeaconTransmitter(
-            "CombinedBridge.Bridge",
-            self.group,
-            get_interface_addresses(None),
-        )
+    async def _setup_transmitter(self, uuid: UUID, address: str, port: int) -> None:
+        """Connect to a satellite's CSCP port (runs blocking call in executor)."""
+        def _connect() -> tuple[str, CommandTransmitter] | None:
+            sock = self._sync_ctx.socket(zmq.REQ)
+            sock.connect(f"tcp://{address}:{port}")
+            sock.setsockopt(zmq.LINGER, 2000)
+            sock.setsockopt(zmq.RCVTIMEO, 5000)
+            try:
+                ct = CommandTransmitter("CombinedBridge.Bridge", sock)
+                msg = ct.request_get_response("get_commands")
+                return msg.sender, ct
+            except Exception as e:
+                sock.close()
+                print(f"  [CSCP]   Failed to connect to {address}:{port}: {e}")
+                return None
 
-        beacon.emit(CHIRPServiceIdentifier.HEARTBEAT, CHIRPMessageType.REQUEST)
-        time.sleep(0.1)
-        beacon.emit(CHIRPServiceIdentifier.MONITORING, CHIRPMessageType.REQUEST)
-        time.sleep(0.1)
-        beacon.emit(CHIRPServiceIdentifier.CONTROL, CHIRPMessageType.REQUEST)
+        result = await self._loop.run_in_executor(self._cscp_executor, _connect)
+        if result is None:
+            return
 
-        while not self._stop_thread.is_set():
-            msg = beacon.listen()
-            if msg is None:
-                continue
-
-            if msg.msgtype == CHIRPMessageType.REQUEST:
-                continue
-
-            uuid = msg.host_uuid
-            address = msg.from_address
-            port = msg.port
-            service = msg.serviceid
-
-            if msg.msgtype == CHIRPMessageType.OFFER:
-                if uuid not in self._discovered:
-                    self._discovered[uuid] = {}
-
-                if service in self._discovered[uuid]:
-                    continue
-
-                self._discovered[uuid][service] = (address, port)
-
-                if service == CHIRPServiceIdentifier.HEARTBEAT:
-                    name = self._transmitter_uuids.get(uuid, f"Unknown-{str(uuid)[:8]}")
-                    print(f"  [CHIRP]  HEARTBEAT from {address}:{port}")
-                    self._loop.call_soon_threadsafe(
-                        self._heartbeat.add_satellite,
-                        uuid, address, port, name,
-                    )
-
-                elif service == CHIRPServiceIdentifier.MONITORING:
-                    print(f"  [CHIRP]  MONITORING from {address}:{port}")
-                    self._loop.call_soon_threadsafe(
-                        self._cmdp_pool.add_socket,
-                        uuid, address, port,
-                    )
-
-                elif service == CHIRPServiceIdentifier.CONTROL:
-                    print(f"  [CHIRP]  CONTROL from {address}:{port}")
-                    self._setup_transmitter(uuid, address, port)
-
-            elif msg.msgtype == CHIRPMessageType.DEPART:
-                if uuid not in self._discovered:
-                    continue
-
-                self._discovered[uuid].pop(service, None)
-
-                if service == CHIRPServiceIdentifier.HEARTBEAT:
-                    print(f"  [CHIRP]  DEPART HEARTBEAT {uuid}")
-                    self._loop.call_soon_threadsafe(
-                        self._heartbeat.remove_satellite, uuid,
-                    )
-
-                elif service == CHIRPServiceIdentifier.MONITORING:
-                    print(f"  [CHIRP]  DEPART MONITORING {uuid}")
-                    self._loop.call_soon_threadsafe(
-                        self._cmdp_pool.remove_socket, uuid,
-                    )
-
-                elif service == CHIRPServiceIdentifier.CONTROL:
-                    print(f"  [CHIRP]  DEPART CONTROL {uuid}")
-                    self._cleanup_transmitter(uuid)
-
-        beacon.close()
-
-    def _setup_transmitter(self, uuid: UUID, address: str, port: int) -> None:
-        """Set up a CSCP transmitter for a satellite (runs in CHIRP thread)."""
-        socket = self._sync_ctx.socket(zmq.REQ)
-        socket.connect(f"tcp://{address}:{port}")
-        socket.setsockopt(zmq.LINGER, 2000)
-        socket.setsockopt(zmq.RCVTIMEO, 5000)
-        try:
-            ct = CommandTransmitter("CombinedBridge.Bridge", socket)
-            msg = ct.request_get_response("get_commands")
-            canonical_name = msg.sender
-            with self._transmitter_lock:
-                self._transmitters[canonical_name] = ct
-                self._transmitter_uuids[uuid] = canonical_name
-            print(f"  [CSCP]   Connected to {canonical_name}")
-        except Exception as e:
-            socket.close()
-            print(f"  [CSCP]   Failed to connect to {address}:{port}: {e}")
+        canonical_name, ct = result
+        with self._transmitter_lock:
+            self._transmitters[canonical_name] = ct
+            self._transmitter_uuids[uuid] = canonical_name
+        print(f"  [CSCP]   Connected to {canonical_name}")
 
     def _cleanup_transmitter(self, uuid: UUID) -> None:
         """Remove and close a CSCP transmitter on satellite departure."""
@@ -259,10 +243,10 @@ async def main() -> None:
     bridge = CombinedBridge(group, loop)
 
     print(f"Combined Bridge for group '{group}'")
-    print(f"Architecture: 1 thread (CHIRP) + asyncio event loop")
+    print(f"Architecture: asyncio event loop only (no dedicated threads)")
     print()
 
-    bridge.start()
+    await bridge.start()
     await asyncio.sleep(2)
 
     run_task = asyncio.create_task(bridge.run())
@@ -322,7 +306,7 @@ async def main() -> None:
     print(f"  Log messages received:  {bridge.stats['logs']}")
     print(f"  Metrics received:       {bridge.stats['metrics']}")
     print(f"  Commands sent:          {bridge.stats['commands_sent']}")
-    print(f"  Architecture:           1 thread (CHIRP) + asyncio event loop")
+    print(f"  Architecture:           asyncio event loop only (no dedicated threads)")
 
 
 if __name__ == "__main__":
