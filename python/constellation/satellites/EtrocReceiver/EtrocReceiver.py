@@ -34,6 +34,7 @@ class EtrocReceiver(ReceiverSatellite):
         "event_trailer": 0xb,       # first 6  bits
         "frame_header":  0x3c5c,    # first 16 bits + '00'
         "frame_data":    0x1,
+        "frame_trailer": 0x0,
     }
 
     FIXED_PATTERN_SIZES = {
@@ -44,7 +45,7 @@ class EtrocReceiver(ReceiverSatellite):
         "firmware_key":  4,
         "event_trailer": 6,
         "frame_header":  18,
-        "frame_trailer": 18,
+        "frame_trailer": 1,
         "frame_data":    1,
     }
 
@@ -61,8 +62,6 @@ class EtrocReceiver(ReceiverSatellite):
 
             # Set the variable on the class
             setattr(self, key, value)
-
-        self.frame_trailers = {0: 0x17f0f, 1: 0x17f0f, 2: 0x17f0f, 3: 0x17f0f}
 
         # Determine file size limit (20 MB for binary, 50,000 lines for text)
         if self.translate:
@@ -313,8 +312,8 @@ class EtrocReceiver(ReceiverSatellite):
                             output_buffer.append(f"D {self.active_channel} {(to_be_translated >> 37) & 0x3} {(to_be_translated >> 29) & 0xF} {(to_be_translated >> 33) & 0xF} {(to_be_translated >> 19) & 0x3FF} {(to_be_translated >> 10) & 0x1FF} {to_be_translated & 0x3FF}")
 
                         # TRAILER
-                        elif to_be_translated >> (40 - self.FIXED_PATTERN_SIZES["frame_trailer"]) == self.frame_trailers.get(self.active_channel, 0):
-                            output_buffer.append(f"T {self.active_channel} {(to_be_translated >> 16) & 0x3F} {(to_be_translated >> 8) & 0xFF} {to_be_translated & 0xFF}")
+                        elif to_be_translated >> (40 - self.FIXED_PATTERN_SIZES["frame_trailer"]) == self.FIXED_PATTERNS["frame_trailer"]:
+                            output_buffer.append(f"T {self.active_channel} {hex((to_be_translated >> 22) & 0x1FFFF)} {(to_be_translated >> 16) & 0x3F} {(to_be_translated >> 8) & 0xFF} {to_be_translated & 0xFF}")
 
                         else:
                             output_buffer.append("UNKNOWN 40 bit word!")
