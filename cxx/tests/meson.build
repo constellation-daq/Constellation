@@ -1,15 +1,26 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
-catch2_dep = dependency('catch2-with-main',
+catch2_raw_dep = dependency('catch2-with-main',
   version: '>=3.0.0',
   default_options: ['tests=false', 'install=false'],
   required: get_option('cxx_tests'),
 )
+catch2_args = []
 
-if not catch2_dep.found()
+if not catch2_raw_dep.found()
   subdir_done()
 endif
+
+# Workaround for clang >22 with Catch <3.14
+if cpp.get_id() == 'clang' and cpp.version().version_compare('>=22') and catch2_raw_dep.version().version_compare('<3.14')
+  catch2_args += cpp.get_supported_arguments('-Wno-c2y-extensions')
+endif
+
+catch2_dep = declare_dependency(
+  dependencies: catch2_raw_dep,
+  compile_args: catch2_args,
+)
 
 # Core
 

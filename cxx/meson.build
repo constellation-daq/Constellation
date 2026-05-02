@@ -5,11 +5,8 @@ cpp = meson.get_compiler('cpp')
 pkgconfig = find_program('pkg-config', required: false)
 
 # Error for unsupported compilers (for now only gcc)
-if cpp.get_id() == 'gcc'
-  gcc_major_version = cpp.version().split('.')[0].to_int()
-  if gcc_major_version < 12
-    error('GCC version 12 or newer required')
-  endif
+if cpp.get_id() == 'gcc' and cpp.version().version_compare('<12')
+  error('GCC version 12 or newer required')
 endif
 
 # argparse
@@ -114,11 +111,6 @@ if get_option('default_library') == 'static'
 elif get_option('default_library') == 'both'
   error('Building both static and shared libraries is not possible')
 endif
-# clang flags
-if cpp.get_id() == 'clang'
-  # Qt uses C++26 extensions exposed by clang even when using pre-C++26, leading to warnings
-  constellation_private_args += cpp.get_supported_arguments('-Wno-c++26-extensions')
-endif
 # Windows flags
 if host_machine.system() == 'windows'
   # Disable parts of Windows API with conflicting macro definitions
@@ -128,6 +120,11 @@ if host_machine.system() == 'windows'
   # Add ws2_32 and iphlpapi to dependencies
   constellation_private_deps += cpp.find_library('ws2_32')
   constellation_private_deps += cpp.find_library('iphlpapi')
+endif
+
+# Workaround for GCC/libstdc++ 15/16 when compiling with optimized flags
+if cpp.get_id() == 'gcc'and cpp.version().version_compare('>=15') and cpp.version().version_compare('<17') and get_option('buildtype') in ['debugoptimized', 'release']
+  constellation_private_args += cpp.get_supported_arguments('-Wno-maybe-uninitialized')
 endif
 
 constellation_inc = include_directories('.')
