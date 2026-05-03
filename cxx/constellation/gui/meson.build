@@ -1,13 +1,13 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
-if get_option('build_gui') == 'none'
+qt_version = get_option('build_gui')
+if qt_version == 'none'
   subdir_done()
 endif
 
-qt_version = get_option('build_gui')
 qt = import(qt_version)
-qt_raw_dep = dependency(qt_version, modules: ['Core', 'Gui', 'Widgets', 'Svg'])
+qt_raw_dep = dependency(qt_version, include_type: 'system', modules: ['Core', 'Gui', 'Widgets', 'Svg'])
 qt_args = []
 
 # Workaround for GCC 16 with Qt using incomplete classes
