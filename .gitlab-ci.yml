@@ -214,7 +214,7 @@ build:fedora-clang:
     - .fedora-clang
   variables:
     BUILD_TYPE: "debugoptimized"
-    BUILD_OPTIONS: "-Dcpp_std=c++23 -Db_sanitize=address -Db_lundef=false -Dmemory_allocator=system"
+    BUILD_OPTIONS: "-Db_sanitize=address -Db_lundef=false -Dmemory_allocator=system"
 
 build:fedora-gcc:
   extends:
