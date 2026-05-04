@@ -107,7 +107,7 @@ namespace constellation::exec {
          *
          * @return String containing the program help
          */
-        std::string help() const;
+        std::string help() const; // NOLINT(bugprone-derived-method-shadowing-base-method)
     };
 
     class CNSTLN_API SatelliteParser : public BaseParser {
@@ -161,7 +161,7 @@ namespace constellation::exec {
          *
          * @return Parsed options
          */
-        SatelliteOptions parse(std::span<const char*> args);
+        SatelliteOptions parse(std::span<const char*> args); // NOLINT(bugprone-derived-method-shadowing-base-method)
 
     private:
         std::optional<std::string> type_;
@@ -213,7 +213,7 @@ namespace constellation::exec {
          *
          * @return Parsed options
          */
-        GUIOptions parse(std::span<const char*> args);
+        GUIOptions parse(std::span<const char*> args); // NOLINT(bugprone-derived-method-shadowing-base-method)
     };
 
 } // namespace constellation::exec

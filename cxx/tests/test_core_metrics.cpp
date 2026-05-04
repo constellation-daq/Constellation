@@ -34,54 +34,56 @@ using namespace constellation::protocol::CHIRP;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 
-class MetricsReceiver : public SubscriberPool<CMDP1StatMessage, ServiceIdentifier::MONITORING> {
-public:
-    using SubscriberPoolT = SubscriberPool<CMDP1StatMessage, ServiceIdentifier::MONITORING>;
-    MetricsReceiver(std::string topic = "")
-        : SubscriberPoolT("MNTR",
-                          [this](CMDP1StatMessage&& msg) {
-                              const std::scoped_lock last_message_lock {last_message_mutex_};
-                              last_message_ = std::make_shared<CMDP1StatMessage>(std::move(msg));
-                              last_message_updated_.store(true);
-                          }),
-          topic_(std::move(topic)) {}
-    void waitSubscription() {
-        while(!subscribed_.load()) {
-            std::this_thread::yield();
+namespace {
+    class MetricsReceiver : public SubscriberPool<CMDP1StatMessage, ServiceIdentifier::MONITORING> {
+    public:
+        using SubscriberPoolT = SubscriberPool<CMDP1StatMessage, ServiceIdentifier::MONITORING>;
+        MetricsReceiver(std::string topic = "")
+            : SubscriberPoolT("MNTR",
+                              [this](CMDP1StatMessage&& msg) {
+                                  const std::scoped_lock last_message_lock {last_message_mutex_};
+                                  last_message_ = std::make_shared<CMDP1StatMessage>(std::move(msg));
+                                  last_message_updated_.store(true);
+                              }),
+              topic_(std::move(topic)) {}
+        void waitSubscription() {
+            while(!subscribed_.load()) {
+                std::this_thread::yield();
+            }
+            subscribed_.store(false);
+            // Metric manager updates subscriptions every 100ms, wait until processed time
+            std::this_thread::sleep_for(150ms);
         }
-        subscribed_.store(false);
-        // Metric manager updates subscriptions every 100ms, wait until processed time
-        std::this_thread::sleep_for(150ms);
-    }
-    void resetLastMessage() {
-        const std::scoped_lock last_message_lock {last_message_mutex_};
-        last_message_.reset();
-        last_message_updated_.store(false);
-    }
-    void waitNextMessage() {
-        while(!last_message_updated_.load()) {
-            std::this_thread::yield();
+        void resetLastMessage() {
+            const std::scoped_lock last_message_lock {last_message_mutex_};
+            last_message_.reset();
+            last_message_updated_.store(false);
         }
-        last_message_updated_.store(false);
-    }
-    std::shared_ptr<CMDP1StatMessage> getLastMessage() {
-        const std::scoped_lock last_message_lock {last_message_mutex_};
-        return last_message_;
-    }
+        void waitNextMessage() {
+            while(!last_message_updated_.load()) {
+                std::this_thread::yield();
+            }
+            last_message_updated_.store(false);
+        }
+        std::shared_ptr<CMDP1StatMessage> getLastMessage() {
+            const std::scoped_lock last_message_lock {last_message_mutex_};
+            return last_message_;
+        }
 
-protected:
-    void host_connected(const DiscoveredService& service) final {
-        subscribe(service.host_id, "STAT/" + topic_);
-        subscribed_.store(true);
-    }
+    protected:
+        void host_connected(const DiscoveredService& service) final {
+            subscribe(service.host_id, "STAT/" + topic_);
+            subscribed_.store(true);
+        }
 
-private:
-    std::atomic_bool subscribed_ {false};
-    std::atomic_bool last_message_updated_ {false};
-    std::mutex last_message_mutex_;
-    std::shared_ptr<CMDP1StatMessage> last_message_;
-    std::string topic_;
-};
+    private:
+        std::atomic_bool subscribed_ {false};
+        std::atomic_bool last_message_updated_ {false};
+        std::mutex last_message_mutex_;
+        std::shared_ptr<CMDP1StatMessage> last_message_;
+        std::string topic_;
+    };
+} // namespace
 
 TEST_CASE("Registering and unregistering metrics", "[core][metrics]") {
     auto& metrics_manager = ManagerLocator::getMetricsManager();

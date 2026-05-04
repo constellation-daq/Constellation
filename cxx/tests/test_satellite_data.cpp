@@ -41,115 +41,117 @@ using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
-class Receiver : public DummySatelliteNR<ReceiverSatellite> {
-public:
-    Receiver(std::string_view name = "r1") : DummySatelliteNR<ReceiverSatellite>(name) {}
+namespace {
+    class Receiver : public DummySatelliteNR<ReceiverSatellite> {
+    public:
+        Receiver(std::string_view name = "r1") : DummySatelliteNR<ReceiverSatellite>(name) {}
 
-protected:
-    void receive_bor(std::string_view sender, const Dictionary& user_tags, const Dictionary& config) override {
-        const auto sender_str = std::string(sender);
-        const std::scoped_lock map_lock {map_mutex_};
-        bor_map_.erase(sender_str);
-        bor_map_.emplace(sender, config);
-        bor_tag_map_.erase(sender_str);
-        bor_tag_map_.emplace(sender, user_tags);
-        bor_received_ = true;
-    }
-    void receive_data(std::string_view sender, const CDTP2Message::DataRecord& data_record) override {
-        const auto sender_str = std::string(sender);
-        const std::scoped_lock map_lock {map_mutex_};
-        last_data_map_.erase(sender_str);
-        last_data_map_.emplace(sender, copy_record(data_record));
-        data_received_ = true;
-    }
-    void receive_eor(std::string_view sender, const Dictionary& user_tags, const Dictionary& run_metadata) override {
-        const auto sender_str = std::string(sender);
-        const std::scoped_lock map_lock {map_mutex_};
-        eor_map_.erase(sender_str);
-        eor_map_.emplace(sender, run_metadata);
-        eor_tag_map_.erase(sender_str);
-        eor_tag_map_.emplace(sender, user_tags);
-        eor_received_ = true;
-    }
-
-public:
-    void awaitBOR() {
-        while(!bor_received_.load()) {
-            std::this_thread::yield();
+    protected:
+        void receive_bor(std::string_view sender, const Dictionary& user_tags, const Dictionary& config) override {
+            const auto sender_str = std::string(sender);
+            const std::scoped_lock map_lock {map_mutex_};
+            bor_map_.erase(sender_str);
+            bor_map_.emplace(sender, config);
+            bor_tag_map_.erase(sender_str);
+            bor_tag_map_.emplace(sender, user_tags);
+            bor_received_ = true;
         }
-        bor_received_.store(false);
-    }
-
-    void awaitData() {
-        while(!data_received_.load()) {
-            std::this_thread::yield();
+        void receive_data(std::string_view sender, const CDTP2Message::DataRecord& data_record) override {
+            const auto sender_str = std::string(sender);
+            const std::scoped_lock map_lock {map_mutex_};
+            last_data_map_.erase(sender_str);
+            last_data_map_.emplace(sender, copy_record(data_record));
+            data_received_ = true;
         }
-        data_received_.store(false);
-    }
-
-    void awaitEOR() {
-        while(!eor_received_.load()) {
-            std::this_thread::yield();
+        void receive_eor(std::string_view sender, const Dictionary& user_tags, const Dictionary& run_metadata) override {
+            const auto sender_str = std::string(sender);
+            const std::scoped_lock map_lock {map_mutex_};
+            eor_map_.erase(sender_str);
+            eor_map_.emplace(sender, run_metadata);
+            eor_tag_map_.erase(sender_str);
+            eor_tag_map_.emplace(sender, user_tags);
+            eor_received_ = true;
         }
-        eor_received_.store(false);
-    }
 
-    const Dictionary& getBOR(const std::string& sender) {
-        const std::scoped_lock map_lock {map_mutex_};
-        return bor_map_.at(sender);
-    }
-    const Dictionary& getBORTags(const std::string& sender) {
-        const std::scoped_lock map_lock {map_mutex_};
-        return bor_tag_map_.at(sender);
-    }
-    const CDTP2Message::DataRecord& getLastData(const std::string& sender) {
-        const std::scoped_lock map_lock {map_mutex_};
-        return last_data_map_.at(sender);
-    }
-    const Dictionary& getEOR(const std::string& sender) {
-        const std::scoped_lock map_lock {map_mutex_};
-        return eor_map_.at(sender);
-    }
-    const Dictionary& getEORTags(const std::string& sender) {
-        const std::scoped_lock map_lock {map_mutex_};
-        return eor_tag_map_.at(sender);
-    }
-
-private:
-    static CDTP2Message::DataRecord copy_record(const CDTP2Message::DataRecord& data_record) {
-        // Data records cannot be copied for good reason, but we need to for testing purposes
-        CDTP2Message::DataRecord record_copy {
-            data_record.getSequenceNumber(), data_record.getTags(), data_record.countBlocks()};
-        for(const auto& block : data_record.getBlocks()) {
-            std::vector<std::byte> block_copy {block.span().begin(), block.span().end()};
-            record_copy.addBlock(std::move(block_copy));
+    public:
+        void awaitBOR() {
+            while(!bor_received_.load()) {
+                std::this_thread::yield();
+            }
+            bor_received_.store(false);
         }
-        return record_copy;
-    }
 
-private:
-    std::mutex map_mutex_;
-    std::atomic_bool bor_received_ {false};
-    std::atomic_bool data_received_ {false};
-    std::atomic_bool eor_received_ {false};
-    std::map<std::string, Dictionary> bor_map_;
-    std::map<std::string, Dictionary> bor_tag_map_;
-    std::map<std::string, CDTP2Message::DataRecord> last_data_map_;
-    std::map<std::string, Dictionary> eor_map_;
-    std::map<std::string, Dictionary> eor_tag_map_;
-};
+        void awaitData() {
+            while(!data_received_.load()) {
+                std::this_thread::yield();
+            }
+            data_received_.store(false);
+        }
 
-class Transmitter : public DummySatellite<TransmitterSatellite> {
-public:
-    Transmitter(std::string_view name = "t1") : DummySatellite<TransmitterSatellite>(name) {}
+        void awaitEOR() {
+            while(!eor_received_.load()) {
+                std::this_thread::yield();
+            }
+            eor_received_.store(false);
+        }
 
-    template <typename T> void sendData(T data) {
-        auto data_record = newDataRecord();
-        data_record.addBlock(std::move(data));
-        data_record.addTag("test", 1);
-        sendDataRecord(std::move(data_record));
-    }
-};
+        const Dictionary& getBOR(const std::string& sender) {
+            const std::scoped_lock map_lock {map_mutex_};
+            return bor_map_.at(sender);
+        }
+        const Dictionary& getBORTags(const std::string& sender) {
+            const std::scoped_lock map_lock {map_mutex_};
+            return bor_tag_map_.at(sender);
+        }
+        const CDTP2Message::DataRecord& getLastData(const std::string& sender) {
+            const std::scoped_lock map_lock {map_mutex_};
+            return last_data_map_.at(sender);
+        }
+        const Dictionary& getEOR(const std::string& sender) {
+            const std::scoped_lock map_lock {map_mutex_};
+            return eor_map_.at(sender);
+        }
+        const Dictionary& getEORTags(const std::string& sender) {
+            const std::scoped_lock map_lock {map_mutex_};
+            return eor_tag_map_.at(sender);
+        }
+
+    private:
+        static CDTP2Message::DataRecord copy_record(const CDTP2Message::DataRecord& data_record) {
+            // Data records cannot be copied for good reason, but we need to for testing purposes
+            CDTP2Message::DataRecord record_copy {
+                data_record.getSequenceNumber(), data_record.getTags(), data_record.countBlocks()};
+            for(const auto& block : data_record.getBlocks()) {
+                std::vector<std::byte> block_copy {block.span().begin(), block.span().end()};
+                record_copy.addBlock(std::move(block_copy));
+            }
+            return record_copy;
+        }
+
+    private:
+        std::mutex map_mutex_;
+        std::atomic_bool bor_received_ {false};
+        std::atomic_bool data_received_ {false};
+        std::atomic_bool eor_received_ {false};
+        std::map<std::string, Dictionary> bor_map_;
+        std::map<std::string, Dictionary> bor_tag_map_;
+        std::map<std::string, CDTP2Message::DataRecord> last_data_map_;
+        std::map<std::string, Dictionary> eor_map_;
+        std::map<std::string, Dictionary> eor_tag_map_;
+    };
+
+    class Transmitter : public DummySatellite<TransmitterSatellite> {
+    public:
+        Transmitter(std::string_view name = "t1") : DummySatellite<TransmitterSatellite>(name) {}
+
+        template <typename T> void sendData(T data) {
+            auto data_record = newDataRecord();
+            data_record.addBlock(std::move(data));
+            data_record.addTag("test", 1);
+            sendDataRecord(std::move(data_record));
+        }
+    };
+} // namespace
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 

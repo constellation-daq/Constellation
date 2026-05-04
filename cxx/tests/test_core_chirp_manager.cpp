@@ -217,7 +217,7 @@ TEST_CASE("Execute callbacks in CHIRP manager", "[chirp][chirp::manager]") {
     // Callback test struct to test if callback was properly executed
     struct CBTest {
         ServiceStatus status {};
-        DiscoveredService service {};
+        DiscoveredService service {}; // NOLINT(bugprone-invalid-enum-default-initialization)
         std::atomic_bool executed {false};
     };
     CBTest cb_test_data {};

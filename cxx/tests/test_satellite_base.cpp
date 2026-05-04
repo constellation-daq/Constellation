@@ -51,29 +51,31 @@ using namespace constellation::utils;
 using namespace std::chrono_literals;
 using namespace std::string_literals;
 
-class CSCPSender {
-public:
-    CSCPSender(Port port) : req_socket_(*global_zmq_context(), zmq::socket_type::req) {
-        req_socket_.connect("tcp://127.0.0.1:" + to_string(port));
-    }
-    void send(std::span<const std::byte> message, zmq::send_flags send_flags = zmq::send_flags::none) {
-        zmq::message_t zmq_msg {message.data(), message.size()};
-        req_socket_.send(zmq_msg, send_flags);
-    }
-    void send(CSCP1Message& message) { message.assemble().send(req_socket_); }
-    void sendCommand(std::string command) {
-        auto msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, std::move(command)});
-        send(msg);
-    }
-    CSCP1Message recv() {
-        zmq::multipart_t zmq_msgs {};
-        zmq_msgs.recv(req_socket_);
-        return CSCP1Message::disassemble(zmq_msgs);
-    }
+namespace {
+    class CSCPSender {
+    public:
+        CSCPSender(Port port) : req_socket_(*global_zmq_context(), zmq::socket_type::req) {
+            req_socket_.connect("tcp://127.0.0.1:" + to_string(port));
+        }
+        void send(std::span<const std::byte> message, zmq::send_flags send_flags = zmq::send_flags::none) {
+            zmq::message_t zmq_msg {message.data(), message.size()};
+            req_socket_.send(zmq_msg, send_flags);
+        }
+        void send(CSCP1Message& message) { message.assemble().send(req_socket_); }
+        void sendCommand(std::string command) {
+            auto msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, std::move(command)});
+            send(msg);
+        }
+        CSCP1Message recv() {
+            zmq::multipart_t zmq_msgs {};
+            zmq_msgs.recv(req_socket_);
+            return CSCP1Message::disassemble(zmq_msgs);
+        }
 
-private:
-    zmq::socket_t req_socket_;
-};
+    private:
+        zmq::socket_t req_socket_;
+    };
+} // namespace
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 

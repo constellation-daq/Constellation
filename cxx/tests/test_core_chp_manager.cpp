@@ -34,47 +34,49 @@ using namespace constellation::protocol;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 
-class CHPManager : public HeartbeatManager {
-public:
-    CHPManager(std::string name)
-        : HeartbeatManager(
-              std::move(name),
-              [&]() { return CSCP::State::NEW; },
-              [&](std::string_view status) {
-                  const std::scoped_lock lock {mutex_};
-                  interrupt_message_ = std::string(status);
-                  interrupt_received_.store(true);
-              },
-              [&](std::string_view /*reason*/) {
-                  const std::scoped_lock lock {mutex_};
-                  degraded_received_.store(true);
-              }) {}
+namespace {
+    class CHPManager : public HeartbeatManager {
+    public:
+        CHPManager(std::string name)
+            : HeartbeatManager(
+                  std::move(name),
+                  [&]() { return CSCP::State::NEW; },
+                  [&](std::string_view status) {
+                      const std::scoped_lock lock {mutex_};
+                      interrupt_message_ = std::string(status);
+                      interrupt_received_.store(true);
+                  },
+                  [&](std::string_view /*reason*/) {
+                      const std::scoped_lock lock {mutex_};
+                      degraded_received_.store(true);
+                  }) {}
 
-    void waitInterrupt() {
-        while(!interrupt_received_.load()) {
-            std::this_thread::yield();
+        void waitInterrupt() {
+            while(!interrupt_received_.load()) {
+                std::this_thread::yield();
+            }
+            interrupt_received_.store(false);
         }
-        interrupt_received_.store(false);
-    }
 
-    void waitDegraded() {
-        while(!degraded_received_.load()) {
-            std::this_thread::yield();
+        void waitDegraded() {
+            while(!degraded_received_.load()) {
+                std::this_thread::yield();
+            }
+            degraded_received_.store(false);
         }
-        degraded_received_.store(false);
-    }
 
-    std::string getInterruptMessage() {
-        const std::scoped_lock lock {mutex_};
-        return interrupt_message_;
-    }
+        std::string getInterruptMessage() {
+            const std::scoped_lock lock {mutex_};
+            return interrupt_message_;
+        }
 
-private:
-    std::atomic_bool degraded_received_ {false};
-    std::atomic_bool interrupt_received_ {false};
-    std::mutex mutex_;
-    std::string interrupt_message_;
-};
+    private:
+        std::atomic_bool degraded_received_ {false};
+        std::atomic_bool interrupt_received_ {false};
+        std::mutex mutex_;
+        std::string interrupt_message_;
+    };
+} // namespace
 
 TEST_CASE("Check remote state", "[chp][send]") {
     create_chirp_manager();

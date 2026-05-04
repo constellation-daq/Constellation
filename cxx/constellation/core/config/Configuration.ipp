@@ -73,8 +73,8 @@ namespace constellation::config {
         }
     }
 
-    template <typename T> T Section::get(std::string_view key, T default_value) {
-        setDefault(key, std::move(default_value));
+    template <typename T> T Section::get(std::string_view key, const T& default_value) {
+        setDefault(key, default_value);
         return get<T>(key);
     }
 
@@ -96,8 +96,8 @@ namespace constellation::config {
         }
     }
 
-    template <typename T> std::vector<T> Section::getArray(std::string_view key, std::vector<T> default_value) {
-        setDefault(key, std::move(default_value));
+    template <typename T> std::vector<T> Section::getArray(std::string_view key, const std::vector<T>& default_value) {
+        setDefault(key, default_value);
         return getArray<T>(key);
     }
 

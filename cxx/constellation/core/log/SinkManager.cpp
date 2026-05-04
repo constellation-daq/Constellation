@@ -113,7 +113,7 @@ std::unique_ptr<spdlog::custom_flag_formatter> SinkManager::ConstellationMessage
     return std::make_unique<ConstellationMessageFormatter>();
 }
 
-SinkManager::SinkManager() : console_global_level_(TRACE), cmdp_global_level_(OFF) {
+SinkManager::SinkManager() {
     // Disable global spdlog registration of loggers
     spdlog::set_automatic_registration(false);
 

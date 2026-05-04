@@ -182,11 +182,14 @@ namespace constellation::utils {
     /** Converts a range to a string with custom to_string function and delimiter */
     template <typename R, typename F>
         requires std::ranges::bidirectional_range<R> && std::is_invocable_r_v<std::string, F, std::ranges::range_value_t<R>>
-    inline std::string range_to_string(const R& range, F to_string_func, const std::string& delim = ", ") {
+    inline std::string range_to_string(const R& range, // NOLINT(misc-no-recursion)
+                                       F to_string_func,
+                                       const std::string& delim = ", ") {
         std::string out {};
         if(!std::ranges::empty(range)) {
-            std::ranges::for_each(std::ranges::subrange(std::cbegin(range), std::ranges::prev(std::ranges::cend(range))),
-                                  [&](const auto& element) { out += to_string_func(element) + delim; });
+            std::ranges::for_each(
+                std::ranges::subrange(std::cbegin(range), std::ranges::prev(std::ranges::cend(range))),
+                [&](const auto& element) { out += to_string_func(element) + delim; }); // NOLINT(misc-no-recursion)
             out += to_string_func(*std::ranges::crbegin(range));
         }
         return out;

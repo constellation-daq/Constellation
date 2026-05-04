@@ -57,6 +57,6 @@ protected:
 private:
     std::unique_ptr<FileSerializer> serializer_;
     std::filesystem::path base_path_;
-    std::size_t buffer_size_;
+    std::size_t buffer_size_ {};
     constellation::utils::TimeoutTimer flush_timer_;
 };
