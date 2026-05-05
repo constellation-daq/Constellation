@@ -35,43 +35,45 @@ using namespace constellation::pools;
 using namespace constellation::protocol;
 using namespace constellation::utils;
 
-class TestPool : public SubscriberPool<CMDP1Message, CHIRP::MONITORING> {
-public:
-    using SubscriberPoolT = SubscriberPool<CMDP1Message, CHIRP::MONITORING>;
+namespace {
+    class TestPool : public SubscriberPool<CMDP1Message, CHIRP::MONITORING> {
+    public:
+        using SubscriberPoolT = SubscriberPool<CMDP1Message, CHIRP::MONITORING>;
 
-    TestPool() : SubscriberPoolT("POOL", {}) {}
+        TestPool() : SubscriberPoolT("POOL", {}) {}
 
-    [[nodiscard]] std::future<std::cv_status> waitCallback() {
-        auto callback_fut = std::async(std::launch::async, [&]() {
-            std::unique_lock pseudo_lock {pesudo_mutex_};
-            const auto cv_status = cv_.wait_for(pseudo_lock, std::chrono::seconds(1));
-            return cv_status;
-        });
-        // Give a bit of time to start the thread
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        return callback_fut;
-    }
+        [[nodiscard]] std::future<std::cv_status> waitCallback() {
+            auto callback_fut = std::async(std::launch::async, [&]() {
+                std::unique_lock pseudo_lock {pesudo_mutex_};
+                const auto cv_status = cv_.wait_for(pseudo_lock, std::chrono::seconds(1));
+                return cv_status;
+            });
+            // Give a bit of time to start the thread
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            return callback_fut;
+        }
 
-protected:
-    void host_connected(const chirp::DiscoveredService& /*service*/) final {
-        const std::scoped_lock pseudo_lock {pesudo_mutex_};
-        cv_.notify_one();
-    }
+    protected:
+        void host_connected(const chirp::DiscoveredService& /*service*/) final {
+            const std::scoped_lock pseudo_lock {pesudo_mutex_};
+            cv_.notify_one();
+        }
 
-    void host_disconnected(const chirp::DiscoveredService& /*service*/) final {
-        const std::scoped_lock pseudo_lock {pesudo_mutex_};
-        cv_.notify_one();
-    }
+        void host_disconnected(const chirp::DiscoveredService& /*service*/) final {
+            const std::scoped_lock pseudo_lock {pesudo_mutex_};
+            cv_.notify_one();
+        }
 
-    void host_disposed(const chirp::DiscoveredService& /*service*/) final {
-        const std::scoped_lock pseudo_lock {pesudo_mutex_};
-        cv_.notify_one();
-    }
+        void host_disposed(const chirp::DiscoveredService& /*service*/) final {
+            const std::scoped_lock pseudo_lock {pesudo_mutex_};
+            cv_.notify_one();
+        }
 
-private:
-    std::mutex pesudo_mutex_;
-    std::condition_variable cv_;
-};
+    private:
+        std::mutex pesudo_mutex_;
+        std::condition_variable cv_;
+    };
+} // namespace
 
 TEST_CASE("Message callback", "[core][core::pools]") {
     // Create CHIRP manager for monitoring service discovery

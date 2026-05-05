@@ -4,7 +4,7 @@
 py_dep = dependency('', required: false)
 py_args = []
 if impl_py
-  py_dep = py.dependency(embed: true, required: get_option('impl_py'))
+  py_dep = py.dependency(embed: true, include_type: 'system', required: get_option('impl_py'))
   if py_dep.found()
     py_args = ['-DCNSTLN_EXEC_PYTHON', '-DPy_LIMITED_API=0x030B0000']
   else

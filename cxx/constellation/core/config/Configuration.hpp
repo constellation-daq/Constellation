@@ -120,7 +120,7 @@ namespace constellation::config {
          * @throws InvalidTypeError If the value could not be cast to desired type
          * @throws InvalidValueError If the value is not valid for the requested type
          */
-        template <typename T> T get(std::string_view key, T default_value);
+        template <typename T> T get(std::string_view key, const T& default_value);
 
         /**
          * @brief Get an optional with value of a key in requested type if available
@@ -158,7 +158,7 @@ namespace constellation::config {
          * @throws InvalidTypeError If the value could not be cast to desired type
          * @throws InvalidValueError If the value is not valid for the requested type
          */
-        template <typename T> std::vector<T> getArray(std::string_view key, std::vector<T> default_value);
+        template <typename T> std::vector<T> getArray(std::string_view key, const std::vector<T>& default_value);
 
         /**
          * @brief Get an optional with the values for a key containing an array if available

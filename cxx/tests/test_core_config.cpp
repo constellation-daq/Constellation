@@ -32,8 +32,6 @@ using namespace Catch::Matchers;
 using namespace constellation::config;
 using namespace constellation::utils;
 
-enum class Enum : std::uint8_t { A, B };
-
 namespace {
     std::filesystem::path test_files_dir() {
         const auto* cxx_tests_dir = std::getenv("CXX_TESTS_DIR"); // NOLINT(concurrency-mt-unsafe)
@@ -42,12 +40,10 @@ namespace {
         }
         return std::filesystem::path(cxx_tests_dir) / "test_files";
     }
-} // namespace
 
-namespace {
-    enum class MyEnum : std::uint8_t {
-        ONE,
-        TWO,
+    enum class Enum : std::uint8_t {
+        A,
+        B,
     };
 } // namespace
 

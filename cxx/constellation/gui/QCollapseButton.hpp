@@ -25,7 +25,9 @@ namespace constellation::gui {
     public:
         QCollapseButton(QWidget* parent = nullptr);
         QCollapseButton(const QString& text, QWidget* parent = nullptr);
-        void setText(const QString& text) { QToolButton::setText(" " + text); }
+        void setText(const QString& text) { // NOLINT(bugprone-derived-method-shadowing-base-method)
+            QToolButton::setText(" " + text);
+        }
     };
 
 } // namespace constellation::gui

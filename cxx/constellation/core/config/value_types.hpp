@@ -238,7 +238,7 @@ namespace constellation::config {
     /**
      * @brief Dictionary which maps strings to a composite
      */
-    class Dictionary : public std::map<std::string, Composite> {
+    class Dictionary : public std::map<std::string, Composite> { // NOLINT(misc-no-recursion)
     public:
         /**
          * @brief Construct a new empty dictionary
@@ -338,7 +338,7 @@ namespace constellation::config {
     /**
      * @brief Composite which is either scalar, array, or dictionary
      */
-    class Composite : public CompositeVariant {
+    class Composite : public CompositeVariant { // NOLINT(misc-no-recursion)
     public:
         /**
          * @brief Construct a new valueless composite

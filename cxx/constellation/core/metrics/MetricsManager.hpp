@@ -168,7 +168,7 @@ namespace constellation::metrics {
         log::Logger logger_;
 
         // List of topics with active subscribers
-        bool global_subscription_;
+        bool global_subscription_ {};
         utils::string_hash_set subscribed_topics_;
         mutable std::mutex subscription_mutex_;
 

@@ -185,9 +185,9 @@ namespace constellation::log {
         std::vector<std::shared_ptr<spdlog::async_logger>> loggers_;
         std::mutex loggers_mutex_;
 
-        Level console_global_level_;
+        Level console_global_level_ {Level::TRACE};
         utils::string_hash_map<Level> console_topic_levels_;
-        Level cmdp_global_level_;
+        Level cmdp_global_level_ {Level::OFF};
         utils::string_hash_map<Level> cmdp_sub_topic_levels_;
         std::mutex levels_mutex_;
     };

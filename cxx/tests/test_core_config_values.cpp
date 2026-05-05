@@ -38,7 +38,12 @@ using namespace constellation::utils;
 using namespace std::string_literals;
 using namespace std::string_view_literals;
 
-enum class Enum : std::uint8_t { A, B };
+namespace {
+    enum class Enum : std::uint8_t {
+        A,
+        B,
+    };
+} // namespace
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 

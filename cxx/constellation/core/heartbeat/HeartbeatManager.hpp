@@ -173,7 +173,7 @@ namespace constellation::heartbeat {
             protocol::CHP::Role role {protocol::CHP::Role::DYNAMIC};
             std::chrono::milliseconds interval {};
             std::chrono::steady_clock::time_point last_heartbeat;
-            protocol::CSCP::State last_state {};
+            protocol::CSCP::State last_state {protocol::CSCP::State::NEW};
             std::chrono::steady_clock::time_point last_checked;
             std::uint8_t lives {protocol::CHP::Lives};
         };

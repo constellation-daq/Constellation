@@ -40,18 +40,20 @@ using namespace constellation::protocol::CHIRP;
 using namespace constellation::utils;
 using namespace std::string_literals;
 
-enum class Command : std::uint8_t {
-    list_registered_services,
-    list_discovered_services,
-    register_service,
-    unregister_service,
-    register_callback,
-    unregister_callback,
-    request,
-    reset,
-    quit,
-};
-using enum Command;
+namespace {
+    enum class Command : std::uint8_t {
+        list_registered_services,
+        list_discovered_services,
+        register_service,
+        unregister_service,
+        register_callback,
+        unregister_callback,
+        request,
+        reset,
+        quit,
+    };
+    using enum Command;
+} // namespace
 
 namespace {
     template <typename T> std::string pad_str_right(const T& string, std::size_t width) {

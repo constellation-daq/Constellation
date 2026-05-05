@@ -36,10 +36,12 @@ using namespace Catch::Matchers;
 using namespace constellation::utils;
 
 namespace test {
+    // NOLINTBEGIN(misc-use-internal-linkage)
     class TestClass {};
     enum class TestEnum : std::uint8_t {
         A = '\x01',
     };
+    // NOLINTEND(misc-use-internal-linkage)
 }; // namespace test
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)

@@ -10,17 +10,17 @@ if cpp.get_id() == 'gcc' and cpp.version().version_compare('<12')
 endif
 
 # argparse
-argparse_dep = dependency('argparse')
+argparse_dep = dependency('argparse', include_type: 'system')
 
 # Asio
-asio_raw_dep = dependency('asio')
+asio_raw_dep = dependency('asio', include_type: 'system')
 asio_dep = declare_dependency(
   dependencies: asio_raw_dep,
   compile_args: ['-DASIO_STANDALONE=1', '-DASIO_HAS_SNPRINTF=1'],
 )
 
 # atomic_queue
-atomic_queue_dep = dependency('atomic_queue', default_options: ['tests=false'])
+atomic_queue_dep = dependency('atomic_queue', include_type: 'system', default_options: ['tests=false'])
 
 # ZeroMQ with draft API
 libzmq_sys_has_draft_api_poller = false
@@ -56,23 +56,23 @@ if not libzmq_sys_has_draft_api_poller
   subproject('cppzmq', default_options: cppzmq_sp_default_options)
 endif
 # Get libzmq dependency first and then cppzmq dependency to ensure libzmq is setup up correctly with draft API
-dependency('libzmq', default_options: libzmq_sp_default_options)
-cppzmq_dep = dependency('cppzmq', default_options: cppzmq_sp_default_options)
+dependency('libzmq', include_type: 'system', default_options: libzmq_sp_default_options)
+cppzmq_dep = dependency('cppzmq', include_type: 'system', default_options: cppzmq_sp_default_options)
 
 # magic_enum
-magic_enum_dep = dependency('magic_enum', default_options: ['test=false'])
+magic_enum_dep = dependency('magic_enum', include_type: 'system', default_options: ['test=false'])
 
 # msgpack-cxx
-msgpack_cxx_dep = dependency('msgpack-cxx', version: '>=7.0.0', default_options: ['boost=disabled', 'tests=disabled'])
+msgpack_cxx_dep = dependency('msgpack-cxx', version: '>=7.0.0', include_type: 'system', default_options: ['boost=disabled', 'tests=disabled'])
 
 # spdlog
-spdlog_dep = dependency('spdlog', default_options: ['tests=disabled', 'default_library=static'])
+spdlog_dep = dependency('spdlog', include_type: 'system', default_options: ['tests=disabled', 'default_library=static'])
 
 # TOML++
-tomlplusplus_dep = dependency('tomlplusplus', default_options: ['default_library=static'])
+tomlplusplus_dep = dependency('tomlplusplus', include_type: 'system', default_options: ['default_library=static'])
 
 # yaml-cpp
-yamlcpp_dep = dependency('yaml-cpp', default_options: ['tools=false', 'tests=disabled', 'default_library=static'])
+yamlcpp_dep = dependency('yaml-cpp', include_type: 'system', default_options: ['tools=false', 'tests=disabled', 'default_library=static'])
 
 # System libraries
 threads_dep = dependency('threads')
@@ -82,14 +82,14 @@ dl_dep = dependency('dl', required: false)
 memory_allocator = get_option('memory_allocator')
 malloc_dep = dependency('', required: false)
 if memory_allocator == 'auto' or memory_allocator == 'jemalloc'
-  jemalloc_dep = dependency('jemalloc', required: memory_allocator == 'jemalloc')
+  jemalloc_dep = dependency('jemalloc', include_type: 'system', required: memory_allocator == 'jemalloc')
   if jemalloc_dep.found()
     memory_allocator = 'jemalloc'
     malloc_dep = jemalloc_dep
   endif
 endif
 if memory_allocator == 'auto' or memory_allocator == 'mimalloc'
-  mimalloc_dep = dependency('mimalloc', required: memory_allocator == 'mimalloc', allow_fallback: true, default_options: ['warning_level=0', 'werror=false', 'b_ndebug=true'])
+  mimalloc_dep = dependency('mimalloc', include_type: 'system', required: memory_allocator == 'mimalloc', allow_fallback: true, default_options: ['warning_level=0', 'werror=false', 'b_ndebug=true'])
   if mimalloc_dep.found()
     memory_allocator = 'mimalloc'
     malloc_dep = mimalloc_dep

@@ -11,15 +11,15 @@ Checks: [
   'bugprone-*','-bugprone-easily-swappable-parameters',
   'cert-*',
   'concurrency-*',
-  'cppcoreguidelines-*','-cppcoreguidelines-pro-bounds-pointer-arithmetic',
+  'cppcoreguidelines-*','-cppcoreguidelines-pro-bounds-pointer-arithmetic','-cppcoreguidelines-pro-bounds-avoid-unchecked-container-access',
   'google-*','-google-build-using-namespace','-google-explicit-constructor',
   'hicpp-*',
   'llvm-*','-llvm-header-guard','-llvm-include-order','-llvm-prefer-static-over-anonymous-namespace',
-  'misc-*',
+  'misc-*','-misc-multiple-inheritance','-misc-override-with-different-visibility',
   'modernize-*','-modernize-use-designated-initializers','-modernize-use-nodiscard','-modernize-use-trailing-return-type',
   'performance-*',
   'portability-*','-portability-avoid-pragma-once','-portability-template-virtual-member-function',
-  'readability-*','-readability-identifier-length','-readability-function-cognitive-complexity','-readability-magic-numbers','-readability-redundant-access-specifiers',
+  'readability-*','-readability-identifier-length','-readability-function-cognitive-complexity','-readability-magic-numbers','-readability-redundant-access-specifiers','-readability-redundant-typename',
   '-cert-arr39-c','-cert-con36-c','-cert-con54-cpp','-cert-ctr56-cpp','-cert-dcl03-c','-cert-dcl16-c','-cert-dcl37-c','-cert-dcl51-cpp','-cert-dcl54-cpp','-cert-dcl58-cpp','-cert-dcl59-cpp','-cert-env33-c','-cert-err09-cpp','-cert-err34-c','-cert-err52-cpp','-cert-err58-cpp','-cert-err60-cpp','-cert-err61-cpp','-cert-exp42-c','-cert-fio38-c','-cert-flp30-c','-cert-flp37-c','-cert-int09-c','-cert-mem57-cpp','-cert-msc24-c','-cert-msc30-c','-cert-msc32-c','-cert-msc33-c','-cert-msc50-cpp','-cert-msc51-cpp','-cert-msc54-cpp','-cert-oop11-cpp','-cert-oop54-cpp','-cert-oop57-cpp','-cert-oop58-cpp','-cert-pos44-c','-cert-pos47-c','-cert-sig30-c','-cert-str34-c',
   '-cppcoreguidelines-avoid-c-arrays','-cppcoreguidelines-avoid-magic-numbers','-cppcoreguidelines-c-copy-assignment-signature','-cppcoreguidelines-explicit-virtual-functions','-cppcoreguidelines-macro-to-enum','-cppcoreguidelines-narrowing-conversions','-cppcoreguidelines-noexcept-destructor','-cppcoreguidelines-noexcept-move-operations','-cppcoreguidelines-noexcept-swap','-cppcoreguidelines-non-private-member-variables-in-classes','-cppcoreguidelines-use-default-member-init',
   '-google-build-namespaces','-google-readability-braces-around-statements','-google-readability-casting','-google-readability-function-size','-google-readability-namespace-comments',
@@ -28,11 +28,12 @@ Checks: [
 ]
 WarningsAsErrors: '*'
 HeaderFileExtensions: ['', 'h', 'hpp', 'ipp']
+ExcludeHeaderFilterRegex: '.*/external/md5\.h|.*/ui_.*\.h'
 CheckOptions:
-  misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: 'true'
+  misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: true
   misc-include-cleaner.IgnoreHeaders: 'bits/.*;asio.*;msgpack.*;spdlog.*;toml\+\+.*;yaml-cpp.*;q[^\/]+\.h;cpr.*'
-  modernize-use-override.IgnoreDestructors: 'true'
-  cppcoreguidelines-avoid-do-while.IgnoreMacros: 'true'
+  modernize-use-override.IgnoreDestructors: true
+  cppcoreguidelines-avoid-do-while.IgnoreMacros: true
   readability-identifier-naming.NamespaceCase: lower_case
   readability-identifier-naming.NamespaceIgnoredRegexp: '^CHIRP$|^CHP$|^CSCP$|^CMDP$|^CDTP$'
   readability-identifier-naming.ClassCase: CamelCase

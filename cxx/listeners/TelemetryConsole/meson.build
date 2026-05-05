@@ -11,7 +11,7 @@ if get_option('build_gui') == 'none'
   subdir_done()
 endif
 
-qtcharts_dep = dependency(qt_version, modules: ['Charts'])
+qtcharts_dep = dependency(qt_version, include_type: 'system', modules: ['Charts'])
 
 qrc_files = qt.compile_resources(sources: 'TelemetryConsole.qrc')
 ui_files = qt.compile_ui(sources: ['TelemetryConsole.ui'])

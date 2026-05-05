@@ -13,7 +13,7 @@
 
 #include <version>
 
-// NOLINTBEGIN(cert-dcl58-cpp,readability-duplicate-include)
+// NOLINTBEGIN(bugprone-std-namespace-modification,readability-duplicate-include)
 
 // std::to_underlying
 #ifndef __cpp_lib_to_underlying
@@ -97,4 +97,4 @@ namespace std::ranges {
 
 #endif
 
-// NOLINTEND(cert-dcl58-cpp,readability-duplicate-include)
+// NOLINTEND(bugprone-std-namespace-modification,readability-duplicate-include)

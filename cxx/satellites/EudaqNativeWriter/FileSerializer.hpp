@@ -121,10 +121,10 @@ private:
     /** Write integers of different sizes to event buffer */
     template <typename T> void write_int(T t) {
         static_assert(sizeof(t) > 1, "Only supports integers of size > 1 byte");
-        std::array<std::byte, sizeof t> buf;
+        std::array<std::byte, sizeof t> buf {};
         for(std::size_t i = 0; i < sizeof t; ++i) {
-            buf[i] = static_cast<std::byte>(t & 0xff);
-            t >>= 8;
+            buf.at(i) = static_cast<std::byte>(t & 0xFFU);
+            t >>= 8U;
         }
         write({buf.data(), buf.size()});
     }
@@ -147,7 +147,7 @@ private:
     std::ofstream file_;
     std::vector<char> buffer_;
     std::size_t buffer_size_;
-    std::size_t buffer_written_;
+    std::size_t buffer_written_ {};
     std::vector<std::byte> event_buffer_;
 
     std::uint32_t run_sequence_;

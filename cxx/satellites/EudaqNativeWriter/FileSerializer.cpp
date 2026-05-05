@@ -33,7 +33,7 @@ using namespace constellation::satellite;
 using namespace constellation::utils;
 
 FileSerializer::FileSerializer(std::ofstream file, std::size_t buffer_size, std::uint32_t run_sequence)
-    : file_(std::move(file)), buffer_size_(buffer_size), buffer_written_(0), run_sequence_(run_sequence) {
+    : file_(std::move(file)), buffer_size_(buffer_size), run_sequence_(run_sequence) {
     buffer_.resize(buffer_size_);
     event_buffer_.reserve(buffer_size_);
     // Use custom file buffer to only write full events to file

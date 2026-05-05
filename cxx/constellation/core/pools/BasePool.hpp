@@ -147,7 +147,9 @@ namespace constellation::pools {
          * @param status Enum to indicate if the service is discovered, departed or dead
          * @param user_data Pointer to the BasePool instance
          */
-        static void callback(chirp::DiscoveredService service, chirp::ServiceStatus status, std::any user_data);
+        static void callback(chirp::DiscoveredService service, // NOLINT(performance-unnecessary-value-param)
+                             chirp::ServiceStatus status,
+                             std::any user_data);
 
         /** Callback implementation */
         void callback_impl(const chirp::DiscoveredService& service, chirp::ServiceStatus status);

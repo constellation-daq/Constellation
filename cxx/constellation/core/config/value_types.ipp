@@ -236,7 +236,7 @@ namespace constellation::config {
         requires composite_constructible<T>
     Composite::Composite(const T& value) {
         if constexpr(std::constructible_from<Scalar, T>) {
-            emplace<Scalar>(Scalar(value));
+            emplace<Scalar>(Scalar(value)); // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay) clang-tidy bug
         } else if constexpr(std::constructible_from<Array, T>) {
             emplace<Array>(Array(value));
         } else if constexpr(std::constructible_from<Dictionary, T>) {

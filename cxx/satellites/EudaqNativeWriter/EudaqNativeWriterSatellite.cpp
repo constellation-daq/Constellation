@@ -36,7 +36,7 @@ using namespace constellation::satellite;
 using namespace constellation::utils;
 
 EudaqNativeWriterSatellite::EudaqNativeWriterSatellite(std::string_view type, std::string_view name)
-    : ReceiverSatellite(type, name), buffer_size_(), flush_timer_({}) {}
+    : ReceiverSatellite(type, name), flush_timer_({}) {}
 
 void EudaqNativeWriterSatellite::initializing(Configuration& config) {
     base_path_ = config.getPath("output_directory");
