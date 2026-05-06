@@ -177,7 +177,7 @@ class MonitoringSender(BaseSatelliteFrame):
         """Loop over all class methods and return those marked as scheduled metric"""
         res = {}
         for attr in dir(self):
-            obj = getattr(self, attr)
+            obj = getattr(self, attr, None)
             if callable(obj):
                 if hasattr(obj, "metric") and hasattr(obj, "__name__"):
                     metric = getattr(obj, "metric")  # noqa: B009
