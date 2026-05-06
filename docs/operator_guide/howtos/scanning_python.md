@@ -70,6 +70,19 @@ for ivl in range(0, 100, 10):
 The `await_state` function raises an exception after waiting for  60 seconds by default (can be adapted using the `timeout`
 parameter) and when any satellite is in the ERROR state.
 
+## Logging Messages
+
+The Python controller can also be used to log messages:
+
+```python
+ctrl.log.trace("This is a trace message")
+ctrl.log.debug("This is a debug message")
+ctrl.log.info("This is an info message")
+ctrl.log.warning("This is a warning message")
+ctrl.log.status("This is a status message")
+ctrl.log.critical("This is a critical message")
+```
+
 ## Using a Standalone Script
 
 It is also possible to create a standalone script which can be run without the IPython console:
@@ -175,6 +188,8 @@ ctrl.await_state(SatelliteState.ORBIT)
 # Scan over bias voltages
 voltages = [-1.2, -2.4, -3.6, -4.8]
 for voltage in voltages:
+    ctrl.log.status(f"Reconfiguring with new bias voltage {voltage}V")
+
     # Reconfigure Keithley with new voltage
     recfg = {"voltage": voltage}
 
