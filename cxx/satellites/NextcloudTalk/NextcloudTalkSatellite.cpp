@@ -45,7 +45,7 @@ using namespace std::string_literals;
 using namespace std::string_view_literals;
 
 namespace {
-    // NOLINTNEXTLINE(cert-err58-cpp)
+    // NOLINTNEXTLINE(bugprone-throwing-static-initialization)
     const std::set<State> run_interrupting_safe {State::RUN, State::interrupting, State::SAFE};
 } // namespace
 
