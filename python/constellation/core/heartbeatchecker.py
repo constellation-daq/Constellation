@@ -14,6 +14,7 @@ import zmq
 from .base import BaseSatelliteFrame
 from .chp import CHPMessageFlags, CHPRole, chp_decode_message
 from .protocol.cscp1 import SatelliteState
+from .util import case_insensitive_dict
 
 
 class HeartbeatState:
@@ -168,30 +169,24 @@ class HeartbeatChecker(BaseSatelliteFrame):
     def heartbeat_name_is_registered(self, name: str) -> bool:
         """Check whether a given Satellite is already registered."""
         for hb in self._remote_heartbeat_states.values():
-            if hb.name == name:
+            if hb.name.casefold() == name.casefold():
                 return True
         return False
 
     @property
-    def heartbeat_states(self) -> dict[str, SatelliteState]:
+    def heartbeat_states(self) -> case_insensitive_dict[SatelliteState]:
         """Return a dictionary of the monitored Satellites' state."""
-        res = {}
-        for hb in self._remote_heartbeat_states.values():
-            res[hb.name.lower()] = hb.state
-        return res
+        return case_insensitive_dict({hb.name: hb.state for hb in self._remote_heartbeat_states.values()})
 
     @property
-    def heartbeat_status(self) -> dict[str, str]:
+    def heartbeat_status(self) -> case_insensitive_dict[str]:
         """Return a dictionary of the last status message received from each Satellite."""
-        return {hb.name: hb.status for hb in self._remote_heartbeat_states.values()}
+        return case_insensitive_dict({hb.name: hb.status for hb in self._remote_heartbeat_states.values()})
 
     @property
-    def heartbeat_state_changes(self) -> dict[str, datetime]:
+    def heartbeat_state_changes(self) -> case_insensitive_dict[datetime]:
         """Return a dictionary of the times of the last state changes."""
-        res = {}
-        for hb in self._remote_heartbeat_states.values():
-            res[hb.name] = hb.last_statechange
-        return res
+        return case_insensitive_dict({hb.name: hb.last_statechange for hb in self._remote_heartbeat_states.values()})
 
     @property
     def fail_events(self) -> dict[str, threading.Event]:

@@ -28,6 +28,7 @@ core_files = files(
   'core/receiver_satellite.py',
   'core/satellite.py',
   'core/transmitter_satellite.py',
+  'core/util.py',
 )
 
 core_message_files = files(

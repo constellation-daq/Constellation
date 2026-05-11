@@ -323,28 +323,30 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         timeout = self._conditional_transition_timeout
         timeout_start = time.time()
 
+        self.dbg_msg_logged: set[str] = set()
+
         # Wait for remote states to match condition:
         while True:
             satisfied = True
             for name in self.conditions[self.fsm.state]:
-                name_lc = name.lower()
-
                 # Check that remote is registered
-                if name_lc not in self.heartbeat_states or self.heartbeat_states[name_lc] == SatelliteState.DEAD:
+                if name not in self.heartbeat_states or self.heartbeat_states[name] == SatelliteState.DEAD:
                     error_message = f"Dependent remote satellite {name} not present"
                     self.fsm.status = error_message
                     raise RuntimeError(error_message)
 
                 # Check if state is ERROR
-                if self.heartbeat_states[name_lc] == SatelliteState.ERROR:
-                    error_message = f"Dependent remote satellite {name} reports state {self.heartbeat_states[name_lc]}"
+                if self.heartbeat_states[name] == SatelliteState.ERROR:
+                    error_message = f"Dependent remote satellite {name} reports state {self.heartbeat_states[name]}"
                     self.fsm.status = error_message
                     raise RuntimeError(error_message)
 
                 # Check if condition is fulfilled:
-                if not self.fsm.state.transitions_to(self.heartbeat_states[name_lc]):
-                    msg = f"Awaiting state from {name}, currently: {self.heartbeat_states[name_lc]}"
-                    self.log_fsm.debug(msg)
+                if not self.fsm.state.transitions_to(self.heartbeat_states[name]):
+                    msg = f"Awaiting state from {name}, currently: {self.heartbeat_states[name]}"
+                    if msg not in self.dbg_msg_logged:
+                        self.log_fsm.debug(msg)
+                        self.dbg_msg_logged.add(msg)
                     self.fsm.set_status(msg)
                     satisfied = False
                     break

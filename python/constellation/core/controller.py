@@ -26,6 +26,7 @@ from .logging import setup_cli_logging
 from .monitoring import MonitoringSender
 from .protocol.cscp1 import SatelliteState
 from .satellite import Satellite
+from .util import case_insensitive_dict
 
 
 class ControllerState(Enum):
@@ -312,7 +313,7 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
         time.sleep(0.1)
 
     @property
-    def states(self) -> dict[str, SatelliteState]:
+    def states(self) -> case_insensitive_dict[SatelliteState]:
         """Return an up-to-date dictionary of connected Satellite's state.
 
         Based on heartbeat information.
@@ -321,7 +322,7 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
         return self.heartbeat_states
 
     @property
-    def last_state_change(self) -> dict[str, datetime]:
+    def last_state_change(self) -> case_insensitive_dict[datetime]:
         """Return a dictionary of connected Satellite's last state change.
 
         Based on heartbeat information.
