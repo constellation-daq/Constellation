@@ -291,6 +291,9 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
 
         self._constellation = SatelliteArray(group, self.command)
 
+        # Override logger with operator topic
+        self.log = self.get_logger("OP")
+
         super()._add_com_thread()
         super()._start_com_threads()
 
