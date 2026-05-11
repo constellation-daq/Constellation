@@ -14,13 +14,11 @@ from uuid import UUID
 
 import zmq
 
-from . import __version__, __version_code_name__
-from .base import EPILOG, ConstellationArgumentParser
 from .chirp import CHIRPServiceIdentifier, get_uuid
 from .chirpmanager import CHIRPManager, DiscoveredService, chirp_callback
 from .commandmanager import get_cscp_commands
 from .configuration import Configuration
-from .controller_configuration import ControllerConfiguration, load_config
+from .controller_configuration import ControllerConfiguration
 from .cscp import CommandTransmitter
 from .error import debug_log
 from .heartbeatchecker import HeartbeatChecker
@@ -726,113 +724,6 @@ class BaseController(CHIRPManager, HeartbeatChecker):
     def _repr_pretty_(self, p: Any, _cycle: bool) -> None:
         nsat = len(self.constellation.satellites)
         p.text(f"Controller(group='{self.group}') for {nsat} Satellites, current state is {self.state.name}")
-
-
-def main(args: Any = None) -> None:
-    """Start a Constellation CSCP controller.
-
-    This Controller provides a command-line interface to the selected
-    Constellation group via IPython terminal.
-
-    """
-    import rich.pretty
-    from IPython.terminal.embed import InteractiveShellEmbed
-    from IPython.terminal.prompts import Prompts
-    from pygments.token import Token
-    from traitlets.config.loader import Config
-
-    parser = ConstellationArgumentParser(description=main.__doc__, epilog=EPILOG)
-    parser.add_argument("-c", "--config", type=str, help="Path to the TOML configuration file to load.")
-    # get a dict of the parsed arguments
-    args = vars(parser.parse_args(args))
-
-    # Set up logging
-    setup_cli_logging(args.pop("level"))
-
-    cfg_file = args.pop("config")
-
-    # start server with args
-    ctrl = BaseController(**args)
-
-    constellation = ctrl.constellation
-
-    print("\nWelcome to the Constellation CLI IPython Controller!\n")
-    print("You can interact with the discovered Satellites via the `constellation` array:")
-    print("         > constellation.get_state()\n")
-    print("To get help for any of its methods, call it with a question mark:")
-    print("         > constellation.get_state?\n")
-
-    if cfg_file:
-        # make configuration available to the user
-        cfg = load_config(cfg_file)  # noqa: F841
-        print(f"The configuration file '{cfg_file}' has been loaded into 'cfg'.\n")
-
-    print("   Happy hacking! :)\n")
-
-    #  ___ ____        _   _                            _
-    # |_ _|  _ \ _   _| |_| |__   ___  _ __    ___  ___| |_ _   _ _ __
-    #  | || |_) | | | | __| '_ \ / _ \| '_ \  / __|/ _ \ __| | | | '_ \
-    #  | ||  __/| |_| | |_| | | | (_) | | | | \__ \  __/ |_| |_| | |_) |
-    # |___|_|    \__, |\__|_| |_|\___/|_| |_| |___/\___|\__|\__,_| .__/
-    #            |___/                                           |_|
-
-    class ControllerPrompt(Prompts):
-        """Customized prompt."""
-
-        def in_prompt_tokens(self, _cli=None):  # type: ignore[no-untyped-def]
-            return [
-                (Token, ""),
-                # show version
-                (Token.Generic.Subheading, "📡 v"),
-                (Token.Generic.Subheading, __version__),
-                (Token.Generic.Subheading, " ("),
-                (Token.Generic.Subheading, __version_code_name__),
-                (Token.Generic.Subheading, ")"),
-                (Token, " "),
-                # show number of satellites
-                (Token.Prompt, "🛰 "),
-                (Token.Prompt, str(len(constellation.satellites))),
-                # show current state
-                (Token, " "),
-                (Token.Name.Class, ctrl.state.emoji + " " + ctrl.state.name),  # type: ignore[attr-defined]
-                (Token, " "),
-                (Token.Name.Entity, "ipython"),
-                (Token, "\n"),
-                (
-                    (
-                        Token.Prompt
-                        if self.shell.last_execution_succeeded and ctrl.state not in [ControllerState.ERROR]
-                        else Token.Generic.Error
-                    ),
-                    f"{ctrl.group} ❯ ",
-                ),
-            ]
-
-        def out_prompt_tokens(self, _cli=None):  # type: ignore[no-untyped-def]
-            return []
-
-    ipython_cfg = Config()
-    ipython_cfg.InteractiveShell.enable_tip = False
-    ipython_cfg.TerminalInteractiveShell.prompts_class = ControllerPrompt
-    # Now create an instance of the embeddable shell. The first argument is a
-    # string with options exactly as you would type them if you were starting
-    # IPython at the system command line. Any parameters you want to define for
-    # configuration can thus be specified here.
-    ipshell = InteractiveShellEmbed(
-        config=ipython_cfg,
-        banner1="Starting IPython Controller for Constellation",
-        exit_msg="Have a nice day!",
-    )
-
-    # Install Rich REPL
-    rich.pretty.install()
-
-    # Start IPython shell
-    ipshell()
-
-
-if __name__ == "__main__":
-    main()
 
 
 class ScriptableController(BaseController):

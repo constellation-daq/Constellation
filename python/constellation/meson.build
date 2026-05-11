@@ -53,6 +53,7 @@ satellites_files = files(
 tools_files = files(
   'tools/__init__.py',
   'tools/discover_plugins.py',
+  'tools/controller.py',
   'tools/monitor.py',
 )
 
