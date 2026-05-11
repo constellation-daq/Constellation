@@ -82,7 +82,7 @@ class ConstellationArgumentParser(ArgumentParser):
         )
 
 
-EPILOG = "This command is part of the Constellation Python core package."
+EPILOG = "This command is part of the Constellation Python package."
 
 
 class BaseSatelliteFrame:

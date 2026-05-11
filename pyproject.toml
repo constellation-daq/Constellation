@@ -39,7 +39,7 @@ dependencies = [
 ]
 
 [project.scripts]
-Controller = "constellation.core.controller:main"
+Controller = "constellation.tools.controller:main"
 Monitor = "constellation.tools.monitor:main"
 # 3rd-party Satellites
 SatelliteH5DataWriter = "constellation.satellites.H5DataWriter.__main__:main"
