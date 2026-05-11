@@ -541,7 +541,7 @@ class Satellite(
         cfg_dict = self._config._dictionary
         return "Dictionary attached in payload", cfg_dict, {}
 
-    @cscp_requestable()
+    @cscp_requestable([SatelliteState.NEW, SatelliteState.INIT, SatelliteState.SAFE, SatelliteState.ERROR])
     def shutdown(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Queue the Satellite's reentry.
 
