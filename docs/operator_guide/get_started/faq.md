@@ -11,7 +11,7 @@ is an issue in the network communication:
 
 * The machines are not on the same subnet. The `ping` command can be used to test connection between machines.
 * The satellite is in a different Constellation group. Groups are explained in the [Systems Architecture section](../concepts/constellation.md#network-discovery).
-* A firewall is blocking incoming UDP or TCP packets. The [Configuring Firewalls](../howtos/firewall.md) How-To Guide describes in detail which settings of the firewall need to be adjusted
+* A firewall is blocking incoming UDP or TCP packets. The [Configuring Firewalls](../howtos/firewalls.md) How-To Guide describes in detail which settings of the firewall need to be adjusted
 * The communication is outed over the wrong network interface. When starting Constellation nodes, the `-i`/`--interface` command line argument can be used to restrict communication to one or several network interfaces. Command line arguments are documented in the [Satellite section](../concepts/satellite.md#the-satellite-executable).
 
 :::
