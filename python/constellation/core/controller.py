@@ -23,6 +23,7 @@ from .cscp import CommandTransmitter
 from .error import debug_log
 from .heartbeatchecker import HeartbeatChecker
 from .logging import setup_cli_logging
+from .monitoring import MonitoringSender
 from .protocol.cscp1 import SatelliteState
 from .satellite import Satellite
 
@@ -269,7 +270,7 @@ class SatelliteResponse:
                         p.pretty(item)
 
 
-class BaseController(CHIRPManager, HeartbeatChecker):
+class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
     """Simple controller class to send commands to a Constellation."""
 
     def __init__(self, group: str, **kwargs: Any) -> None:
@@ -288,6 +289,9 @@ class BaseController(CHIRPManager, HeartbeatChecker):
 
         self._constellation = SatelliteArray(group, self.command)
 
+        # Override logger with operator topic
+        self.log = self.get_logger("OP")
+
         super()._add_com_thread()
         super()._start_com_threads()
 
@@ -295,6 +299,10 @@ class BaseController(CHIRPManager, HeartbeatChecker):
         self._task_handler_event = threading.Event()
         self._task_handler_thread = threading.Thread(target=self._run_task_handler, daemon=True)
         self._task_handler_thread.start()
+
+        # register monitoring service
+        self.register_offer(CHIRPServiceIdentifier.MONITORING, self.mon_port)
+        self.emit_offers()
 
         # wait for threads to be ready
         time.sleep(0.2)
