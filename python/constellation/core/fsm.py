@@ -191,8 +191,18 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
                 if key in config_conditions:
                     satellites = config_conditions.get_array(key, element_type=str)
                     for satellite in satellites:
+                        # Check for valid canonical name
                         if not is_valid_canonical_name(satellite):
-                            raise InvalidValueError(config_conditions, key, f"`{satellite}` is not a valid canonical name")
+                            raise InvalidValueError(config_conditions, key, f"{satellite} is not a valid canonical name")
+                        # Check that the requested remote is not this satellite
+                        if satellite == self.name:
+                            raise InvalidValueError(config_conditions, key, "Satellite cannot depend on itself")
+                        # Check that remote is registered
+                        if satellite not in self.heartbeat_states or self.heartbeat_states[satellite] == SatelliteState.DEAD:
+                            raise InvalidValueError(
+                                config_conditions, key, f"Dependent remote satellite {satellite} is not present"
+                            )
+
                     self.conditions[transition] = satellites
                     self.log_fsm.debug(f"Registered remote condition {transition.name} with {self.conditions[transition]}")
 
