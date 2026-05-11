@@ -379,9 +379,9 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         """
         # call FSM transition, will throw exception if not allowed
         self.log_fsm.debug("State transition %s requested", target)
-        getattr(self.fsm, target)(f"{target.capitalize()} called via CSCP request.")
+        getattr(self.fsm, target)(f"{target.capitalize()} requested")
 
-        self.log_fsm.status("State transition %s initiated.", target)
+        self.log_fsm.status("State transition %s initiated", target)
         transit_fcn = getattr(self, f"_wrap_{target}")
         # add to the task queue to run from the main thread
         if thread:
