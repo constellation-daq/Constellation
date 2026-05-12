@@ -42,4 +42,7 @@ class case_insensitive_dict(MutableMapping[str, T]):
         return self._dictionary.__len__()
 
     def __repr__(self) -> str:
-        return pprint.pformat({entry.cased_key: entry.value for entry in self._dictionary.values()}, sort_dicts=False)
+        return pprint.pformat(self.as_dict(), sort_dicts=False)
+
+    def as_dict(self) -> dict[str, T]:
+        return {entry.cased_key: entry.value for entry in self._dictionary.values()}

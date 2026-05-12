@@ -192,7 +192,7 @@ class CMDP1LogMessage(CMDP1Message):
         return CMDP1LogMessage(
             sender,
             LogLevel(record.levelno),
-            record.name,
+            record.name.upper(),
             record.getMessage(),
             datetime.fromtimestamp(record.created).astimezone(),
             tags,
