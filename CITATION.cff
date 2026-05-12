@@ -23,6 +23,10 @@ authors:
 identifiers:
   - type: doi
     value: 10.5281/zenodo.15688357
+    description: Software records
+  - type: doi
+    value: 10.1016/j.nima.2026.171279
+    description: Reference paper
 repository-code: 'https://gitlab.desy.de/constellation/constellation'
 url: 'https://constellation.pages.desy.de/'
 license: EUPL-1.2
