@@ -98,7 +98,7 @@ class CMDPPublisher(CMDPTransmitter):
         if f"LOG/{levelname}" in self.subscriptions:
             return True
         # Check topic subscription
-        if topic is not None and f"LOG/{levelname}/{topic}" in self.subscriptions:
+        if topic is not None and f"LOG/{levelname}/{topic.upper()}" in self.subscriptions:
             return True
         return False
 
@@ -126,7 +126,7 @@ class CMDPPublisher(CMDPTransmitter):
                     frames = self._socket.recv_multipart(flags=zmq.NOBLOCK)
                 msg = frames[0]
                 # unpack list, decode string, drop the first character
-                topic = msg.decode()[1:]
+                topic = msg.decode()[1:].upper()
                 # First byte \x01 is subscription, \0x00 is unsubscription
                 subscribe = bool(msg[0])
                 count = self.subscriptions.get(topic, 0)
