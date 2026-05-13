@@ -22,7 +22,7 @@ from .cmdp import CMDPPublisher
 # - `logging.INFO`     : 20
 # - `logging.WARNING`  : 30
 # - `logging.STATUS`   : 35
-# - `logging.ERROR`    : mapped to CRITICAL
+# - `logging.ERROR`    : 40, mapped to CRITICAL
 # - `logging.CRITICAL` : 50
 
 # Custom log levels

@@ -17,7 +17,7 @@ import zmq
 from .base import BaseSatelliteFrame
 from .cmdp import CMDPPublisher
 from .logging import ConstellationLogger, ZeroMQSocketLogHandler
-from .protocol.cmdp1 import Metric
+from .protocol.cmdp1 import LogLevel, Metric
 from .protocol.cscp1 import SatelliteState, states_except
 
 T = TypeVar("T")
@@ -160,9 +160,9 @@ class MonitoringSender(BaseSatelliteFrame):
         """Checks if a metric has any subscribers"""
         return self._cmdp_publisher.has_metric_subscribers(metric_name)
 
-    def should_log(self, levelname: str, topic: str | None = None) -> bool:
+    def should_log(self, level: LogLevel, topic: str | None = None) -> bool:
         """Checks if a log level or topic has any subscribers"""
-        return self._cmdp_publisher.has_log_subscribers(levelname, topic)
+        return self._cmdp_publisher.has_log_subscribers(level, topic)
 
     def stat(self, metric_name: str, value: Any) -> None:
         """Manually emit a registered metric"""

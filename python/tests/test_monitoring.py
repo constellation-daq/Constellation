@@ -14,7 +14,7 @@ from constellation.core.chirp import get_uuid
 from constellation.core.listener import MonitoringListener
 from constellation.core.monitoring import MonitoringSender, schedule_metric
 from constellation.core.network import get_loopback_interface_name
-from constellation.core.protocol.cmdp1 import Metric
+from constellation.core.protocol.cmdp1 import LogLevel, Metric
 
 from .conftest import DEFAULT_SEND_PORT
 
@@ -99,7 +99,7 @@ def test_log(monitoringsender: MyMonitoringSender, monitoringlistener: MyMonitor
 
     # Wait for subscription
     timeout = 2.0
-    while timeout > 0.0 and not monitoringsender.should_log("STATUS"):
+    while timeout > 0.0 and not monitoringsender.should_log(LogLevel.STATUS):
         timeout -= 0.01
         time.sleep(0.01)
     assert timeout > 0.0, "Subscription not received"
@@ -230,7 +230,9 @@ def test_nonreturning_scheduled_metric(monitoringsender: MyMonitoringSender, mon
     # Wait for subscription
     timeout = 2.0
     while (
-        timeout > 0.0 and not monitoringsender.should_stat("SCHED") and not monitoringsender.should_log("CRITICAL", "MNTR")
+        timeout > 0.0
+        and not monitoringsender.should_stat("SCHED")
+        and not monitoringsender.should_log(LogLevel.CRITICAL, "MNTR")
     ):
         timeout -= 0.01
         time.sleep(0.01)
@@ -273,7 +275,7 @@ def test_emit_unregsitered_metric(monitoringsender: MyMonitoringSender, monitori
 
     # Wait for subscription
     timeout = 2.0
-    while timeout > 0.0 and not monitoringsender.should_log("WARNING", "MNTR"):
+    while timeout > 0.0 and not monitoringsender.should_log(LogLevel.WARNING, "MNTR"):
         timeout -= 0.01
         time.sleep(0.01)
     assert timeout > 0.0, "Subscription not received"

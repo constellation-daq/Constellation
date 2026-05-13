@@ -16,7 +16,7 @@ from typing import Any, cast
 import msgpack  # type: ignore[import-untyped]
 
 from ..protocol import Protocol
-from ..protocol.cmdp1 import LogLevel, Metric
+from ..protocol.cmdp1 import LogLevel, Metric, log_level_from_levelno
 from .exceptions import InvalidProtocolError, MessageDecodingError, UnexpectedProtocolError
 from .msgpack_helpers import msgpack_pack, msgpack_unpack_to
 from .multipart import MultipartMessage
@@ -191,7 +191,7 @@ class CMDP1LogMessage(CMDP1Message):
             tags["traceback"] = tb
         return CMDP1LogMessage(
             sender,
-            LogLevel(record.levelno),
+            log_level_from_levelno(record.levelno),
             record.name.upper(),
             record.getMessage(),
             datetime.fromtimestamp(record.created).astimezone(),
