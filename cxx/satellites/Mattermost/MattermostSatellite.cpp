@@ -59,6 +59,9 @@ void MattermostSatellite::initializing(Configuration& config) {
     setGlobalLogLevel(log_level);
     LOG(STATUS) << "Set log level to " << log_level;
 
+    // Subscribe to operator logs
+    subscribeLogTopic("OP", Level::INFO);
+
     const auto ignore_topics_v = config.getArray<std::string>("ignore_topics", {"FSM"});
     LOG_IF(INFO, !ignore_topics_v.empty()) << "Ignore log messages with topics " << range_to_string(ignore_topics_v);
     ignore_topics_.clear();
