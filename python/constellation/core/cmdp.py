@@ -13,7 +13,7 @@ from typing import Any
 import zmq
 
 from .message.cmdp1 import CMDP1LogMessage, CMDP1Message, CMDP1Notification, CMDP1StatMessage
-from .protocol.cmdp1 import Metric
+from .protocol.cmdp1 import LogLevel, Metric, log_level_from_levelno
 
 
 class CMDPTransmitter:
@@ -89,22 +89,22 @@ class CMDPPublisher(CMDPTransmitter):
         if popped is not None and "STAT?" in self.subscriptions:
             self.send_notification("STAT", self.stat_topics)
 
-    def has_log_subscribers(self, levelname: str, topic: str | None = None):
+    def has_log_subscribers(self, level: LogLevel, topic: str | None = None):
         """Return whether or not there are subscribers for the given log level and topic."""
         # Check global subscription
         if "LOG/" in self.subscriptions:
             return True
         # Check level subscription
-        if f"LOG/{levelname}" in self.subscriptions:
+        if f"LOG/{level.name}" in self.subscriptions:
             return True
         # Check topic subscription
-        if topic is not None and f"LOG/{levelname}/{topic.upper()}" in self.subscriptions:
+        if topic is not None and f"LOG/{level.name}/{topic.upper()}" in self.subscriptions:
             return True
         return False
 
     def has_log_subscribers_record(self, record: logging.LogRecord) -> bool:
         """Return whether or not we have subscribers for the given log topic."""
-        return self.has_log_subscribers(record.levelname, record.name)
+        return self.has_log_subscribers(log_level_from_levelno(record.levelno), record.name)
 
     def has_metric_subscribers(self, metric_name: str) -> bool:
         """Return whether or not we have subscribers for the given metric data topic."""

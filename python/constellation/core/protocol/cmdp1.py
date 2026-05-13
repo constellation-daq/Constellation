@@ -21,6 +21,19 @@ class LogLevel(IntEnum):
     CRITICAL = logging.CRITICAL
 
 
+def log_level_from_levelno(levelno: int) -> LogLevel:
+    retval = LogLevel.CRITICAL
+    for level in LogLevel:
+        if levelno >= level.value:
+            retval = level
+        else:
+            # Special case: map ERROR to CRITICAL
+            if levelno >= logging.ERROR:
+                retval = LogLevel.CRITICAL
+            break
+    return retval
+
+
 @dataclass
 class Metric:
     name: str
