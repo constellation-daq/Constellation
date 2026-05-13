@@ -185,18 +185,18 @@ void ReceiverSatellite::register_diskspace_metric(const std::filesystem::path& p
                                   LOG(BasePoolT::pool_logger_, TRACE) << "Disk space free:      " << space.free;
                                   LOG(BasePoolT::pool_logger_, TRACE) << "Disk space available: " << space.available;
 
-                                  const auto available_mb = space.available >> 20U;
+                                  const auto available_mib = space.available >> 20U;
 
                                   // Less than 10GiB disk space - let's warn the user via logs!
-                                  if(available_mb >> 10U < 3) {
+                                  if(available_mib >> 10U < 3) {
                                       LOG(BasePoolT::pool_logger_, CRITICAL)
-                                          << "Available disk space critically low, " << available_mb << "MiB left";
-                                  } else if(available_mb >> 10U < 10) {
+                                          << "Available disk space critically low, " << available_mib << "MiB left";
+                                  } else if(available_mib >> 10U < 10) {
                                       LOG(BasePoolT::pool_logger_, WARNING)
-                                          << "Available disk space low, " << available_mb << "MiB left";
+                                          << "Available disk space low, " << available_mib << "MiB left";
                                   }
 
-                                  return {available_mb};
+                                  return {available_mib};
                               } catch(const std::filesystem::filesystem_error& e) {
                                   LOG(BasePoolT::pool_logger_, DEBUG) << e.what();
                               }
