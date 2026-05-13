@@ -198,7 +198,7 @@ void ReceiverSatellite::register_diskspace_metric(const std::filesystem::path& p
 
                                   return {available_mb};
                               } catch(const std::filesystem::filesystem_error& e) {
-                                  LOG(BasePoolT::pool_logger_, WARNING) << e.what();
+                                  LOG(BasePoolT::pool_logger_, DEBUG) << e.what();
                               }
                               return std::nullopt;
                           });
