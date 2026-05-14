@@ -130,7 +130,7 @@ class MyController(ScriptableController, MonitoringListener):
         self.post_veto_triggers = 0
 
     def receive_metric(self, sender, metric, timestamp, value):
-        if metric.name == "POST_VETO" and sender == "AidaTLU.2020":
+        if metric.name == "POST_VETO" and sender == "AidaTLU.TLU":
             self.post_veto_triggers = value
 ```
 
@@ -162,8 +162,12 @@ class MyController(ScriptableController, MonitoringListener):
         self.post_veto_triggers = 0
 
     def receive_metric(self, sender, metric, timestamp, value):
-        if metric.name == "POST_VETO" and sender == "AidaTLU.2020":
+        if metric.name == "POST_VETO" and sender == "AidaTLU.TLU":
             self.post_veto_triggers = value
+
+    def reset_metric(self):
+        self.constellation.AidaTLU.TLU.reset_counters()
+        self.post_veto_triggers = 0
 
 
 # Settings
@@ -177,7 +181,7 @@ ctrl = MyController(group_name)
 cfg = load_config(config_file_path)
 
 # Wait until all satellites are connected
-ctrl.await_satellites(["AidaTLU.2020", "Caribou.SPARC", "Keithley.Bias"])
+ctrl.await_satellites(["AidaTLU.TLU", "Caribou.SPARC", "Keithley.Bias"])
 
 # Initialize and launch
 ctrl.constellation.initialize(cfg)
@@ -213,6 +217,9 @@ for voltage in voltages:
     # Stop the run and await ORBIT state of all satellites
     ctrl.constellation.stop()
     ctrl.await_state(SatelliteState.ORBIT)
+
+    # Reset metric to avoid that the telemetry condition is immediately met in the next iteration
+    ctrl.reset_metric()
 
 # Land and shutdown satellites
 ctrl.constellation.land()
