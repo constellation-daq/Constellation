@@ -66,9 +66,10 @@ using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 
-BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
+BaseSatellite::BaseSatellite(std::string_view type, std::string_view name, std::string_view version)
     : logger_("CTRL"), cscp_rep_socket_(*global_zmq_context(), zmq::socket_type::rep),
-      cscp_port_(bind_ephemeral_port(cscp_rep_socket_)), satellite_type_(type), satellite_name_(name), fsm_(this),
+      cscp_port_(bind_ephemeral_port(cscp_rep_socket_)), satellite_type_(type), satellite_name_(name),
+      satellite_version_(version.empty() ? CNSTLN_VERSION : version), fsm_(this),
       heartbeat_manager_(
           getCanonicalName(),
           [&]() { return fsm_.getState(); },
@@ -209,6 +210,10 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         break;
     }
     case get_version: {
+        return_verb = {CSCP1Message::Type::SUCCESS, std::string(getSatelliteVersion())};
+        break;
+    }
+    case get_cnstln_version: {
         return_verb = {CSCP1Message::Type::SUCCESS, CNSTLN_VERSION};
         break;
     }

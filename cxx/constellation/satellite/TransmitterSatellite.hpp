@@ -101,8 +101,9 @@ namespace constellation::satellite {
          *
          * @param type Satellite type
          * @param name Name of this satellite instance
+         * @param version Version of the satellite
          */
-        TransmitterSatellite(std::string_view type, std::string_view name);
+        TransmitterSatellite(std::string_view type, std::string_view name, std::string_view version = {});
 
         /**
          * @brief Enable or disable transmission of data

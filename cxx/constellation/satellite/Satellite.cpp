@@ -22,7 +22,8 @@ using namespace constellation::protocol::CSCP;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
-Satellite::Satellite(std::string_view type, std::string_view name) : BaseSatellite(type, name) {}
+Satellite::Satellite(std::string_view type, std::string_view name, std::string_view version)
+    : BaseSatellite(type, name, version) {}
 
 void Satellite::initializing(config::Configuration& /* config */) {}
 
