@@ -340,7 +340,8 @@ TEST_CASE("Successful run", "[satellite]") {
     receiver.awaitEOR();
     const auto& eor = receiver.getEOR(transmitter.getCanonicalName());
     REQUIRE(eor.at("version").get<std::string>() == CNSTLN_VERSION);
-    REQUIRE(eor.at("version_full").get<std::string>() == "Constellation " CNSTLN_VERSION_FULL);
+    REQUIRE(eor.at("cnstln_version").get<std::string>() == CNSTLN_VERSION);
+    REQUIRE(eor.at("cnstln_codename").get<std::string>() == CNSTLN_VERSION_CODE_NAME);
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
     REQUIRE(eor.at("condition").get<std::string>() == "GOOD");
     REQUIRE(eor.at("condition_code").get<std::underlying_type_t<CDTP::RunCondition>>() ==
