@@ -232,7 +232,8 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         command_dict["shutdown"] = "Shutdown satellite";
         // Get commands
         command_dict["get_name"] = "Get canonical name of satellite";
-        command_dict["get_version"] = "Get Constellation version of satellite";
+        command_dict["get_version"] = "Get Satellite version";
+        command_dict["get_cnstln_version"] = "Get Constellation version of satellite";
         command_dict["get_commands"] =
             "Get commands supported by satellite (returned in payload as flat MessagePack dict with strings as keys)";
         command_dict["get_state"] = "Get state of satellite";
