@@ -9,6 +9,7 @@ import zmq.asyncio
 
 from constellation.core.chp import CHPRole, chp_decode_message
 from constellation.core.protocol.cscp1 import SatelliteState
+from constellation.core.util import case_insensitive_dict
 
 from .async_pools import AsyncSubscriberPool
 
@@ -25,6 +26,7 @@ class HeartbeatState:
     interval_ms: int = 2000
     lives: int = 3
     role: CHPRole = CHPRole.DYNAMIC
+    status: str = ""
 
     def refresh(self) -> None:
         self.last_refresh = time.monotonic()
@@ -40,8 +42,8 @@ class AsyncHeartbeatReceiver:
     CHP has no topic filtering so the pool subscribes to "" for all sockets,
     applied automatically to every socket added via add_satellite().
 
-    Call add_satellite() and remove_satellite() via
-    loop.call_soon_threadsafe() from the CHIRP thread.
+    Call add_satellite() and remove_satellite() from the event loop.
+    When calling from another thread use loop.call_soon_threadsafe().
     """
 
     INIT_LIVES = 3
@@ -57,7 +59,7 @@ class AsyncHeartbeatReceiver:
         self._on_satellite_dead = on_satellite_dead
 
         self._states: dict[UUID, HeartbeatState] = {}
-        self._name_to_uuid: dict[str, UUID] = {}
+        self._name_to_uuid: case_insensitive_dict[UUID] = case_insensitive_dict()
 
         self._pool = AsyncSubscriberPool(ctx, self._on_frames)
         self._pool.set_topics([""])
@@ -83,14 +85,19 @@ class AsyncHeartbeatReceiver:
             self._name_to_uuid.pop(hb.name, None)
 
     @property
-    def states(self) -> dict[str, SatelliteState]:
-        """Current states keyed by lowercase canonical name."""
-        return {hb.name.lower(): hb.state for hb in self._states.values()}
+    def states(self) -> case_insensitive_dict[SatelliteState]:
+        """Current states keyed by canonical name."""
+        return case_insensitive_dict({hb.name: hb.state for hb in self._states.values()})
 
     @property
-    def state_changes(self) -> dict[str, datetime]:
+    def state_changes(self) -> case_insensitive_dict[datetime]:
         """Last state change timestamps keyed by canonical name."""
-        return {hb.name: hb.last_statechange for hb in self._states.values()}
+        return case_insensitive_dict({hb.name: hb.last_statechange for hb in self._states.values()})
+
+    @property
+    def statuses(self) -> case_insensitive_dict[str]:
+        """Last status message keyed by canonical name."""
+        return case_insensitive_dict({hb.name: hb.status for hb in self._states.values()})
 
     async def run(self, stop: asyncio.Event) -> None:
         """Run pool polling and stale check loop concurrently until stop is set."""
@@ -108,7 +115,7 @@ class AsyncHeartbeatReceiver:
     def _on_frames(self, uuid: UUID, frames: list[bytes]) -> None:
         """Process a CHP frame delivered by the pool."""
         try:
-            name, _timestamp, state_val, flags, interval, _status = chp_decode_message(frames)
+            name, _timestamp, state_val, flags, interval, status = chp_decode_message(frames)
         except Exception:
             return
 
@@ -116,8 +123,7 @@ class AsyncHeartbeatReceiver:
         if hb is None:
             return
 
-        # Update name if it was unknown
-        if hb.name != name:
+        if hb.name.casefold() != name.casefold():
             self._name_to_uuid.pop(hb.name, None)
             hb.name = name
             self._name_to_uuid[name] = uuid
@@ -134,6 +140,9 @@ class AsyncHeartbeatReceiver:
         hb.refresh()
         hb.interval_ms = interval
         hb.role = CHPRole.from_flags(flags)
+
+        if status:
+            hb.status = status
 
         if hb.lives != self.INIT_LIVES:
             hb.lives = self.INIT_LIVES
