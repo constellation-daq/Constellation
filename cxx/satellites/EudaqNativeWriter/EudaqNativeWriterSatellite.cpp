@@ -13,12 +13,17 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
-#include <format>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
+
+#if defined(__cpp_lib_format) && __cpp_lib_format >= 201907L
+#include <format>
+#else
+#include <sstream>
+#endif
 
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/value_types.hpp"
@@ -39,6 +44,23 @@ using namespace constellation::utils;
 EudaqNativeWriterSatellite::EudaqNativeWriterSatellite(std::string_view type, std::string_view name)
     : ReceiverSatellite(type, name), flush_timer_({}) {}
 
+std::string EudaqNativeWriterSatellite::format_filename(const std::string& pattern, std::string_view arg) {
+#if defined(__cpp_lib_format) && __cpp_lib_format >= 201907L
+    return std::vformat(pattern, std::make_format_args(arg));
+#else
+    const std::size_t pos = pattern.find("{}");
+    if(pos == std::string::npos) {
+        throw std::runtime_error("no '{}' placeholder found");
+    }
+    if(pattern.find("{}", pos + 2) != std::string::npos) {
+        throw std::runtime_error("more than one '{}' placeholder found");
+    }
+    std::ostringstream oss;
+    oss << pattern.substr(0, pos) << arg << pattern.substr(pos + 2);
+    return oss.str();
+#endif
+}
+
 void EudaqNativeWriterSatellite::initializing(Configuration& config) {
     base_path_ = config.getPath("output_directory");
     validate_output_directory(base_path_);
@@ -49,9 +71,9 @@ void EudaqNativeWriterSatellite::initializing(Configuration& config) {
     try {
         file_name_pattern_ = config.get<std::string>("file_name_pattern", "data_{}.raw");
         // Attempt to format with a dummy run number to see that it is working
-        const auto formatted = std::vformat(file_name_pattern_, std::make_format_args("dummy"));
+        const auto formatted = format_filename(file_name_pattern_, "dummy");
         LOG(DEBUG) << "Successfully tested format, files will be named like " << formatted;
-    } catch(const std::format_error& e) {
+    } catch(const std::runtime_error& e) {
         throw InvalidValueError(config,
                                 "file_name_pattern",
                                 "Formatting file name pattern with run identifier failed, one placeholder required");
@@ -70,8 +92,7 @@ void EudaqNativeWriterSatellite::starting(std::string_view run_identifier) {
     }
 
     // Open target file
-    auto file =
-        create_output_file(base_path_, std::vformat(file_name_pattern_, std::make_format_args(run_identifier)), "raw", true);
+    auto file = create_output_file(base_path_, format_filename(file_name_pattern_, run_identifier), "raw", true);
 
     LOG(INFO) << "Starting run with identifier " << run_identifier << ", sequence " << sequence;
     serializer_ = std::make_unique<FileSerializer>(std::move(file), buffer_size_, sequence);

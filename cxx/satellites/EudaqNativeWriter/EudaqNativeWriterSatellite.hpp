@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <memory>
+#include <string>
 #include <string_view>
 
 #include "constellation/core/config/Configuration.hpp"
@@ -53,6 +54,9 @@ protected:
     void receive_eor(std::string_view sender,
                      const constellation::config::Dictionary& user_tags,
                      const constellation::config::Dictionary& run_metadata) final;
+
+private:
+    static std::string format_filename(const std::string& pattern, std::string_view arg);
 
 private:
     std::unique_ptr<FileSerializer> serializer_;
