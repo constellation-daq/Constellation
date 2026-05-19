@@ -1,6 +1,10 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
+if not get_option('build_controller_lib')
+  subdir_done()
+endif
+
 controller_src = files(
   'Controller.cpp',
   'ControllerConfiguration.cpp',
