@@ -199,7 +199,6 @@ def test_ctrl_config_valid_toml():
     assert global_config.get("int") == -42
     assert global_config.get("hexint") == 0x33
     assert global_config.get("binint") == 0b11
-    assert global_config.get("octint") == 0o10
     assert global_config.get("float") == 3.14
     assert global_config.get("string") == "global"
     assert global_config.get("time", return_type=lambda x: x.timetz()) == _timetz(12, 34, 56)
@@ -298,7 +297,6 @@ def test_ctrl_config_valid_yaml():
     assert global_config.get("int") == -42
     assert global_config.get("hexint") == 0x33
     assert global_config.get("binint") == 0b11
-    assert global_config.get("octint") == 0o10
     assert global_config.get("float") == 3.14
     assert global_config.get("string") == "global"
     assert global_config.get("array_bool") == [True, False, False, True]

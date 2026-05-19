@@ -11,13 +11,14 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <chrono>
 #include <concepts>
-#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -85,68 +86,37 @@ namespace {
     }
 } // namespace
 
-bool constellation::controller::parse_yaml_int_with_prefix(const YAML::Node& node, std::int64_t& out) {
-
-    // Convert to string to iterator over
+bool constellation::controller::parse_yaml_binary_int(const YAML::Node& node, std::int64_t& out) {
     const std::string& input = node.Scalar();
-    if(input.empty()) {
-        return false;
-    }
-
     const auto* p = input.data();
-    const auto* end = p + static_cast<std::ptrdiff_t>(input.size());
+    const auto* end = p + input.size();
 
     // Parse optional sign
-    auto negative = false;
-    if(*p == '-') {
-        negative = true;
-        ++p;
-    } else if(*p == '+') {
-        ++p;
+    bool negative = false;
+    if(p != end && (*p == '-' || *p == '+')) {
+        negative = (*p++ == '-');
     }
 
-    // Check for mandatory leading zero
-    if(p == end || *p != '0') {
+    // Match "0b" / "0B" prefix
+    if(end - p < 3 || *p != '0') {
         return false;
     }
     ++p;
 
-    // prefix selects radix
-    if(p == end) {
-        return false;
-    }
-
-    auto radix = 0ULL;
-    if(*p == 'b' || *p == 'B') {
-        radix = 2;
-    } else if(*p == 'o' || *p == 'O') {
-        radix = 8;
-    } else {
+    if(*p != 'b' && *p != 'B') {
         return false;
     }
     ++p;
 
-    // Require at least one digit
-    if(p == end) {
+    // Parse binary digits
+    std::uint64_t value {};
+    const auto [last, ec] = std::from_chars(p, end, value, 2);
+    if(ec != std::errc {} || last != end) {
         return false;
     }
 
-    // Use unsigned value to avoid signed overflow
-    std::uint64_t value = 0;
-
-    for(; p != end; ++p) {
-        const unsigned digit = static_cast<unsigned>(*p) - '0';
-        if(digit >= radix) {
-            return false;
-        }
-        if(value > (std::numeric_limits<std::uint64_t>::max() - digit) / radix) {
-            return false;
-        }
-        value = (value * radix) + digit;
-    }
-
+    // Assign to signed output, checking range
     if(negative) {
-        // Check range against int64_t and assign to output value
         const auto limit = static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max()) + 1;
         if(value > limit) {
             return false;
@@ -174,7 +144,7 @@ Composite constellation::controller::parse_yaml_value(const std::string& key, co
             return {rv_bool};
         }
         std::int64_t rv_int {};
-        if(YAML::convert<std::int64_t>::decode(node, rv_int) || parse_yaml_int_with_prefix(node, rv_int)) {
+        if(YAML::convert<std::int64_t>::decode(node, rv_int) || parse_yaml_binary_int(node, rv_int)) {
             return {rv_int};
         }
         double rv_float {};

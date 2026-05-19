@@ -55,13 +55,13 @@ namespace constellation::controller {
     YAML::Node get_as_yaml_node(const config::Composite& value);
 
     /**
-     * \brief Helper to parse integers with binary (0b) or octal (0o) prefixes
+     * @brief Helper to parse integers with binary (0b) prefixes
      *
      * @param node YAML node to be parsed
      * @param out Integer value
      *
      * @return True if conversion succeeded, false otherwise
      */
-    bool parse_yaml_int_with_prefix(const YAML::Node& node, std::int64_t& out);
+    bool parse_yaml_binary_int(const YAML::Node& node, std::int64_t& out);
 
 } // namespace constellation::controller
