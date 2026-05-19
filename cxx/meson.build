@@ -68,11 +68,13 @@ msgpack_cxx_dep = dependency('msgpack-cxx', version: '>=7.0.0', include_type: 's
 # spdlog
 spdlog_dep = dependency('spdlog', include_type: 'system', default_options: ['tests=disabled', 'default_library=static'])
 
-# TOML++
-tomlplusplus_dep = dependency('tomlplusplus', include_type: 'system', default_options: ['default_library=static'])
-
-# yaml-cpp
-yamlcpp_dep = dependency('yaml-cpp', include_type: 'system', default_options: ['tools=false', 'tests=disabled', 'default_library=static'])
+# Controller dependencies:
+if get_option('build_controller_lib')
+  # TOML++
+  tomlplusplus_dep = dependency('tomlplusplus', include_type: 'system', default_options: ['default_library=static'])
+  # yaml-cpp
+  yamlcpp_dep = dependency('yaml-cpp', include_type: 'system', default_options: ['tools=false', 'tests=disabled', 'default_library=static'])
+endif
 
 # System libraries
 threads_dep = dependency('threads')
