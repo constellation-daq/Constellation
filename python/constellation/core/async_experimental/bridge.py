@@ -6,12 +6,12 @@ from uuid import UUID
 import zmq
 import zmq.asyncio
 
-from constellation.core.chirp import CHIRPMessageType, CHIRPServiceIdentifier
+from constellation.core.chirp import CHIRPServiceIdentifier
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.message.cmdp1 import CMDP1LogMessage, CMDP1Message, CMDP1StatMessage
 from constellation.core.network import get_interface_addresses
 
-from .async_chirp import AsyncCHIRPProtocol
+from .async_chirp import AsyncCHIRPManager, CHIRPEvent, DiscoveredService
 from .async_heartbeat import AsyncHeartbeatReceiver
 from .async_pools import AsyncSubscriberPool
 
@@ -57,7 +57,7 @@ class CombinedBridge:
         self._cscp_executor = ThreadPoolExecutor(max_workers=1)
 
         self._discovered: dict[UUID, dict] = {}
-        self._chirp_protocol: AsyncCHIRPProtocol | None = None
+        self._chirp_manager: AsyncCHIRPManager | None = None
 
         self.stats = {
             "state_changes": 0,
@@ -69,26 +69,20 @@ class CombinedBridge:
     async def start(self) -> None:
         """Set up async CHIRP and emit initial service requests."""
         interface_addresses = get_interface_addresses(None)
-        recv_socket = AsyncCHIRPProtocol.create_recv_socket(interface_addresses)
 
-        self._chirp_protocol = AsyncCHIRPProtocol(
+        self._chirp_manager = AsyncCHIRPManager(
             name="CombinedBridge.Bridge",
             group=self.group,
             interface_addresses=interface_addresses,
-            on_offer=self._on_chirp_offer,
-            on_depart=self._on_chirp_depart,
         )
+        self._chirp_manager.register_callback("bridge", self._on_chirp_event)
+        await self._chirp_manager.start(self._loop)
 
-        await self._loop.create_datagram_endpoint(
-            lambda: self._chirp_protocol,
-            sock=recv_socket,
-        )
-
-        self._chirp_protocol.emit(CHIRPServiceIdentifier.HEARTBEAT, CHIRPMessageType.REQUEST)
+        self._chirp_manager.request(CHIRPServiceIdentifier.HEARTBEAT)
         await asyncio.sleep(0.1)
-        self._chirp_protocol.emit(CHIRPServiceIdentifier.MONITORING, CHIRPMessageType.REQUEST)
+        self._chirp_manager.request(CHIRPServiceIdentifier.MONITORING)
         await asyncio.sleep(0.1)
-        self._chirp_protocol.emit(CHIRPServiceIdentifier.CONTROL, CHIRPMessageType.REQUEST)
+        self._chirp_manager.request(CHIRPServiceIdentifier.CONTROL)
 
     async def run(self) -> None:
         """Run heartbeat and CMDP components concurrently."""
@@ -124,8 +118,8 @@ class CombinedBridge:
         contexts while sockets are still open.
         """
         self._stop.set()
-        if self._chirp_protocol is not None:
-            self._chirp_protocol.close()
+        if self._chirp_manager is not None:
+            self._chirp_manager.close()
         self._cscp_executor.shutdown(wait=True)
         self._heartbeat.close()
         self._cmdp_pool.close()
@@ -135,47 +129,52 @@ class CombinedBridge:
         self._ctx.term()
         self._sync_ctx.term()
 
-    def _on_chirp_offer(self, uuid: UUID, address: str, port: int, service: CHIRPServiceIdentifier) -> None:
-        """Handle a CHIRP OFFER. Called from datagram_received on the event loop."""
-        if uuid not in self._discovered:
-            self._discovered[uuid] = {}
+    def _on_chirp_event(self, event: CHIRPEvent, service: DiscoveredService) -> None:
+        """Handle a CHIRP event. Called from datagram_received on the event loop."""
+        uuid = service.host_id
+        address = service.address
+        port = service.port
+        service_id = service.service_id
 
-        if service in self._discovered[uuid]:
-            return
+        if event == CHIRPEvent.SERVICE_CONNECTED:
+            if uuid not in self._discovered:
+                self._discovered[uuid] = {}
 
-        self._discovered[uuid][service] = (address, port)
+            if service_id in self._discovered[uuid]:
+                return
 
-        if service == CHIRPServiceIdentifier.HEARTBEAT:
-            name = self._transmitter_uuids.get(uuid, f"Unknown-{str(uuid)[:8]}")
-            print(f"  [CHIRP]  HEARTBEAT from {address}:{port}")
-            self._heartbeat.add_satellite(uuid, address, port, name)
+            self._discovered[uuid][service_id] = (address, port)
 
-        elif service == CHIRPServiceIdentifier.MONITORING:
-            print(f"  [CHIRP]  MONITORING from {address}:{port}")
-            self._cmdp_pool.add_socket(uuid, address, port)
+            if service_id == CHIRPServiceIdentifier.HEARTBEAT:
+                name = self._transmitter_uuids.get(uuid, f"Unknown-{str(uuid)[:8]}")
+                print(f"  [CHIRP]  HEARTBEAT from {address}:{port}")
+                self._heartbeat.add_satellite(uuid, address, port, name)
 
-        elif service == CHIRPServiceIdentifier.CONTROL:
-            print(f"  [CHIRP]  CONTROL from {address}:{port}")
-            self._loop.create_task(self._setup_transmitter(uuid, address, port))
+            elif service_id == CHIRPServiceIdentifier.MONITORING:
+                print(f"  [CHIRP]  MONITORING from {address}:{port}")
+                self._cmdp_pool.add_socket(uuid, address, port)
 
-    def _on_chirp_depart(self, uuid: UUID, service: CHIRPServiceIdentifier) -> None:
-        """Handle a CHIRP DEPART. Called from datagram_received on the event loop."""
-        if uuid not in self._discovered:
-            return
+            elif service_id == CHIRPServiceIdentifier.CONTROL:
+                print(f"  [CHIRP]  CONTROL from {address}:{port}")
+                self._loop.create_task(self._setup_transmitter(uuid, address, port))
 
-        self._discovered[uuid].pop(service, None)
+        elif event == CHIRPEvent.SERVICE_DISCONNECTED:
+            if uuid not in self._discovered:
+                return
 
-        if service == CHIRPServiceIdentifier.HEARTBEAT:
-            print(f"  [CHIRP]  DEPART HEARTBEAT {uuid}")
-            self._heartbeat.remove_satellite(uuid)
+            self._discovered[uuid].pop(service_id, None)
 
-        elif service == CHIRPServiceIdentifier.MONITORING:
-            print(f"  [CHIRP]  DEPART MONITORING {uuid}")
-            self._cmdp_pool.remove_socket(uuid)
+            if service_id == CHIRPServiceIdentifier.HEARTBEAT:
+                print(f"  [CHIRP]  DEPART HEARTBEAT {uuid}")
+                self._heartbeat.remove_satellite(uuid)
 
-        elif service == CHIRPServiceIdentifier.CONTROL:
-            print(f"  [CHIRP]  DEPART CONTROL {uuid}")
-            self._cleanup_transmitter(uuid)
+            elif service_id == CHIRPServiceIdentifier.MONITORING:
+                print(f"  [CHIRP]  DEPART MONITORING {uuid}")
+                self._cmdp_pool.remove_socket(uuid)
+
+            elif service_id == CHIRPServiceIdentifier.CONTROL:
+                print(f"  [CHIRP]  DEPART CONTROL {uuid}")
+                self._cleanup_transmitter(uuid)
 
     def _on_state_change(self, name: str, old_state, new_state) -> None:
         self.stats["state_changes"] += 1
