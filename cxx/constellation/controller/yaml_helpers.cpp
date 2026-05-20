@@ -11,11 +11,14 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <chrono>
 #include <concepts>
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -83,6 +86,51 @@ namespace {
     }
 } // namespace
 
+bool constellation::controller::parse_yaml_binary_int(const YAML::Node& node, std::int64_t& out) {
+    const std::string& input = node.Scalar();
+    const auto* p = input.data();
+    const auto* end = p + input.size();
+
+    // Parse optional sign
+    bool negative = false;
+    if(p != end && (*p == '-' || *p == '+')) {
+        negative = (*p++ == '-');
+    }
+
+    // Match "0b" / "0B" prefix
+    if(end - p < 3 || *p != '0') {
+        return false;
+    }
+    ++p;
+
+    if(*p != 'b' && *p != 'B') {
+        return false;
+    }
+    ++p;
+
+    // Parse binary digits
+    std::uint64_t value {};
+    const auto [last, ec] = std::from_chars(p, end, value, 2);
+    if(ec != std::errc {} || last != end) {
+        return false;
+    }
+
+    // Assign to signed output, checking range
+    if(negative) {
+        const auto limit = static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max()) + 1;
+        if(value > limit) {
+            return false;
+        }
+        out = static_cast<std::int64_t>(~value + 1);
+    } else {
+        if(value > static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max())) {
+            return false;
+        }
+        out = static_cast<std::int64_t>(value);
+    }
+    return true;
+}
+
 // NOLINTBEGIN(misc-no-recursion)
 Composite constellation::controller::parse_yaml_value(const std::string& key, const YAML::Node& node) {
     if(node.IsNull()) {
@@ -96,7 +144,7 @@ Composite constellation::controller::parse_yaml_value(const std::string& key, co
             return {rv_bool};
         }
         std::int64_t rv_int {};
-        if(YAML::convert<std::int64_t>::decode(node, rv_int)) {
+        if(YAML::convert<std::int64_t>::decode(node, rv_int) || parse_yaml_binary_int(node, rv_int)) {
             return {rv_int};
         }
         double rv_float {};
