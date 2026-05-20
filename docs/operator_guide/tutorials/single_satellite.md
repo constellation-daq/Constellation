@@ -33,6 +33,11 @@ A detailed description of all available command line arguments can be found in t
 A controller running in the same Constellation group is needed in order to control the satellite started in the first part
 of this tutorial. This section shows different options to perform this task.
 
+```{seealso}
+The [IPython Controller tutorial](./ipython_controller.md) describes the use of the interactive command line controller used hereafter in more detail.
+More details on controllers in general can be found in the [Controller concepts](../concepts/controller.md) section.
+```
+
 ### Starting a Controller
 
 The Python implementation of Constellation provides a powerful command line interface controller using IPython.
