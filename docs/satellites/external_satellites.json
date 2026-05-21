@@ -24,6 +24,11 @@
       "name": "AMIModel1700LLI",
       "readme": "https://gitlab.desy.de/madmax/hamburg/amimodel1700lli-satellite/-/raw/main/README.md",
       "website": "https://gitlab.desy.de/madmax/hamburg/amimodel1700lli-satellite"
+    },
+    {
+      "name": "Eudet-Telescope with MMC3 / pymosa",
+      "readme": "https://raw.githubusercontent.com/SiLab-Bonn/pymosa/refs/heads/master/pymosa/constellation/README.md",
+      "website": "https://github.com/SiLab-Bonn/pymosa"
     }
   ]
 }
