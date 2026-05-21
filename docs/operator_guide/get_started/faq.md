@@ -31,6 +31,23 @@ message can be silenced by adding an explicit empty section for it in the config
 [Sputnik.Three]
 ```
 
-If the satellite was not expected to appear, check that its Constellation group name matches and that it is not a leftover
-process from a previous session or supposed to be part of a different Constellation.
+If the satellite was not expected to appear, it should be checked that its Constellation group name matches and that it is
+not a leftover process from a previous session or supposed to be part of a different Constellation.
+:::
+
+:::{dropdown} An environment variable placeholder is not resolved or causes an error
+If Constellation reports that an environment variable cannot be found, or the placeholder appears
+literally in the final value, the following items should be checked:
+
+* **Controller-side vs. satellite-side syntax.** Variables written as `${VARIABLE}` are resolved on the satellite host at the
+  time the configuration key is first accessed by the satellite. Variables written as `$_{VARIABLE}` are resolved by the
+  controller before the configuration is sent to individual satellites, and has to be present on the controller machine.
+* **The variable is not set in the environment.** It should be ensured, e.g. by running `echo $VARIABLE` in the same shell as
+  the node in question, that the variable in question is exported to the environment. Shell variables defined without the
+  `export` keyword are not visible to child processes.
+* **A default fallback can be specified** using the `:-` syntax: `${VARIABLE:-fallback}`. This prevents errors for absent
+  variables and is especially useful during initial setup of a Constellation.
+
+The [Configuration Files](../concepts/configuration_files.md#environment-variables) concept section describes the full
+available syntax for parsing environment variables.
 :::
