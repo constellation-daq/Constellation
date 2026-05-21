@@ -205,7 +205,7 @@ command otherwise.
 
 In C++, the allowed states are provided as part of the command registration as described [above](#registering-the-command).
 
-Steady as well as transitional states can be listed. An empty list of states allows the command to be called in any state.
+Steady as well as transitional states can be listed. An empty list of states allows the command to be called in any state. The `protocol::CSCP1::states_except({})` helper function allows to create a set of all states *except* the ones provided as argument. For example, `states_except({State::NEW, State::SAFE, State::ERROR})` would yield a set with the states {bdg-secondary}`initializing`, {bdg-secondary}`INIT`, {bdg-secondary}`launching`, {bdg-secondary}`ORBIT`, {bdg-secondary}`landing`, {bdg-secondary}`reconfiguring`, {bdg-secondary}`starting`, {bdg-secondary}`RUN`, {bdg-secondary}`stopping` and {bdg-secondary}`interrupting`.
 
 :::
 :::{tab-item} Python
@@ -218,7 +218,7 @@ In Python, it is possible to specify a list of allowed states in the first argum
 def COMMAND(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
 ```
 
-An example is shown below, limiting the usage of the `get_channel_reading` command to all states except {bdg-secondary}`NEW`, {bdg-secondary}`initializing`, {bdg-secondary}`reconfiguring` and {bdg-secondary}`ERROR`:
+ The `states_except([])` helper function allows to create a set of all states *except* the ones provided as argument. An example is shown below, limiting the usage of the `get_channel_reading` command to all states except {bdg-secondary}`NEW`, {bdg-secondary}`initializing`, {bdg-secondary}`reconfiguring` and {bdg-secondary}`ERROR`:
 
 ```python
 @cscp_requestable(states_except([SatelliteState.NEW, SatelliteState.initializing, SatelliteState.reconfiguring, SatelliteState.ERROR]))
