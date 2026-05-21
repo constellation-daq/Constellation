@@ -1,8 +1,7 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
-# Controller library requires listener library
-if not (get_option('build_listener_lib') or get_option('build_controller_lib'))
+if not get_option('build_listener_lib')
   subdir_done()
 endif
 
