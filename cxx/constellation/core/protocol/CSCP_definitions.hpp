@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <regex>
+#include <set>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -43,6 +44,12 @@ namespace constellation::protocol::CSCP {
         SAFE = 0xE0,
         ERROR = 0xF0,
     };
+} // namespace constellation::protocol::CSCP
+
+// State enum exceeds default enum value limits of magic_enum (-128, 127)
+ENUM_SET_RANGE(constellation::protocol::CSCP::State, 0, 255);
+
+namespace constellation::protocol::CSCP {
 
     /** Possible FSM transitions */
     enum class Transition : std::uint8_t {
@@ -157,6 +164,22 @@ namespace constellation::protocol::CSCP {
     }
 
     /**
+     * @brief Obtain a set of all states except the provided ones
+     *
+     * @param disallowed_states Set of states which should not be part of the final set
+     * @return All but the disapplowed states
+     */
+    inline std::set<protocol::CSCP::State> states_except(const std::set<protocol::CSCP::State>& disallowed_states) {
+        std::set<protocol::CSCP::State> allowed_states;
+        for(const auto& state : utils::enum_range<State>()) {
+            if(!disallowed_states.contains(state)) {
+                allowed_states.emplace(state);
+            }
+        }
+        return allowed_states;
+    }
+
+    /**
      * @brief Checks if a satellite name is valid
      *
      * A satellite name may contain alphanumeric characters and underscores and may not be empty.
@@ -209,6 +232,3 @@ namespace constellation::protocol::CSCP {
     }
 
 } // namespace constellation::protocol::CSCP
-
-// State enum exceeds default enum value limits of magic_enum (-128, 127)
-ENUM_SET_RANGE(constellation::protocol::CSCP::State, 0, 255);

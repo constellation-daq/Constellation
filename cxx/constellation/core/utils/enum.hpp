@@ -34,6 +34,12 @@ namespace constellation::utils {
 
     template <typename E>
         requires std::is_enum_v<E>
+    constexpr auto enum_range() noexcept {
+        return magic_enum::enum_values<E>();
+    }
+
+    template <typename E>
+        requires std::is_enum_v<E>
     constexpr auto enum_cast(std::string_view value, bool case_insensitive = true) noexcept {
         std::optional<E> retval {};
         retval = case_insensitive ? magic_enum::enum_cast<E>(value, magic_enum::case_insensitive)
