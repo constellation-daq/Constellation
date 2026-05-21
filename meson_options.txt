@@ -13,9 +13,11 @@ option('memory_allocator', type: 'combo', choices: ['auto', 'jemalloc', 'mimallo
 option('build_gui', type: 'combo', choices: ['none', 'qt5', 'qt6'], value: 'qt6', description: 'Build Qt graphical UIs')
 
 # Controllers
+option('build_controller_lib', type: 'boolean', value: true, description: 'Build controller library and controllers')
 option('controller_missioncontrol', type: 'boolean', value: true, description: 'Build the MissionControl Qt Controller GUI')
 
 # Listeners
+option('build_listener_lib', type: 'boolean', value: true, description: 'Build listener library and listeners')
 option('listener_observatory', type: 'boolean', value: true, description: 'Build the Observatory Qt Log Listener GUI')
 option('listener_telemetry_console', type: 'boolean', value: true, description: 'Build the Telemetry Console Qt GUI')
 

@@ -1,6 +1,10 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
+if not get_option('build_listener_lib')
+  subdir_done()
+endif
+
 listener_src = files(
   'CMDPListener.cpp',
   'LogListener.cpp',
