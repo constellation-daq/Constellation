@@ -15,5 +15,22 @@ issue in the network communication:
 :::
 
 :::{dropdown} Satellites on macOS cannot access the network
+:::
 
+## Configuration
+
+:::{dropdown} MissionControl warns about satellites not found in configuration file
+MissionControl issues a warning when it discovers satellites in the Constellation group that have no corresponding entry in
+the loaded configuration file. This is a guard against typos: a misspelled satellite name would otherwise silently receive
+an empty configuration.
+
+If the satellite in question does indeed not need any configuration parameters, this warning can be safely ignored. The
+message can be silenced by adding an explicit empty section for it in the configuration file:
+
+```toml
+[Sputnik.Three]
+```
+
+If the satellite was not expected to appear, check that its Constellation group name matches and that it is not a leftover
+process from a previous session or supposed to be part of a different Constellation.
 :::
