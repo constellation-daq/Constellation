@@ -12,7 +12,6 @@ from queue import Empty
 from typing import Any
 from uuid import UUID
 
-import message.cscp1.CSCP1Message.Type as VerbType
 import zmq
 
 from .chirp import CHIRPServiceIdentifier, get_uuid
@@ -24,6 +23,7 @@ from .cscp import CommandTransmitter
 from .error import debug_log
 from .heartbeatchecker import HeartbeatChecker
 from .logging import setup_cli_logging
+from .message.cscp1 import CSCP1Message
 from .monitoring import MonitoringSender
 from .protocol.cscp1 import SatelliteState
 from .satellite import Satellite
@@ -666,7 +666,7 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
             # Reset outdated flag if the command failed or the response was not SUCCESS
             # This would mean that the transition command has not been accepted and no transition is expected
             if heartbeat_state:
-                if not sat_response.success or ret_msg is None or ret_msg.verb_type != VerbType.SUCCESS:
+                if not sat_response.success or ret_msg is None or ret_msg.verb_type != CSCP1Message.Type.SUCCESS:
                     heartbeat_state.outdated = False
 
             if sat_name:
