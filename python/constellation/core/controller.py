@@ -629,11 +629,11 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
         res: dict[str, SatelliteResponse] = {}
         for target in targets:
             # Get the HeartbeatState object for this target
-            heartbeat = self._get_heartbeat_state(UUID(target._uuid))
+            heartbeat_state = self._get_heartbeat_state(UUID(target._uuid)) if is_transition else None
 
             # Mark state of this host as outdated if this is a transition command:
-            if is_transition and heartbeat:
-                heartbeat.outdated = True
+            if heartbeat_state:
+                heartbeat_state.outdated = True
 
             self.log.debug("Host %s send command %s...", target, cmd)
             # The payload to set of (known) command can be pre-processed
@@ -665,9 +665,9 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
 
             # Reset outdated flag if the command failed or the response was not SUCCESS
             # This would mean that the transition command has not been accepted and no transition is expected
-            if is_transition and heartbeat:
+            if heartbeat_state:
                 if not sat_response.success or ret_msg is None or ret_msg.verb_type != VerbType.SUCCESS:
-                    heartbeat.outdated = False
+                    heartbeat_state.outdated = False
 
             if sat_name:
                 # simplify return value for single satellite
