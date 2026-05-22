@@ -36,7 +36,7 @@ class HeartbeatState:
         self.last_statechange = datetime(2000, 1, 1)
         self.state = SatelliteState.DEAD
         self.status: str = ""
-        self.tainted: bool = True
+        self.outdated: bool = False
         self.failed: threading.Event = evt
 
     def refresh(self, ts: datetime | None = None) -> None:
@@ -221,7 +221,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
                     old_state = hb.state
                     hb.state = state_enum
                     hb.last_statechange = datetime.now()
-                    hb.tainted = False
+                    hb.outdated = False
                     self._on_state_change(hb.name, old_state, state_enum)
                 self.log_chp.trace(
                     "%s reports state %s, flags %s%s, next message in %d",
