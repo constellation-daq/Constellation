@@ -132,7 +132,7 @@ class CombinedBridge:
     def _on_chirp_event(self, event: CHIRPEvent, service: DiscoveredService) -> None:
         """Handle a CHIRP event. Called from datagram_received on the event loop."""
         uuid = service.host_id
-        address = service.address
+        address = service.addresses[0]
         port = service.port
         service_id = service.service_id
 
