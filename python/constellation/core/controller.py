@@ -12,6 +12,7 @@ from queue import Empty
 from typing import Any
 from uuid import UUID
 
+import message.cscp1.CSCP1Message.Type as VerbType
 import zmq
 
 from .chirp import CHIRPServiceIdentifier, get_uuid
@@ -622,8 +623,18 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
             targets = [self._constellation.get_satellite(sat_type, sat_name)]
             self.log.debug("Sending %s to Satellite %s.", cmd, targets[0])
 
+        # Check if this is a transition command
+        is_transition = cmd in [transition_cmd.name for transition_cmd in TransitionCommand]
+
         res: dict[str, SatelliteResponse] = {}
         for target in targets:
+            # Get the HeartbeatState object for this target
+            heartbeat = self._get_heartbeat_state(UUID(target._uuid))
+
+            # Mark state of this host as outdated if this is a transition command:
+            if is_transition and heartbeat:
+                heartbeat.outdated = True
+
             self.log.debug("Host %s send command %s...", target, cmd)
             # The payload to set of (known) command can be pre-processed
             # allowing using more complex objects as arguments and a more
@@ -651,6 +662,13 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
                 sat_response.msg = ret_msg.verb_msg
                 sat_response.payload = ret_msg.payload
                 sat_response.meta = ret_msg.tags
+
+            # Reset outdated flag if the command failed or the response was not SUCCESS
+            # This would mean that the transition command has not been accepted and no transition is expected
+            if is_transition and heartbeat:
+                if not sat_response.success or ret_msg is None or ret_msg.verb_type != VerbType.SUCCESS:
+                    heartbeat.outdated = False
+
             if sat_name:
                 # simplify return value for single satellite
                 return sat_response
