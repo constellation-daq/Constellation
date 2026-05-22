@@ -461,6 +461,25 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
         remaining_timeout = timeout - round(time.time() - start)
         self.await_state(target, remaining_timeout)
 
+    def await_state_change_new(self, target: SatelliteState, timeout: int = 60) -> None:
+        """Blocks until the desired global state of the connected satellites is reached with check for state changes."""
+        start = time.time()
+
+        while True:
+            outdated = [hb for hb in self._remote_heartbeat_states.values() if hb.outdated]
+            if not outdated:
+                break
+            if time.time() - start > timeout:
+                raise Exception(
+                    f"Timeout after {timeout}s while waiting for state {target.name}: "
+                    f"{[hb.name for hb in outdated]} still have an outdated state"
+                )
+            time.sleep(0.1)
+
+        # Once all sent an extrasystole, await state as usual with remaining timeout
+        remaining_timeout = timeout - round(time.time() - start)
+        self.await_state(target, remaining_timeout)
+
     def await_satellites(self, satellites: list[str], timeout: int = 60) -> None:
         """Blocks until all desired satellites are connected."""
         self.log.info("Awaiting %d satellites", len(satellites))
