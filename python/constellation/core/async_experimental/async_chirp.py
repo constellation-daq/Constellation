@@ -224,9 +224,7 @@ class AsyncCHIRPListener:
         if msg.msgtype == CHIRPMessageType.REQUEST:
             if self._request_callback is not None:
                 self._request_callback(msg.serviceid)
-            return
-
-        if msg.msgtype == CHIRPMessageType.OFFER:
+        elif msg.msgtype == CHIRPMessageType.OFFER:
             self._discover_service(msg, addr[0])
         elif msg.msgtype == CHIRPMessageType.DEPART and msg.port != 0:
             self._depart_service(msg)
