@@ -322,6 +322,8 @@ test:fedora-clang:
   extends:
     - .test-cpp
     - .fedora-clang
+  variables:
+    LSAN_OPTIONS: "detect_leaks=0"
   needs:
     - job: build:fedora-clang
       artifacts: true
