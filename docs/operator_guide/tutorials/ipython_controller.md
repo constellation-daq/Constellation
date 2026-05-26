@@ -19,11 +19,26 @@ example to set up [Parameter Scans with Python](../howtos/scanning_python.md).
 
 ## Starting the Controller
 
-The interactive controller is provided by the `cli` extra of the Constellation Python package on the [Python Package Index (PyPI)](https://pypi.org/):
+The interactive controller is provided by the `cli` extra of the Constellation Python package and can be installed via:
+
+::::{tab-set}
+:::{tab-item} PyPI
+:sync: pypi
 
 ```sh
 pip install "ConstellationDAQ[cli]"
 ```
+
+:::
+:::{tab-item} Source
+:sync: source
+
+```sh
+pip install --no-build-isolation -e ".[cli]"
+```
+
+:::
+::::
 
 Once installed, it is launched with the `Controller` command. The only required argument is the
 Constellation group name, which must match the group the satellites belong to:
