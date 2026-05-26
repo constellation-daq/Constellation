@@ -12,6 +12,8 @@ jobs:
   format-python:
     name: Python Format Check (ruff)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/ruff-action@v3
@@ -21,6 +23,8 @@ jobs:
   format-cpp:
     name: C++ Format Check (clang-format)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     container:
       image: gitlab.desy.de:5555/constellation/build-images/fedora-clang
     steps:
@@ -37,6 +41,8 @@ jobs:
 
   format-reuse:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -45,6 +51,8 @@ jobs:
 
   format-codespell:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 

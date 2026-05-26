@@ -15,6 +15,8 @@ jobs:
   build-test-cpp-gcc:
     name: C++ Build & Test (Ubuntu 24.04 GCC)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     container:
       image: gitlab.desy.de:5555/constellation/build-images/ubuntu-24.04
     steps:
@@ -48,6 +50,8 @@ jobs:
   build-test-cpp-clang:
     name: C++ Build & Test (Fedora Clang)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     container:
       image: gitlab.desy.de:5555/constellation/build-images/fedora-clang
     steps:
@@ -81,6 +85,8 @@ jobs:
   build-test-python:
     name: Python Build & Test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

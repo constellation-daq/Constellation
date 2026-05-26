@@ -11,6 +11,8 @@ on:
 jobs:
   generate-docs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     container:
       image: gitlab.desy.de:5555/constellation/build-images/fedora-sphinx
     steps:
