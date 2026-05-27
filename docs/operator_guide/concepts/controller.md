@@ -81,7 +81,7 @@ ctrl.await_state(SatelliteState.ORBIT)
 ```
 
 ```{seealso}
-The How-To section provides a guide on [Parameter Scans with Python](../howtos/scanning_python.md).
+The [IPython Controller tutorial](../tutorials/ipython_controller.md) describes the use of the interactive command line controller and the How-To section provides a guide on [Parameter Scans with Python](../howtos/scanning_python.md).
 ```
 
 ## Measurement Queues

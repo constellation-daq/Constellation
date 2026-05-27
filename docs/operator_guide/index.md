@@ -54,6 +54,7 @@ Installation <get_started/installation>
 
 tutorials/single_satellite
 tutorials/missioncontrol
+tutorials/ipython_controller
 tutorials/observatory
 tutorials/telemetryconsole
 ```
