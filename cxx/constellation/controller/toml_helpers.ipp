@@ -66,6 +66,21 @@ namespace constellation::controller {
             return {utils::localdate_to_system(value.get().year, value.get().month, value.get().day)};
         }
 
+        if constexpr(toml::is_date_time<T>) {
+            const auto toml_datetime = value.get();
+            std::stringstream offset;
+            if(toml_datetime.offset.has_value()) {
+                offset << toml_datetime.offset.value();
+            }
+            return utils::datetime_to_system(toml_datetime.date.year,
+                                             toml_datetime.date.month,
+                                             toml_datetime.date.day,
+                                             toml_datetime.time.hour,
+                                             toml_datetime.time.minute,
+                                             toml_datetime.time.second,
+                                             offset.str());
+        }
+
         if constexpr(toml::is_array<T>) {
             // Check for empty array first
             if(value.empty()) {
@@ -105,6 +120,22 @@ namespace constellation::controller {
                 return {convert_toml_array<std::chrono::system_clock::time_point>(value, [](const auto& element) {
                     const auto date = element.as_date()->get();
                     return utils::localdate_to_system(date.year, date.month, date.day);
+                })};
+            }
+            if(value.front().is_date_time()) {
+                return {convert_toml_array<std::chrono::system_clock::time_point>(value, [](const auto& element) {
+                    const auto toml_datetime = element.as_date_time()->get();
+                    std::stringstream offset;
+                    if(toml_datetime.offset.has_value()) {
+                        offset << toml_datetime.offset.value();
+                    }
+                    return utils::datetime_to_system(toml_datetime.date.year,
+                                                     toml_datetime.date.month,
+                                                     toml_datetime.date.day,
+                                                     toml_datetime.time.hour,
+                                                     toml_datetime.time.minute,
+                                                     toml_datetime.time.second,
+                                                     offset.str());
                 })};
             }
         }
