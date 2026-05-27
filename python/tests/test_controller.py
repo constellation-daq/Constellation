@@ -7,6 +7,7 @@ import time
 
 import pytest
 
+from constellation.core.controller import SatelliteUpdate
 from constellation.core.protocol.cscp1 import SatelliteState
 
 # %%%%%%%%%%%%%%%
@@ -134,3 +135,32 @@ def test_satellite_await(controller, satellite):
     last_state_change = controller.get_last_state_change(["MySatellite.satellite"])
     controller.constellation.MySatellite.satellite.reconfigure({})
     controller.await_state_change(SatelliteState.ORBIT, last_state_change, timeout=2)
+
+
+def test_on_satellite_update_callback(mock_controller, mock_satellite):
+    """Test that _on_satellite_update fires when a satellite connects."""
+    ctrl, _ = mock_controller
+
+    updates: list[tuple] = []
+
+    def on_satellite_update(name: str, update_type: SatelliteUpdate) -> None:
+        updates.append((name, update_type))
+
+    ctrl._on_satellite_update = on_satellite_update
+
+    timeout = 2
+    while timeout > 0 and len(ctrl.constellation.satellites) < 1:
+        time.sleep(0.05)
+        timeout -= 0.05
+    assert len(ctrl.constellation.satellites) == 1
+
+    sat_name = list(ctrl.constellation.satellites.keys())[0]
+
+    # Wait for the automatic callback from _add_satellite
+    timeout = 2
+    while timeout > 0 and len(updates) < 1:
+        time.sleep(0.05)
+        timeout -= 0.05
+
+    assert len(updates) == 1
+    assert updates[0] == (sat_name, SatelliteUpdate.ADDED)

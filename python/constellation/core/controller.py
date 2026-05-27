@@ -7,7 +7,7 @@ import threading
 import time
 from collections.abc import Callable
 from datetime import datetime
-from enum import Enum
+from enum import Enum, auto
 from queue import Empty
 from typing import Any
 from uuid import UUID
@@ -47,6 +47,13 @@ class ControllerState(Enum):
 
     def __int__(self) -> int:
         return int(self.value)
+
+
+class SatelliteUpdate(Enum):
+    """Event type for satellite connection callbacks."""
+
+    ADDED = auto()
+    REMOVED = auto()
 
 
 class SatelliteTypeCommLink:
@@ -567,6 +574,7 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
             self._transmitters[uuid] = ct
 
             self.log.info("Satellite %s connected", canonical_name)
+            self._on_satellite_update(canonical_name, SatelliteUpdate.ADDED)
         except RuntimeError as e:
             self.log.error("Could not add Satellite %s: %s", service.host_uuid, repr(e))
 
@@ -579,6 +587,8 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
             self._constellation._remove_satellite(uuid)
         except KeyError:
             pass
+        if satellite_name is not None and satellite_type is not None:
+            self._on_satellite_update(f"{satellite_type}.{satellite_name}", SatelliteUpdate.REMOVED)
         if self.heartbeat_host_is_registered(service.host_uuid):
             self.unregister_heartbeat_host(service.host_uuid)
         self.log.debug("Departure of %s, known as %s.%s", service.host_uuid, satellite_type, satellite_name)
@@ -589,6 +599,10 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
             self._uuid_lookup.pop(uuid)
         except KeyError:
             pass
+
+    def _on_satellite_update(self, name: str, update_type: SatelliteUpdate) -> None:
+        """Called when a satellite connects or disconnects. Override in subclass."""
+        pass
 
     def _hb_failure(self, name: str, state: SatelliteState) -> None:
         """Callback for Satellites failing to send heartbeats."""
