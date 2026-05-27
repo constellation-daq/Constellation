@@ -11,11 +11,13 @@ binint = 0b11
 float = 3.14
 string = "global"
 time = 12:34:56
+date = 2025-09-30
 array_bool = [ true, false, false, true ]
 array_int = [ 1, 2, 3 ]
 array_float = [ 0.5, 1.0 ]
 array_string = [ "global1", "global2" ]
-array_time = [ 12:00:00, 13:00:00 ]
+array_time = [ 11:11:00, 13:14:15.16 ]
+array_date = [ 2001-02-03, 2011-12-13 ]
 empty_array = []
 
 [_default.dict.subdict]
