@@ -109,8 +109,8 @@ live map of the satellites in the Constellation. This map is always accessible v
 
 ```python
 edda > constellation.satellites
-{'Sputnik.One': SatelliteCommLink(name=One, class=Sputnik),
- 'Sputnik.Two': SatelliteCommLink(name=Two, class=Sputnik)}
+{'Sputnik.One': SatelliteCommLink(type=Sputnik, name=One),
+ 'Sputnik.Two': SatelliteCommLink(type=Sputnik, name=Two)}
 ```
 
 The dictionary keys are canonical names in the form `Type.Name`. The controller updates this map

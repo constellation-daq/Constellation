@@ -77,7 +77,7 @@ allows their control. Getting a dictionary containing the satellites could e.g. 
 
 ```python
 edda > constellation.satellites
-{'Sputnik.One': SatelliteCommLink(name=One, class=Sputnik)}
+{'Sputnik.One': SatelliteCommLink(type=Sputnik, name=One)}
 ```
 
 In order to obtain more information on a specific satellite, it can be directly addressed via its type and name

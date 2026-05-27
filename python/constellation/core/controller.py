@@ -49,35 +49,35 @@ class ControllerState(Enum):
         return int(self.value)
 
 
-class SatelliteClassCommLink:
-    """A link to a Satellite Class."""
+class SatelliteTypeCommLink:
+    """A link to a Satellite Type."""
 
-    def __init__(self, name: str):
-        self._class_name = name
+    def __init__(self, satellite_type: str):
+        self._satellite_type = satellite_type
 
     def __str__(self) -> str:
-        """Convert to class name."""
-        return self._class_name
+        """Convert to type name."""
+        return self._satellite_type
 
 
-class SatelliteCommLink(SatelliteClassCommLink):
+class SatelliteCommLink(SatelliteTypeCommLink):
     """A link to a Satellite."""
 
-    def __init__(self, name: str, cls: str):
-        self._name = name
-        self._uuid = str(get_uuid(f"{cls}.{name}"))
-        super().__init__(cls)
+    def __init__(self, satellite_name: str, satellite_type: str):
+        self._satellite_name = satellite_name
+        self._uuid = str(get_uuid(f"{satellite_type}.{satellite_name}"))
+        super().__init__(satellite_type)
 
     def __str__(self) -> str:
         """Convert to canonical name."""
-        return f"{self._class_name}.{self._name}"
+        return f"{self._satellite_type}.{self._satellite_name}"
 
     def _repr_pretty_(self, p: Any, cycle: bool) -> None:  # p is a pretty printer from IPython
         if cycle:
             # this is not a container, so this should not happen!
             pass
         else:
-            p.text(f"SatelliteCommLink(name={self._name}, class={self._class_name})")
+            p.text(f"SatelliteCommLink(type={self._satellite_type}, name={self._satellite_name})")
 
 
 class SatelliteArray:
@@ -86,7 +86,7 @@ class SatelliteArray:
     def __init__(
         self,
         group: str,
-        handler: Callable[[str, str, str, Any], tuple[str, Any, dict[str, Any] | None]],
+        handler: Callable[[str, Any, str | None, str | None], tuple[str, Any, dict[str, Any] | None]],
     ):
         self.group = group
         self._handler = handler
@@ -99,79 +99,83 @@ class SatelliteArray:
         """Return the dict of Satellites names and their SatelliteCommLink."""
         return self._satellites
 
-    def get_satellite(self, sat_class: str, sat_name: str) -> SatelliteCommLink:
-        """Return a link to a Satellite given by its class and name."""
-        return self._satellites[f"{sat_class}.{sat_name}"]
+    def get_satellite(self, sat_type: str, sat_name: str) -> SatelliteCommLink:
+        """Return a link to a Satellite given by its type and name."""
+        return self._satellites[f"{sat_type}.{sat_name}"]
 
-    def _add_class(
+    def _add_type(
         self, name: str, commands: dict[str, Any], hidden_commands: dict[str, str] | None = None
-    ) -> SatelliteClassCommLink:
-        """Add a new class to the array."""
+    ) -> SatelliteTypeCommLink:
+        """Add a new satellite type to the array."""
         if not hidden_commands:
             hidden_commands = {}
         try:
-            cl: SatelliteClassCommLink = getattr(self, name)
+            cl: SatelliteTypeCommLink = getattr(self, name)
             return cl
         except AttributeError:
             pass
         # add attributes now
-        cl = SatelliteClassCommLink(name)
+        cl = SatelliteTypeCommLink(name)
         self._add_cmds(cl, self._handler, commands)
         self._add_cmds(cl, self._handler, hidden_commands)
         setattr(self, name, cl)
         return cl
 
     def _add_satellite(
-        self, name: str, cls: str, commands: dict[str, str], hidden_commands: dict[str, str] | None = None
+        self,
+        satellite_name: str,
+        satellite_type: str,
+        commands: dict[str, str],
+        hidden_commands: dict[str, str] | None = None,
     ) -> SatelliteCommLink:
         """Add a new Satellite."""
         if not hidden_commands:
             hidden_commands = {}
         try:
-            cl: SatelliteClassCommLink = getattr(self, cls)
+            cl: SatelliteTypeCommLink = getattr(self, satellite_type)
         except AttributeError:
-            cl = self._add_class(cls, commands, hidden_commands)
-        sat: SatelliteCommLink = SatelliteCommLink(name, cls)
+            cl = self._add_type(satellite_type, commands, hidden_commands)
+        sat: SatelliteCommLink = SatelliteCommLink(satellite_name, satellite_type)
         self._add_cmds(sat, self._handler, commands)
         self._add_cmds(sat, self._handler, hidden_commands)
-        setattr(cl, self._sanitize_name(name), sat)
-        self._satellites[f"{cls}.{name}"] = sat
+        setattr(cl, self._sanitize_name(satellite_name), sat)
+        self._satellites[f"{satellite_type}.{satellite_name}"] = sat
         return sat
 
     def _remove_satellite(self, uuid: str) -> None:
         """Remove a Satellite."""
-        name, cls = self._get_name_from_uuid(uuid)
+        satellite_name, satellite_type = self._get_name_from_uuid(uuid)
         # remove attribute
-        delattr(getattr(self, cls), self._sanitize_name(name))
+        delattr(getattr(self, satellite_type), self._sanitize_name(satellite_name))
         # clear from dict
-        self._satellites.pop(f"{cls}.{name}")
+        self._satellites.pop(f"{satellite_type}.{satellite_name}")
 
     def _get_name_from_uuid(self, uuid: str) -> tuple[str, str]:
         s = [sat for sat in self._satellites.values() if sat._uuid == uuid]
         if not s:
             raise KeyError("No Satellite with that UUID known.")
-        name = s[0]._name
-        cls = s[0]._class_name
-        return name, cls
+        satellite_name = s[0]._satellite_name
+        satellite_type = s[0]._satellite_type
+        return satellite_name, satellite_type
 
     def _add_cmds(
         self,
         obj: Any,
-        handler: Callable[[str, str, str, Any], tuple[str, Any, dict[str, Any] | None]],
+        handler: Callable[[str, Any, str | None, str | None], tuple[str, Any, dict[str, Any] | None]],
         cmds: dict[str, str],
     ) -> None:
         try:
-            sat = obj._name
+            sat_name = obj._satellite_name
         except AttributeError:
-            sat = None
+            sat_name = None
         try:
-            satcls = obj._class_name
+            sat_type = obj._satellite_type
         except AttributeError:
-            satcls = None
+            sat_type = None
         for cmd, doc in cmds.items():
-            w = CommandWrapper(handler, sat=sat, satcls=satcls, cmd=cmd)
+            w = CommandWrapper(handler, sat_name=sat_name, sat_type=sat_type, cmd=cmd)
             # add docstring
-            w.call.__func__.__doc__ = doc  # type: ignore[attr-defined]
+            w.call.__func__.__doc__ = doc
             setattr(obj, cmd, w.call)
 
     def _sanitize_name(self, name: str) -> str:
@@ -199,20 +203,20 @@ class CommandWrapper:
 
     def __init__(
         self,
-        handler: Callable[[str, str, str, Any], tuple[str, Any, dict[str, Any] | None]],
-        sat: str | None,
-        satcls: str | None,
+        handler: Callable[[str, Any, str | None, str | None], tuple[str, Any, dict[str, Any] | None]],
+        sat_name: str | None,
+        sat_type: str | None,
         cmd: str,
     ):
         """Initialize with fcn as a partial() call."""
         self.fcn = handler
-        self.sat = sat
-        self.satcls = satcls
+        self.sat_name = sat_name
+        self.sat_type = sat_type
         self.cmd = cmd
 
     def call(self, payload: Any = None) -> tuple[str, Any, dict[str, Any] | None]:
         """Perform call. This doc string will be overwritten."""
-        return self.fcn(sat=self.sat, satcls=self.satcls, cmd=self.cmd, payload=payload)  # type: ignore[call-arg]
+        return self.fcn(self.cmd, payload, self.sat_type, self.sat_name)
 
 
 class SatelliteResponse:
@@ -285,7 +289,7 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
         super().__init__(group=group, **kwargs)
 
         self._transmitters: dict[str, CommandTransmitter] = {}
-        # lookup table for uuids to (cls, name) tuple
+        # lookup table for uuids to (type, name) tuple
         self._uuid_lookup: dict[str, tuple[str, str]] = {}
 
         self._constellation = SatelliteArray(group, self.command)
@@ -535,12 +539,7 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
         # Set maximum time before a recv operation returns with EAGAIN [ms]
         socket.setsockopt(zmq.RCVTIMEO, 5000)
         ct = CommandTransmitter(self.name, socket)
-        self.log.debug(
-            "Connecting to %s, address %s on port %s...",
-            service.host_uuid,
-            service.address,
-            service.port,
-        )
+        self.log.debug("Connecting to %s, address %s on port %s...", service.host_uuid, service.address, service.port)
         try:
             # get list of commands
             msg = ct.request_get_response("get_commands")
@@ -562,11 +561,7 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
             # add satellite to constellation
             sat = self._constellation._add_satellite(sat_name, sat_type, msg.payload, hidden_cmds)
             if sat._uuid != str(service.host_uuid):
-                self.log.warning(
-                    "UUIDs do not match: expected %s but received %s",
-                    sat._uuid,
-                    str(service.host_uuid),
-                )
+                self.log.warning("UUIDs do not match: expected %s but received %s", sat._uuid, str(service.host_uuid))
             uuid = str(service.host_uuid)
             self._uuid_lookup[uuid] = (sat_type, sat_name)
             self._transmitters[uuid] = ct
@@ -576,22 +571,17 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
             self.log.error("Could not add Satellite %s: %s", service.host_uuid, repr(e))
 
     def _remove_satellite(self, service: DiscoveredService) -> None:
-        name, cls = None, None
+        satellite_name, satellite_type = None, None
         # departure
         uuid = str(service.host_uuid)
         try:
-            name, cls = self._constellation._get_name_from_uuid(uuid)
+            satellite_name, satellite_type = self._constellation._get_name_from_uuid(uuid)
             self._constellation._remove_satellite(uuid)
         except KeyError:
             pass
         if self.heartbeat_host_is_registered(service.host_uuid):
             self.unregister_heartbeat_host(service.host_uuid)
-        self.log.debug(
-            "Departure of %s, known as %s.%s",
-            service.host_uuid,
-            name,
-            cls,
-        )
+        self.log.debug("Departure of %s, known as %s.%s", service.host_uuid, satellite_type, satellite_name)
         try:
             ct = self._transmitters[uuid]
             ct.close()
@@ -604,25 +594,18 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
         """Callback for Satellites failing to send heartbeats."""
         self.log.critical("%s has entered %s", name, state.name)
 
-    def command(self, payload: Any = None, sat: str = "", satcls: str = "", cmd: str = "") -> Any:
+    def command(self, cmd: str, payload: Any, sat_type: str | None, sat_name: str | None) -> Any:
         """Wrapper for _command_satellite function. Handle sending commands to all hosts"""
         targets = []
-        # figure out whether to send command to Satellite, Class or whole Constellation
-        if not sat and not satcls:
+        # figure out whether to send command to satellite, satellite type or whole Constellation
+        if not sat_type:
             targets = list(self._constellation.satellites.values())
-            self.log.debug("Sending %s to all %s connected Satellites.", cmd, len(targets))
-        elif not sat:
-            targets = [sat for sat in self._constellation.satellites.values() if sat._class_name == satcls]
-            self.log.debug(
-                "Sending %s to all %s connected Satellites of class %s.",
-                cmd,
-                len(targets),
-                satcls,
-            )
+            self.log.debug("Sending %s to all %s connected satellites", cmd, len(targets))
+        elif not sat_name:
+            targets = [sat for sat in self._constellation.satellites.values() if sat._satellite_type == sat_type]
+            self.log.debug("Sending %s to all %s connected satellites of type %s", cmd, len(targets), sat_type)
         else:
-            assert satcls  # for typing
-            assert sat  # for typing
-            targets = [self._constellation.get_satellite(satcls, sat)]
+            targets = [self._constellation.get_satellite(sat_type, sat_name)]
             self.log.debug("Sending %s to Satellite %s.", cmd, targets[0])
 
         res: dict[str, SatelliteResponse] = {}
@@ -638,32 +621,15 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
             try:
                 ret_msg = self._transmitters[target._uuid].request_get_response(command=cmd, payload=p)
             except KeyError:
-                self.log.error(
-                    "Command %s failed for %s (%s.%s): No transmitter available",
-                    cmd,
-                    target,
-                    satcls,
-                    sat,
-                )
+                self.log.error("Command %s failed for %s: No transmitter available", cmd, target)
                 sat_response.success = False
                 sat_response.errmsg = "No transmitter available"
             except RuntimeError as e:
-                self.log.error(
-                    "Command %s failed for %s (%s.%s): %s",
-                    cmd,
-                    target,
-                    satcls,
-                    sat,
-                    repr(e),
-                )
+                self.log.error("Command %s failed for %s: %s", cmd, target, repr(e))
                 sat_response.success = False
                 sat_response.errmsg = repr(e)
             if ret_msg:
-                self.log.debug(
-                    "%s responded: %s",
-                    ret_msg.sender,
-                    ret_msg.verb,
-                )
+                self.log.debug("%s responded: %s", ret_msg.sender, ret_msg.verb)
                 if ret_msg.tags:
                     self.log.debug("    header: %s", ret_msg.tags)
                 if ret_msg.payload:
@@ -671,7 +637,7 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
                 sat_response.msg = ret_msg.verb_msg
                 sat_response.payload = ret_msg.payload
                 sat_response.meta = ret_msg.tags
-            if sat:
+            if sat_name:
                 # simplify return value for single satellite
                 return sat_response
             # append
