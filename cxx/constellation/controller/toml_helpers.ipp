@@ -23,6 +23,7 @@
 #include "constellation/core/config/value_types.hpp"
 #include "constellation/core/utils/env.hpp"
 #include "constellation/core/utils/exceptions.hpp"
+#include "constellation/core/utils/time.hpp"
 
 namespace constellation::controller {
 
@@ -58,7 +59,7 @@ namespace constellation::controller {
         }
 
         if constexpr(toml::is_time<T>) {
-            return {from_toml_time(value.get())};
+            return {utils::localtime_to_system(value.get().hour, value.get().minute, value.get().second)};
         }
 
         if constexpr(toml::is_array<T>) {
@@ -91,8 +92,10 @@ namespace constellation::controller {
                 }
             }
             if(value.front().is_time()) {
-                return {convert_toml_array<std::chrono::system_clock::time_point>(
-                    value, [](const auto& element) { return from_toml_time(element.as_time()->get()); })};
+                return {convert_toml_array<std::chrono::system_clock::time_point>(value, [](const auto& element) {
+                    const auto time = element.as_time()->get();
+                    return utils::localtime_to_system(time.hour, time.minute, time.second);
+                })};
             }
         }
 
