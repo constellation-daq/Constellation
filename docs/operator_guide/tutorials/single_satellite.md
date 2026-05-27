@@ -88,62 +88,39 @@ edda > constellation.Sputnik.One.get_name()
 SatelliteResponse(msg='Sputnik.One')
 ```
 
-The controller supports tab completion, and suggestions for possible commands are displayed typing e.g.
-`constellation.Sputnik.One.` and hitting the tab key.
-
-Since this is an interactive IPython console, of course also loops are possible and could look like this with two satellites
-connected:
-
-```python
-edda > for sat in constellation.satellites.values():
-  ...:     print(sat.get_name())
-  ...:
-'Sputnik.One'
-'Mariner.Nine'
-```
+The controller supports tab completion, and suggestions for possible commands are displayed by typing
+`constellation.Sputnik.One.` and hitting {kbd}`Tab`.
 
 ### Sending Commands to the Satellite
 
 Commands can either be sent to individual satellites, all satellites of a given type, or the entire constellation.
 All available commands for the `constellation` object are available via tab completion.
 
-To initialize the satellite, it needs to be sent an initialize command, with a dictionary of configuration options as an argument.
-In the following example, this dictionary is empty (`{}`) and directly passed to the command.
+To initialize the satellite, it needs to be sent an initialize command, with a configuration as an argument.
+In the following example, the configuration is an empty dictionary (`{}`) and directly passed to the command.
 
 ```python
 edda > constellation.Sputnik.One.initialize({})
-{'Sputnik.One': SatelliteResponse(msg='Transition initialize is being initiated')}
+SatelliteResponse(msg='Transition initialize is being initiated')
 ```
 
 All satellites can be initialized together by sending the command to the entire constellation:
 
 ```python
 edda > constellation.initialize({})
-{'Sputnik.One': SatelliteResponse(msg='Transition initialize is being initiated'),
- 'Mariner.Nine': SatelliteResponse(msg='transitioning', payload=initialize)}
+{'Sputnik.One': SatelliteResponse(msg='Transition initialize is being initiated')}
 ```
 
-Whether the satellites have actually changed their state can be checked by retrieving the current state of an individual
-satellite or the entire constellation via:
-
-```python
-edda > constellation.Sputnik.One.get_state()
-SatelliteResponse(msg='INIT', payload=32,
-                  meta={"last_changed": datetime.datetime(2025, 6, 19, 12, 4, 49, 594792, tzinfo=datetime.timezone.utc)})
-```
+Whether the satellites has actually changed its state can be checked by retrieving the current state via:
 
 ```python
 edda > constellation.get_state()
 {'Sputnik.One': SatelliteResponse(
                    msg='INIT', payload=32,
-                   meta={"last_changed": datetime.datetime(2025, 6, 19, 12, 4, 49, 594792, tzinfo=datetime.timezone.utc)}),
- 'Mariner.Nine': SatelliteResponse(
-                    msg='INIT', payload=32,
-                    meta={"last_changed": datetime.datetime(2025, 6, 19, 12, 4, 49, 607260, tzinfo=datetime.timezone.utc),
-                        "last_changed_iso": '2025-06-19T12:04:49.607260+00:00'})}
+                   meta={"last_changed": datetime.datetime(2025, 6, 19, 12, 4, 49, 594792, tzinfo=datetime.timezone.utc)})}
 ```
 
-Here, the response of the satellites contain a message (`msg`) with the human-readable state name, a payload with the state
+Here, the response of the satellite contain a message (`msg`) with the human-readable state name, a payload with the state
 code and metadata with key-value pairs such as the time when the state changed last (`last_changed`).
 
 Similarly, all satellite transitions can be called. A full list of available commands, along with a description of the finite
@@ -164,9 +141,9 @@ _autonomy.role = "DYNAMIC"
 # Settings which apply to all satellites of type "Sputnik"
 interval = 1000
 
-[Mariner.Nine]
-# Settings which only apply to the satellite with name "Mariner.Nine"
-voltage = 5.1
+[Sputnik.One]
+# Settings which only apply to the satellite with name "Sputnik.One"
+launch_delay = 1
 ```
 
 When starting the controller, a configuration file can be passed as optional command line argument:
@@ -180,25 +157,22 @@ function:
 
 ```python
 edda > constellation.initialize(cfg)
-{'Sputnik.One': SatelliteResponse(msg='Transition initialize is being initiated'),
- 'Mariner.Nine': SatelliteResponse(msg='transitioning', payload=initialize)}
+{'Sputnik.One': SatelliteResponse(msg='Transition initialize is being initiated')}
 ```
 
 Alternatively, the configuration can be read and parsed in an already running interactive command line session using the
-`load_config` function. The resulting dictionary can be directly passed to the `initialize` method, the distribution of
-dictionaries to the individual satellites is taken care of by the controller.
+`load_config` function. The resulting object can be directly passed to the `initialize` method:
 
 ```python
 edda > cfg = load_config("myconfiguration.toml")
 edda > constellation.initialize(cfg)
-{'Sputnik.One': SatelliteResponse(msg='Transition initialize is being initiated'),
- 'Mariner.Nine': SatelliteResponse(msg='transitioning', payload=initialize)}
+{'Sputnik.One': SatelliteResponse(msg='Transition initialize is being initiated')}
 ```
 
 ### Closing the Controller
 
 Controllers in Constellation do not possess state and can be closed and restarted at the discretion of the user without
 affecting the state of the satellites. When closing and starting the controller again, the satellites will still be in the
-`INIT` state from before.
+{bdg-secondary}`INIT` state from before.
 
 The IPython CLI controller can be disconnected from the constellation using the command `quit` or by pressing {kbd}`Control-d` twice.
