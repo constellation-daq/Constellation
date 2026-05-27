@@ -111,3 +111,35 @@ def test_hb_recv_fail(mock_heartbeat_checker):
         time.sleep(0.1)
         timeout -= 0.1
     assert hbc.get_failed()
+
+
+def test_hb_on_state_change_callback(mock_heartbeat_sender, mock_heartbeat_checker):
+    """Test that _on_state_change is called when a satellite changes state."""
+    hbc, _ = mock_heartbeat_checker
+    hbs, _ = mock_heartbeat_sender
+
+    changes: list[tuple[str, SatelliteState, SatelliteState]] = []
+
+    def on_state_change(name: str, old_state: SatelliteState, new_state: SatelliteState) -> None:
+        changes.append((name, old_state, new_state))
+
+    hbc._on_state_change = on_state_change
+    hbc.HB_INIT_PERIOD = 180
+    hbs.default_heartbeat_period = 200
+
+    hbc.register_heartbeat_host(
+        get_uuid("HeartbeatSender.mock_heartbeater"),
+        f"tcp://127.0.0.1:{HB_PORT}",
+    )
+    time.sleep(0.5)
+
+    hbs.fsm.initialize("running mock init")
+    hbs.fsm.initialized("done with mock init")
+
+    timeout = 2
+    while timeout > 0 and not any(new_state == SatelliteState.INIT for _, _, new_state in changes):
+        time.sleep(0.05)
+        timeout -= 0.05
+
+    assert len(changes) > 0
+    assert any(new_state == SatelliteState.INIT for _, _, new_state in changes)
