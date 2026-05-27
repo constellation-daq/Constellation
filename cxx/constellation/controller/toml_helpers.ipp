@@ -62,6 +62,10 @@ namespace constellation::controller {
             return {utils::localtime_to_system(value.get().hour, value.get().minute, value.get().second)};
         }
 
+        if constexpr(toml::is_date<T>) {
+            return {utils::localdate_to_system(value.get().year, value.get().month, value.get().day)};
+        }
+
         if constexpr(toml::is_array<T>) {
             // Check for empty array first
             if(value.empty()) {
@@ -95,6 +99,12 @@ namespace constellation::controller {
                 return {convert_toml_array<std::chrono::system_clock::time_point>(value, [](const auto& element) {
                     const auto time = element.as_time()->get();
                     return utils::localtime_to_system(time.hour, time.minute, time.second);
+                })};
+            }
+            if(value.front().is_date()) {
+                return {convert_toml_array<std::chrono::system_clock::time_point>(value, [](const auto& element) {
+                    const auto date = element.as_date()->get();
+                    return utils::localdate_to_system(date.year, date.month, date.day);
                 })};
             }
         }
