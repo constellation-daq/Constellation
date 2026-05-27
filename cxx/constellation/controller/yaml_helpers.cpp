@@ -16,6 +16,7 @@
 #include <concepts>
 #include <cstdint>
 #include <limits>
+#include <regex>
 #include <string>
 #include <string_view>
 #include <system_error>
@@ -32,6 +33,7 @@
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/core/utils/time.hpp"
 
 using namespace constellation::config;
 using namespace constellation::controller;
@@ -61,13 +63,57 @@ Dictionary constellation::controller::parse_yaml_map(const std::string& key, con
 }
 // NOLINTEND(misc-no-recursion)
 
+bool constellation::controller::parse_yaml_time(const YAML::Node& node, std::chrono::system_clock::time_point& rhs) {
+
+    static const std::regex time_regex(R"((\d{2}):(\d{2}):(\d{2})(\.\d+)?)");
+    static const std::regex date_regex(R"((\d{4})-(\d{2})-(\d{2}))");
+    static const std::regex datetime_regex(
+        R"((\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})[\.]?(\d+)?(Z|[+-]\d{2}:\d{2})?)");
+
+    // Chrono parsing:
+    auto node_str = node.as<std::string>();
+    std::smatch match;
+
+    // Check if this is a daytime:
+    if(std::regex_match(node_str, match, time_regex)) {
+        // Convert to system time, ignore milliseconds
+        rhs = localtime_to_system(std::stoi(match[1]), std::stoi(match[2]), std::stoi(match[3]));
+        return true;
+    }
+
+    // Check for local date
+    if(std::regex_match(node_str, match, date_regex)) {
+        rhs = localdate_to_system(std::stoi(match[1]), std::stoi(match[2]), std::stoi(match[3]));
+        return true;
+    }
+
+    // Check for datetime:
+    if(std::regex_match(node_str, match, datetime_regex)) {
+        rhs = datetime_to_system(std::stoi(match[1]),
+                                 std::stoi(match[2]),
+                                 std::stoi(match[3]),
+                                 std::stoi(match[4]),
+                                 std::stoi(match[5]),
+                                 std::stoi(match[6]),
+                                 match[8]);
+        return true;
+    }
+
+    return false;
+}
+
 namespace {
     template <typename T> bool decode_yaml_array(std::string_view key, const YAML::Node& node, std::vector<T>& rhs) {
         rhs.clear();
         bool first_element = true;
         T rv;
         for(const auto& element : node) {
-            const auto success = YAML::convert<T>::decode(element, rv);
+            bool success {false};
+            if constexpr(std::is_same_v<T, std::chrono::system_clock::time_point>) {
+                success = parse_yaml_time(element, rv);
+            } else {
+                success = YAML::convert<T>::decode(element, rv);
+            }
             if(first_element) {
                 // Return early if decoding failed on first element
                 if(!success) {
@@ -152,7 +198,10 @@ Composite constellation::controller::parse_yaml_value(const std::string& key, co
             return {rv_float};
         }
 
-        // TODO(stephan.lachnit): add chrono parsing
+        std::chrono::system_clock::time_point rv_time {};
+        if(parse_yaml_time(node, rv_time)) {
+            return {rv_time};
+        }
 
         // Otherwise return as string after resolving environment variables
         try {
@@ -176,7 +225,10 @@ Composite constellation::controller::parse_yaml_value(const std::string& key, co
             return {rv_float};
         }
 
-        // TODO(stephan.lachnit): add chrono parsing
+        std::vector<std::chrono::system_clock::time_point> rv_time {};
+        if(decode_yaml_array(key, node, rv_time)) {
+            return {rv_time};
+        }
 
         // Otherwise return as string vector after resolving environment variables
         auto retval = node.as<std::vector<std::string>>();
@@ -201,7 +253,7 @@ namespace {
     auto convert_for_yaml(auto&& value) {
         using T = std::decay_t<decltype(value)>;
         if constexpr(std::same_as<T, std::chrono::system_clock::time_point>) {
-            return to_string(value);
+            return to_rfc3339_string(value);
         } else if constexpr(std::same_as<T, std::vector<bool>::const_reference>) {
             const bool rv = value;
             return rv;

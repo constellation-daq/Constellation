@@ -64,4 +64,14 @@ namespace constellation::controller {
      */
     bool parse_yaml_binary_int(const YAML::Node& node, std::int64_t& out);
 
+    /**
+     * @brief Helper to parse time and date values from YAML strings
+     *
+     * @param node YAML node to be parsed
+     * @param rhs Time point in system time
+     *
+     * @return True if conversion succeeded, false otherwise
+     */
+    bool parse_yaml_time(const YAML::Node& node, std::chrono::system_clock::time_point& rhs);
+
 } // namespace constellation::controller
