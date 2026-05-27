@@ -155,7 +155,7 @@ namespace constellation::utils {
             const auto sign = (tz.starts_with('-') ? -1 : 1);
 
             // Calculate offset from hours and minutes section
-            const auto offset = sign * (std::stoi(tz.substr(1, 2)) * 60 + std::stoi(tz.substr(4, 2)));
+            const auto offset = sign * ((std::stoi(tz.substr(1, 2)) * 60) + std::stoi(tz.substr(4, 2)));
             return std::chrono::time_point_cast<std::chrono::system_clock::duration>(date + time -
                                                                                      std::chrono::minutes {offset});
         }
