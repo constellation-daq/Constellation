@@ -161,7 +161,21 @@ namespace constellation::utils {
         }
 
         // No offset given, interpreting as local time and converting to UTC
+#if __cpp_lib_chrono >= 201907L
         const auto ldate = std::chrono::local_days {ymd};
         return std::chrono::current_zone()->to_sys(std::chrono::local_time<std::chrono::seconds>(ldate + time));
+#else
+        std::tm tm {};
+        tm.tm_year = year - 1900;
+        tm.tm_mon = month - 1;
+        tm.tm_mday = day;
+        tm.tm_hour = hour;
+        tm.tm_min = minute;
+        tm.tm_sec = second;
+        tm.tm_isdst = -1;
+
+        const std::time_t tt = std::mktime(&tm);
+        return std::chrono::system_clock::from_time_t(tt);
+#endif
     }
 } // namespace constellation::utils

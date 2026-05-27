@@ -28,6 +28,7 @@
 #include "constellation/controller/exceptions.hpp"
 #include "constellation/core/config/value_types.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/core/utils/time.hpp"
 
 using namespace constellation::config;
 using namespace constellation::controller;
