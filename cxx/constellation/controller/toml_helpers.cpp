@@ -33,27 +33,13 @@ using namespace constellation::config;
 using namespace constellation::controller;
 using namespace constellation::utils;
 
-toml::time constellation::controller::to_toml_time(const std::chrono::system_clock::time_point& system_time) {
-    toml::time toml_time {};
+toml::date_time constellation::controller::to_toml_time(const std::chrono::system_clock::time_point& system_time) {
+    const auto [date, time] = system_to_localdatetime(system_time);
 
-#if __cpp_lib_chrono >= 201907L
-    const auto local_time = std::chrono::current_zone()->to_local(system_time);
-    const auto local_time_midnight = std::chrono::floor<std::chrono::days>(local_time);
-    const auto local_time_since_midnight = local_time - local_time_midnight;
-    const std::chrono::hh_mm_ss hms {local_time_since_midnight};
-    toml_time.hour = hms.hours().count();
-    toml_time.minute = hms.minutes().count();
-    toml_time.second = hms.seconds().count();
-#else
-    const auto time_t = std::chrono::system_clock::to_time_t(system_time);
-    std::tm tm {};
-    localtime_r(&time_t, &tm); // there is no thread-safe std::localtime
-    toml_time.hour = tm.tm_hour;
-    toml_time.minute = tm.tm_min;
-    toml_time.second = tm.tm_sec;
-#endif
-
-    return toml_time;
+    return toml::date_time(toml::date(static_cast<int>(date.year()),
+                                      static_cast<unsigned int>(date.month()),
+                                      static_cast<unsigned int>(date.day())),
+                           toml::time(time.hours().count(), time.minutes().count(), time.seconds().count()));
 }
 
 // NOLINTBEGIN(misc-no-recursion)

@@ -18,7 +18,7 @@
 
 namespace constellation::controller {
 
-    toml::time to_toml_time(const std::chrono::system_clock::time_point& system_time);
+    toml::date_time to_toml_time(const std::chrono::system_clock::time_point& system_time);
 
     template <typename T, typename F> config::Array convert_toml_array(const toml::array& array, F op);
 
