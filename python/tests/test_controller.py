@@ -132,9 +132,8 @@ def test_satellite_await(controller, satellite):
     controller.constellation.launch()
     controller.await_state(SatelliteState.ORBIT, timeout=2)
 
-    last_state_change = controller.get_last_state_change(["MySatellite.satellite"])
     controller.constellation.MySatellite.satellite.reconfigure({})
-    controller.await_state_change(SatelliteState.ORBIT, last_state_change, timeout=2)
+    controller.await_state(SatelliteState.ORBIT, timeout=2)
 
 
 def test_on_satellite_update_callback(mock_controller, mock_satellite):

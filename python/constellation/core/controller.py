@@ -23,8 +23,9 @@ from .cscp import CommandTransmitter
 from .error import debug_log
 from .heartbeatchecker import HeartbeatChecker
 from .logging import setup_cli_logging
+from .message.cscp1 import CSCP1Message
 from .monitoring import MonitoringSender
-from .protocol.cscp1 import SatelliteState
+from .protocol.cscp1 import SatelliteState, TransitionCommand
 from .satellite import Satellite
 from .util import case_insensitive_dict
 
@@ -407,58 +408,30 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
             return prefix + "All " + res[0]
         return prefix + ", ".join(res)
 
-    def get_last_state_change(self, satellites: list[str]) -> dict[str, datetime]:
-        """Return a dictionary of selected connected Satellite's last state change."""
-        last_state_change: dict[str, datetime] = {}
-        for satellite in satellites:
-            if satellite not in self.last_state_change:
-                raise Exception(f"Satellite {satellite} not known to controller")
-            last_state_change[satellite] = self.last_state_change[satellite]
-        return last_state_change
-
     def await_state(self, target: SatelliteState, timeout: int = 60) -> None:
-        """Blocks until the desired global state of the connected satellites is reached."""
+        """Blocks until the desired global state of the connected satellites is reached with check for state changes."""
         self.log.info("Awaiting global state %s", target)
         start = time.time()
-        while not all([state == target for state in self.states.values()]):
-            if time.time() - start > timeout:
-                raise Exception(f"Timeout after {timeout}s while waiting for state {target.name}")
-            if any([state == SatelliteState.ERROR for state in self.states.values()]):
-                raise Exception(f"ERROR state detected while waiting for state {target.name}")
-            time.sleep(0.1)
 
-    def await_state_change(self, target: SatelliteState, last_state_change: dict[str, datetime], timeout: int = 60) -> None:
-        """Blocks until the desired global state of the connected satellites is reached with check for state changes."""
-
-        # Copy dict so that we can modify it for the next iteration
-        last_state_change_copy = last_state_change.copy()
-
-        start = time.time()
-
-        while last_state_change:
-            # Check that last extrasystole is more recent than the timestamp given in the dict
-            for satellite, last_change in last_state_change.items():
-                new_last_change = self.last_state_change[satellite]
-                if new_last_change > last_change:
-                    # New extrasystole found, remove from map for next iteration
-                    del last_state_change_copy[satellite]
-                    self.log.trace("State change registered for %s", satellite)
-
-            # Copy dict with removed entries for next iteration
-            last_state_change = last_state_change_copy.copy()
-
-            # Check for timeout
+        while True:
+            outdated = [hb for hb in self._remote_heartbeat_states.values() if hb.outdated]
+            if not outdated:
+                break
             if time.time() - start > timeout:
                 raise Exception(
                     f"Timeout after {timeout}s while waiting for state {target.name}: "
-                    f"{last_state_change.keys()} never changed state"
+                    f"{[hb.name for hb in outdated]} still have an outdated state"
                 )
-
             time.sleep(0.1)
 
         # Once all sent an extrasystole, await state as usual with remaining timeout
         remaining_timeout = timeout - round(time.time() - start)
-        self.await_state(target, remaining_timeout)
+        while not all([state == target for state in self.states.values()]):
+            if time.time() - start > remaining_timeout:
+                raise Exception(f"Timeout after {timeout}s while waiting for state {target.name}")
+            if any([state == SatelliteState.ERROR for state in self.states.values()]):
+                raise Exception(f"ERROR state detected while waiting for state {target.name}")
+            time.sleep(0.1)
 
     def await_satellites(self, satellites: list[str], timeout: int = 60) -> None:
         """Blocks until all desired satellites are connected."""
@@ -622,8 +595,18 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
             targets = [self._constellation.get_satellite(sat_type, sat_name)]
             self.log.debug("Sending %s to Satellite %s.", cmd, targets[0])
 
+        # Check if this is a transition command
+        is_transition = cmd in [transition_cmd.name for transition_cmd in TransitionCommand]
+
         res: dict[str, SatelliteResponse] = {}
         for target in targets:
+            # Get the HeartbeatState object for this target
+            heartbeat_state = self._get_heartbeat_state(UUID(target._uuid)) if is_transition else None
+
+            # Mark state of this host as outdated if this is a transition command:
+            if heartbeat_state:
+                heartbeat_state.outdated = True
+
             self.log.debug("Host %s send command %s...", target, cmd)
             # The payload to set of (known) command can be pre-processed
             # allowing using more complex objects as arguments and a more
@@ -651,6 +634,13 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
                 sat_response.msg = ret_msg.verb_msg
                 sat_response.payload = ret_msg.payload
                 sat_response.meta = ret_msg.tags
+
+            # Reset outdated flag if the command failed or the response was not SUCCESS
+            # This would mean that the transition command has not been accepted and no transition is expected
+            if heartbeat_state:
+                if not sat_response.success or ret_msg is None or ret_msg.verb_type != CSCP1Message.Type.SUCCESS:
+                    heartbeat_state.outdated = False
+
             if sat_name:
                 # simplify return value for single satellite
                 return sat_response

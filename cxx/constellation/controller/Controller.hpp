@@ -84,6 +84,7 @@ namespace constellation::controller {
             std::chrono::steady_clock::time_point last_state_change {}; // NOLINT(readability-redundant-member-init)
             std::chrono::steady_clock::time_point last_checked {std::chrono::steady_clock::now()};
             std::uint8_t lives {protocol::CHP::Lives};
+            bool outdated {false};
         };
 
     public:
@@ -216,26 +217,14 @@ namespace constellation::controller {
         /**
          * @brief Helper to wait until all connected satellites are in a given state
          *
+         * This function first checks that none of the satellite states is marked as outdated by an outgoing command
+         * before continuing to await the state. This is useful when reconfiguring from ORBIT or initializing from INIT.
+         *
          * @param state State to be checked for
          * @param timeout Time to wait before an exception is thrown
          * @throw ControllerError If the timeout is reached before the global state is reached
          */
         void awaitState(protocol::CSCP::State state, std::chrono::seconds timeout) const;
-
-        /**
-         * @brief Helper to wait until all connected satellites are in a given state with check for state changes
-         *
-         * This function first checks that the satellites provided in the `last_state_changed` parameter changed their state
-         * before continuing to await the state. This is useful when reconfiguring from ORBIT or initializing from INIT.
-         *
-         * @param state State to be checked for
-         * @param timeout Time to wait before an exception is thrown
-         * @param last_state_changed Map of satellites with the timestamp of their last state change
-         * @throw ControllerError If the timeout is reached before the global state is reached
-         */
-        void awaitState(protocol::CSCP::State state,
-                        std::chrono::seconds timeout,
-                        std::map<std::string, std::chrono::steady_clock::time_point> last_state_changed) const;
 
         /**
          * @brief Get lowest state of any satellite connected
@@ -272,15 +261,6 @@ namespace constellation::controller {
          * @return Number of currently connected satellites
          */
         std::size_t getConnectionCount() const { return connection_count_.load(); }
-
-        /**
-         * @brief Get map of satellites and the timestamp of their last state change
-         *
-         * @param satellites Set of satellites which to return in map
-         * @return Map of satellites names and the timestamp of their last state change
-         */
-        std::map<std::string, std::chrono::steady_clock::time_point>
-        getLastStateChange(const std::set<std::string>& satellites) const;
 
         /**
          * @brief Return the current or last run identifier of the constellation

@@ -231,6 +231,7 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
         if(sat->second.state != state) {
             sat->second.state = state;
             sat->second.last_state_change = now;
+            sat->second.outdated = false;
         }
 
         // Update status message if available
@@ -287,20 +288,6 @@ Dictionary Controller::getConnectionCommands(std::string_view satellite_name) co
     }
 
     return {};
-}
-
-std::map<std::string, std::chrono::steady_clock::time_point>
-Controller::getLastStateChange(const std::set<std::string>& satellites) const {
-    std::map<std::string, std::chrono::steady_clock::time_point> last_state_change {};
-    const std::scoped_lock connection_lock {connection_mutex_};
-    for(const auto& satellite : satellites) {
-        const auto connection = connections_.find(satellite);
-        if(connection == connections_.cend()) {
-            throw std::out_of_range("Satellite " + satellite + " is unknown to controller");
-        }
-        last_state_change.emplace(connection->first, connection->second.last_state_change);
-    }
-    return last_state_change;
 }
 
 std::string Controller::getRunIdentifier() {
@@ -394,62 +381,28 @@ bool Controller::isInGlobalState() const {
 void Controller::awaitState(CSCP::State state, std::chrono::seconds timeout) const {
     LOG(logger_, TRACE) << "Awaiting state " << state << " (timeout " << timeout << ")";
 
-    auto timer = TimeoutTimer(timeout);
-    timer.reset();
-
-    while(!isInState(state)) {
-        // Check for timeout
-        if(timer.timeoutReached()) {
-            throw ControllerError("Timed out waiting for global state " + enum_name(state));
-        }
-
-        // Wait a bit to avoid hot-loop
-        std::this_thread::sleep_for(10ms);
-    }
-}
-
-void Controller::awaitState(CSCP::State state,
-                            std::chrono::seconds timeout,
-                            std::map<std::string, std::chrono::steady_clock::time_point> last_state_change) const {
-    LOG(logger_, TRACE) << "Awaiting state change for "
-                        << range_to_string(last_state_change, [](const auto& p) { return p.first; }) << " (timeout "
-                        << timeout << ")";
-
-    // Copy map so that we can modify it for the next iteration
-    auto last_state_change_copy = last_state_change;
-
     std::unique_lock connection_lock {connection_mutex_, std::defer_lock};
 
     auto timer = TimeoutTimer(timeout);
     timer.reset();
 
-    // Wait until all satellites in last_state_changed sent an extrasystole
-    while(!last_state_change.empty()) {
-        for(const auto& [satellite, last_change] : last_state_change) {
-            // Check that last extrasystole is more recent than the timestamp given in the list
-            connection_lock.lock();
-            const auto connection = connections_.find(satellite);
-            if(connection == connections_.cend()) {
-                throw std::out_of_range("Satellite " + satellite + " is unknown to controller");
-            }
-            const auto new_last_change = connection->second.last_state_change;
+    // Wait until no satellite state is marked as outdated anymore
+    while(true) {
+        connection_lock.lock();
+        if(std::ranges::none_of(connections_, [](const auto& sat) { return sat.second.outdated; })) {
             connection_lock.unlock();
-            if(new_last_change > last_change) {
-                // New extrasystole found, remove from map for next iteration
-                last_state_change_copy.erase(satellite);
-                LOG(logger_, TRACE) << "State change registered for " << satellite;
-            }
+            break;
         }
-
-        // Copy map with removed entries for next iteration
-        last_state_change = last_state_change_copy;
 
         // Check for timeout
         if(timer.timeoutReached()) {
-            throw ControllerError("Timed out waiting for global state " + enum_name(state) + ": " +
-                                  range_to_string(last_state_change, [](const auto& p) { return p.first; }) +
-                                  " never changed state");
+            const auto count = std::ranges::count_if(connections_, [](const auto& sat) { return sat.second.outdated; });
+            connection_lock.unlock();
+            throw ControllerError("Timed out waiting for global state " + enum_name(state) + ": " + std::to_string(count) +
+                                  " still have an outdated state");
         }
+
+        connection_lock.unlock();
 
         // Wait a bit to avoid hot-loop
         std::this_thread::sleep_for(10ms);
@@ -457,7 +410,18 @@ void Controller::awaitState(CSCP::State state,
 
     // Once all sent an extrasystole, await state as usual with remaining timeout
     const auto remaining_timeout = timeout - std::chrono::duration_cast<std::chrono::seconds>(timer.runtime());
-    awaitState(state, remaining_timeout);
+    auto remaining_timer = TimeoutTimer(remaining_timeout);
+    remaining_timer.reset();
+
+    while(!isInState(state)) {
+        // Check for timeout
+        if(remaining_timer.timeoutReached()) {
+            throw ControllerError("Timed out waiting for global state " + enum_name(state));
+        }
+
+        // Wait a bit to avoid hot-loop
+        std::this_thread::sleep_for(10ms);
+    }
 }
 
 CSCP::State Controller::getLowestState() const {
@@ -480,7 +444,14 @@ CSCP1Message Controller::send_receive(Connection& conn, CSCP1Message& cmd, bool 
         return {{controller_name_}, {CSCP1Message::Type::ERROR, "Can only send command messages of type REQUEST"}};
     }
 
+    // Check if this is a transition command and mark the satellite state as outdated:
+    const auto mark_outdated = enum_cast<CSCP::TransitionCommand>(cmd.getVerb().second).has_value();
+
     try {
+        if(mark_outdated) {
+            conn.outdated = true;
+        }
+
         // Possible keep payload, we might send multiple command messages:
         cmd.assemble(keep_payload).send(conn.req);
         zmq::multipart_t recv_zmq_msg {};
@@ -492,13 +463,25 @@ CSCP1Message Controller::send_receive(Connection& conn, CSCP1Message& cmd, bool 
             const auto verb = reply.getVerb();
             conn.last_cmd_type = verb.first;
             conn.last_message = verb.second;
+
+            // If the return type is not SUCCESS, the transition command did not succeed and the state is not outdated
+            if(mark_outdated && conn.last_cmd_type != CSCP1Message::Type::SUCCESS) {
+                conn.outdated = false;
+            }
+
             return reply;
         }
 
         // No response - timed out:
+        if(mark_outdated) {
+            conn.outdated = false;
+        }
         throw SendTimeoutError("command " + quote(cmd.getVerb().second) + " to " + conn.uri,
                                std::chrono::duration_cast<std::chrono::seconds>(cmd_timeout_));
     } catch(const zmq::error_t& error) {
+        if(mark_outdated) {
+            conn.outdated = false;
+        }
         throw NetworkError(error.what());
     }
 }

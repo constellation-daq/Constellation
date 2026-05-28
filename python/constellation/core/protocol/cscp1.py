@@ -42,6 +42,19 @@ class SatelliteState(Enum):
         return bool(((self.value & 0x0F) << 4) == state.value)
 
 
+class TransitionCommand(Enum):
+    """Transition commands of the satellite FSM"""
+
+    initialize = 0x0
+    launch = 0x1
+    land = 0x2
+    reconfigure = 0x3
+    start = 0x4
+    stop = 0x5
+    _interrupt = 0x6
+    _failure = 0x7
+
+
 def states_except(disallowed_states: list[SatelliteState]) -> list[SatelliteState]:
     """Get list of all states except states from a given list"""
     allowed_states: list[SatelliteState] = []
