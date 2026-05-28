@@ -37,10 +37,8 @@ using namespace constellation::utils;
 toml::date_time constellation::controller::to_toml_time(const std::chrono::system_clock::time_point& system_time) {
     const auto [date, time] = system_to_localdatetime(system_time);
 
-    return toml::date_time(toml::date(static_cast<int>(date.year()),
-                                      static_cast<unsigned int>(date.month()),
-                                      static_cast<unsigned int>(date.day())),
-                           toml::time(time.hours().count(), time.minutes().count(), time.seconds().count()));
+    return {{static_cast<int>(date.year()), static_cast<unsigned int>(date.month()), static_cast<unsigned int>(date.day())},
+            {time.hours().count(), time.minutes().count(), time.seconds().count()}};
 }
 
 // NOLINTBEGIN(misc-no-recursion)
