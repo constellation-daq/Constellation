@@ -86,7 +86,7 @@ class Satellite(
         self.register_metric("RUN_ID", "", "Current run identifier. Updated when changed.")
         self.register_metric("STATE", "", "Current satellite state. Updated when changed.")
         self.register_scheduled_metric(
-            "CPU_LOAD_AVG", "%", "CPU load average.", 10, lambda: 100 * psutil.getloadavg()[0] / psutil.cpu_count()
+            "CPU_LOAD_AVG", "%", "CPU load average.", 10, lambda: 100 * psutil.getloadavg()[0] / (psutil.cpu_count() or 1)
         )
         self.register_scheduled_metric(
             "MEM_AVAIL", "MiB", "Available memory in Megabytes.", 10, lambda: psutil.virtual_memory().available / 1024 / 1024
