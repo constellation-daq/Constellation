@@ -1,3 +1,8 @@
+"""
+SPDX-FileCopyrightText: 2026 DESY and the Constellation authors
+SPDX-License-Identifier: EUPL-1.2
+"""
+
 import asyncio
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -43,13 +48,15 @@ class CombinedBridge:
             self._ctx,
             callback=self._on_cmdp_message,
         )
-        self._cmdp_pool.set_topics([
-            "LOG/INFO",
-            "LOG/WARNING",
-            "LOG/STATUS",
-            "LOG/CRITICAL",
-            "STAT/",
-        ])
+        self._cmdp_pool.set_topics(
+            [
+                "LOG/INFO",
+                "LOG/WARNING",
+                "LOG/STATUS",
+                "LOG/CRITICAL",
+                "STAT/",
+            ]
+        )
 
         self._transmitters: dict[str, CommandTransmitter] = {}
         self._transmitter_uuids: dict[UUID, str] = {}
@@ -97,6 +104,7 @@ class CombinedBridge:
         The executor serializes all REQ socket operations so concurrent
         send_command calls never interleave on the same socket.
         """
+
         def _send() -> str:
             with self._transmitter_lock:
                 ct = self._transmitters.get(canonical_name)
@@ -201,6 +209,7 @@ class CombinedBridge:
 
     async def _setup_transmitter(self, uuid: UUID, address: str, port: int) -> None:
         """Connect to a satellite's CSCP port (runs blocking call in executor)."""
+
         def _connect() -> tuple[str, CommandTransmitter] | None:
             sock = self._sync_ctx.socket(zmq.REQ)
             sock.connect(f"tcp://{address}:{port}")
@@ -242,7 +251,7 @@ async def main() -> None:
     bridge = CombinedBridge(group, loop)
 
     print(f"Combined Bridge for group '{group}'")
-    print(f"Architecture: asyncio event loop only (no dedicated threads)")
+    print("Architecture: asyncio event loop only (no dedicated threads)")
     print()
 
     await bridge.start()
@@ -305,7 +314,7 @@ async def main() -> None:
     print(f"  Log messages received:  {bridge.stats['logs']}")
     print(f"  Metrics received:       {bridge.stats['metrics']}")
     print(f"  Commands sent:          {bridge.stats['commands_sent']}")
-    print(f"  Architecture:           asyncio event loop only (no dedicated threads)")
+    print("  Architecture:           asyncio event loop only (no dedicated threads)")
 
 
 if __name__ == "__main__":
