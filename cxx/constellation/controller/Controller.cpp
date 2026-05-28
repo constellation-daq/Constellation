@@ -231,6 +231,7 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
         if(sat->second.state != state) {
             sat->second.state = state;
             sat->second.last_state_change = now;
+            sat->second.outdated = false;
         }
 
         // Update status message if available
