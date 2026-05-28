@@ -36,7 +36,6 @@ dependencies = [
     "psutil",
     "rich",
     "pyyaml",
-    "psutil",
 ]
 
 [project.scripts]
