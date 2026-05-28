@@ -1,3 +1,8 @@
+"""
+SPDX-FileCopyrightText: 2026 DESY and the Constellation authors
+SPDX-License-Identifier: EUPL-1.2
+"""
+
 import asyncio
 import socket
 import sys
@@ -90,10 +95,7 @@ class AsyncMulticastSocket(asyncio.DatagramProtocol):
         self._recv_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
         self._recv_socket.bind(("0.0.0.0", multicast_port))
         for interface_address in interface_addresses:
-            ip_mreq = (
-                socket.inet_aton(multicast_address)
-                + socket.inet_aton(interface_address)
-            )
+            ip_mreq = socket.inet_aton(multicast_address) + socket.inet_aton(interface_address)
             self._recv_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, ip_mreq)
         self._recv_socket.setblocking(False)
 
@@ -103,9 +105,7 @@ class AsyncMulticastSocket(asyncio.DatagramProtocol):
         return self._datagram_callback
 
     @datagram_callback.setter
-    def datagram_callback(
-        self, callback: Callable[[bytes, tuple[str, int]], None] | None
-    ) -> None:
+    def datagram_callback(self, callback: Callable[[bytes, tuple[str, int]], None] | None) -> None:
         self._datagram_callback = callback
 
     def connection_made(self, transport: asyncio.DatagramTransport) -> None:
@@ -180,9 +180,7 @@ class AsyncCHIRPListener:
         """Send a CHIRP message on all interfaces."""
         self._socket.send(message.pack())
 
-    def get_discovered(
-        self, service_id: CHIRPServiceIdentifier
-    ) -> list[DiscoveredService]:
+    def get_discovered(self, service_id: CHIRPServiceIdentifier) -> list[DiscoveredService]:
         """Return all discovered services matching service_id."""
         return [s for s in self._discovered_services if s.service_id == service_id]
 
