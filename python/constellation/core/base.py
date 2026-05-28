@@ -5,6 +5,7 @@ SPDX-License-Identifier: EUPL-1.2
 This module provides a base class for Constellation Satellite modules.
 """
 
+import asyncio
 import atexit
 import logging
 import socket
@@ -121,6 +122,8 @@ class BaseSatelliteFrame:
         self._com_thread_pool: dict[str, threading.Thread] = {}
         # Event to indicate to communication service threads to stop
         self._com_thread_evt: threading.Event | None = None
+        # List of async coroutine factories for async communication tasks
+        self._com_task_factories: list = []
 
         # add self to list of satellites to destroy on shutdown
         global SATELLITE_LIST  # noqa
@@ -145,6 +148,20 @@ class BaseSatelliteFrame:
 
         """
         self.log.debug("Satellite Base class _add_thread called")
+
+    def _add_com_task(self) -> None:
+        """Method to add async coroutine factories to the task pool.
+
+        Does nothing in the base class. Override in subclass and call
+        super()._add_com_task() first, then append to _com_task_factories.
+
+        """
+
+    async def _start_com_tasks(self, stop: asyncio.Event) -> None:
+        """Run all registered async tasks concurrently until stop is set."""
+        if not self._com_task_factories:
+            return
+        await asyncio.gather(*[factory(stop) for factory in self._com_task_factories])
 
     def _start_com_threads(self) -> None:
         """Start all background communication threads."""
