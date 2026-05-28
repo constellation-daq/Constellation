@@ -181,15 +181,6 @@ namespace constellation::controller {
         void queue_loop(const std::stop_token& stop_token);
 
         /**
-         * @brief Get map of satellites and the timestamp of their last state change
-         *
-         * @param measurement Measurement from which to extract to extract relevant satellites
-         * @return Map of satellites names and the timestamp of their last state change
-         */
-        std::map<std::string, std::chrono::steady_clock::time_point>
-        get_last_state_change(const Measurement& measurement) const;
-
-        /**
          * @brief Checks all satellite replies for success verbs.
          * @throws If a satellite did not respond with success
          *
