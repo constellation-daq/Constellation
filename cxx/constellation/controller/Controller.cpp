@@ -434,7 +434,14 @@ CSCP1Message Controller::send_receive(Connection& conn, CSCP1Message& cmd, bool 
         return {{controller_name_}, {CSCP1Message::Type::ERROR, "Can only send command messages of type REQUEST"}};
     }
 
+    // Check if this is a transition command and mark the satellite state as outdated:
+    const auto mark_outdated = enum_cast<CSCP::TransitionCommand>(cmd.getVerb().second).has_value();
+
     try {
+        if(mark_outdated) {
+            conn.outdated = true;
+        }
+
         // Possible keep payload, we might send multiple command messages:
         cmd.assemble(keep_payload).send(conn.req);
         zmq::multipart_t recv_zmq_msg {};
@@ -446,13 +453,25 @@ CSCP1Message Controller::send_receive(Connection& conn, CSCP1Message& cmd, bool 
             const auto verb = reply.getVerb();
             conn.last_cmd_type = verb.first;
             conn.last_message = verb.second;
+
+            // If the return type is not SUCCESS, the transition command did not succeed and the state is not outdated
+            if(mark_outdated && conn.last_cmd_type != CSCP1Message::Type::SUCCESS) {
+                conn.outdated = false;
+            }
+
             return reply;
         }
 
         // No response - timed out:
+        if(mark_outdated) {
+            conn.outdated = false;
+        }
         throw SendTimeoutError("command " + quote(cmd.getVerb().second) + " to " + conn.uri,
                                std::chrono::duration_cast<std::chrono::seconds>(cmd_timeout_));
     } catch(const zmq::error_t& error) {
+        if(mark_outdated) {
+            conn.outdated = false;
+        }
         throw NetworkError(error.what());
     }
 }
