@@ -387,13 +387,21 @@ void Controller::awaitState(CSCP::State state, std::chrono::seconds timeout) con
     timer.reset();
 
     // Wait until no satellite state is marked as outdated anymore
-    while(std::ranges::any_of(connections_, [](const auto& sat) { return sat.second.outdated; })) {
+    while(true) {
+        connection_lock.lock();
+        if(std::ranges::none_of(connections_, [](const auto& sat) { return sat.second.outdated; })) {
+            break;
+        }
+
         // Check for timeout
         if(timer.timeoutReached()) {
             const auto count = std::ranges::count_if(connections_, [](const auto& sat) { return sat.second.outdated; });
+            connection_lock.unlock();
             throw ControllerError("Timed out waiting for global state " + enum_name(state) + ": " + std::to_string(count) +
                                   " still have an outdated state");
         }
+
+        connection_lock.unlock();
 
         // Wait a bit to avoid hot-loop
         std::this_thread::sleep_for(10ms);
