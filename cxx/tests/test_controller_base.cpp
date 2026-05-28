@@ -80,7 +80,6 @@ TEST_CASE("Controller await state", "[controller]") {
     // Await INIT state (fails)
     REQUIRE_THROWS_MATCHES(
         controller.awaitState(CSCP::State::INIT, 0s), ControllerError, Message("Timed out waiting for global state INIT"));
-    ;
 
     // Stop controller
     controller.stop();

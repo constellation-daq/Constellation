@@ -390,6 +390,7 @@ void Controller::awaitState(CSCP::State state, std::chrono::seconds timeout) con
     while(true) {
         connection_lock.lock();
         if(std::ranges::none_of(connections_, [](const auto& sat) { return sat.second.outdated; })) {
+            connection_lock.unlock();
             break;
         }
 
