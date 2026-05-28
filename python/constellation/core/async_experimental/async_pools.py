@@ -1,3 +1,8 @@
+"""
+SPDX-FileCopyrightText: 2026 DESY and the Constellation authors
+SPDX-License-Identifier: EUPL-1.2
+"""
+
 import asyncio
 from collections.abc import Callable
 from uuid import UUID
