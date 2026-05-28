@@ -44,14 +44,12 @@ for ivl in range(0, 100, 10):
     # Reconfigure one of the satellites to the new parameter value
     recfg = {"interval": ivl}
 
-    # Store last state change for Sputnik to ensure it reached reconfiguring
-    last_state_change = ctrl.get_last_state_change(["Sputnik.One"])
-
     # Send reconfigure command
     constellation.Sputnik.One.reconfigure(recfg)
 
-    # Wait until all states are back in the ORBIT state while ensuring Sputnik.One changed state
-    ctrl.await_state_change(SatelliteState.ORBIT, last_state_change)
+    # Wait until all states are back in the ORBIT state.
+    # This also ensures that Sputnik.One has indeed changed state
+    ctrl.await_state(SatelliteState.ORBIT)
 
     # Repeat this measurement four times
     for run in range(1, 4):
@@ -197,14 +195,11 @@ for voltage in voltages:
     # Reconfigure Keithley with new voltage
     recfg = {"voltage": voltage}
 
-    # Store last state change for Keithley to ensure it reached reconfiguring
-    last_state_change = ctrl.get_last_state_change(["Keithley.Bias"])
-
     # Send reconfigure command
     ctrl.constellation.Keithley.Bias.reconfigure(recfg)
 
     # Wait until all states are back in the ORBIT state while ensuring Keithley.Bias changed state
-    ctrl.await_state_change(SatelliteState.ORBIT, last_state_change)
+    ctrl.await_state(SatelliteState.ORBIT)
 
     # Start the run
     ctrl.constellation.start(f"voltage{str(voltage).replace('.', '_')}")
