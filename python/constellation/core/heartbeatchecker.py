@@ -210,8 +210,10 @@ class HeartbeatChecker(BaseSatelliteFrame):
                 hb.refresh(timestamp.to_datetime())
                 state_enum = SatelliteState(state)
                 if state_enum != hb.state:
+                    old_state = hb.state
                     hb.state = state_enum
                     hb.last_statechange = datetime.now()
+                    self._on_state_change(hb.name, old_state, state_enum)
                 self.log_chp.trace(
                     "%s reports state %s, flags %s%s, next message in %d",
                     name,
@@ -306,6 +308,15 @@ class HeartbeatChecker(BaseSatelliteFrame):
 
     def _mark_degraded(self, reason: str) -> None:
         """Called when marking a run degraded"""
+
+    def _on_state_change(
+        self,
+        name: str,
+        old_state: SatelliteState,
+        new_state: SatelliteState,
+    ) -> None:
+        """Called when a satellite changes state. Override in subclass."""
+        pass
 
     def get_failed(self) -> list[str]:
         """Get a list of the names of all failed Satellites."""
