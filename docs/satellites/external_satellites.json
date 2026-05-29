@@ -24,6 +24,11 @@
       "name": "AMIModel1700LLI",
       "readme": "https://gitlab.desy.de/madmax/hamburg/amimodel1700lli-satellite/-/raw/main/README.md",
       "website": "https://gitlab.desy.de/madmax/hamburg/amimodel1700lli-satellite"
+    },
+    {
+      "name": "TTi QL355TP",
+      "readme": "https://raw.githubusercontent.com/jedi-demo/TTi-QL355TP-satellite/refs/heads/main/README.md",
+      "website": "https://github.com/jedi-demo/TTi-QL355TP-satellite"
     }
   ]
 }
