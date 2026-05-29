@@ -4,135 +4,106 @@ sd_hide_title: true
 ---
 <!-- markdownlint-disable -->
 
+<script src="_static/js/hero.js"></script>
+
 <!-- CSS overrides on the homepage only -->
 <style>
 .bd-main .bd-content .bd-article-container {
-  max-width: 70rem; /* Make homepage a little wider instead of 60em */
-}
-/* Extra top/bottom padding to the sections */
-article.bd-article section {
-  padding: 3rem 0 7rem;
-}
-/* Override all h1 headers except for the hidden ones */
-h1:not(.sd-d-none) {
-  font-weight: bold;
-  font-size: 48px;
-  text-align: center;
-  margin-bottom: 4rem;
-}
-/* Override all h3 headers that are not in hero */
-h3:not(.hero h3) {
-  font-weight: bold;
-  text-align: center;
+  max-width: 75rem; /* Make homepage a little wider instead of 60em */
 }
 </style>
 
-# Constellation: The Autonomous Control and Data Acquisition System for Dynamic Experimental Setups
+# Constellation
 
-::::::{grid} 1 2 2 2
-:gutter: 0
-:margin: 0
-:padding: 0
-:class-container: hero
-
-:::::{grid-item}
-:margin: 0
-:padding: 0 0 0 4
-:columns: 12 5 5 5
-
-<h2 style="font-size: 60px; font-weight: bold; margin: 2rem 0 0 0;">Constellation</h2>
-<h3 style="font-weight: bold; margin-top: 0;">Autonomous Control and <br/>Data Acquisition System</h3>
-<p>Constellation is a control and data acquisition system for small-scale experiments and experimental setup with volatile and dynamic constituents such as testbeam environments or laboratory test stands.</p>
-
-<div class="homepage-button-container">
-  <div class="homepage-button-container-row">
-      <a href="./operator_guide/index.html" class="homepage-button primary-button">Get Started</a>
-      <a href="./operator_guide/concepts/constellation.html" class="homepage-button secondary-button">Concepts</a>
+<div class="hero">
+  <div class="hero-title-row">
+    <img
+      src="_static/logo.svg"
+      alt="Constellation Logo"
+      class="hero-logo"
+    />
+    <div class="hero-title">
+      <span
+        class="typewrite"
+        data-period="1000"
+        data-type='[
+          "Data Acquisition",
+          "Instrument Control",
+          "Autonomous Operation",
+          "Test Beam Campaigns",
+          "Dynamic Lab Setups"
+        ]'>
+      </span>
+    </div>
   </div>
-  <div class="homepage-button-container-row">
-      <a href="./application_development/index.html" class="homepage-button-link">See Application Developer Guide →</a>
+  <div class="hero-title-row">
+    <div class="hero-subtitle">
+      Constellation is a modern, distributed control and data acquisition framework tailored to highly dynamic environments such as laboratory and beamline setups.
+    </div>
   </div>
-  <div class="homepage-button-container-row">
-      <a href="./framework_reference/index.html" class="homepage-button-link">See Framework Reference →</a>
+  <div class="hero-title-row">
+    <div class="homepage-button-container">
+      <div class="homepage-button-container-row">
+        <a href="./operator_guide/index.html" class="homepage-button primary-button">Get Started →</a>
+        <a href="./operator_guide/concepts/constellation.html" class="homepage-button secondary-button">Concepts</a>
+      </div>
+      <div class="homepage-button-container-row">
+        <a href="./application_development/index.html" class="homepage-button-link">See Application Developer Guide →</a>
+      </div>
+      <div class="homepage-button-container-row">
+        <a href="./framework_reference/index.html" class="homepage-button-link">See Framework Reference →</a>
+      </div>
+    </div>
   </div>
-</div>
+  </div>
 
-:::::
+<p class="eyebrow">Why Constellation?</p>
 
-:::::{grid-item}
-:margin: 0
-:padding: 5 0 0 0
-:columns: 12 7 7 7
+## The Instrument Integration Challenge
 
-::::{grid} 1 2 2 2
+Coordinated operation of instruments is crucial to modern scientific experiments.
+The individual components require configuration, synchronization and monitoring throughout the experiment - tasks realized by control and data acquisition software frameworks.
+
+The complexity of established frameworks necessitates engineering effort for integration and operation that is unattainable for smaller experiments, such as laboratory or beamline experimental setups.
+These projects require more flexible and lightweight solutions that can be adapted to changing experimental conditions quickly and by the instrument experts themselves.
+
+<p class="eyebrow">Rethinking Flexibility</p>
+
+## An Autonomous Control and Data Acquisition Framework
+
+Enter *Constellation*, a flexible, network-distributed control and data acquisition framework that enables rapid integration of new devices and allows scientists to connect new instruments with minimal added effort and with the choice between an implementation in C++ or Python.
+
+The framework is designed with flexibility in mind and targets applications ranging from laboratory test stands up to small and mid-sized experiments with several dozens of connected instruments and large data volumes.
+
+::::{grid} 1 2 2 3
 :gutter: 3
 
+:::{grid-item-card} {octicon}`zap;1em;sd-text-info` Fast Integration
+Finite state machine and satellite interfaces are designed for fast and easy integration of devices.
+:::
 :::{grid-item-card} {octicon}`repo-forked;1em;sd-text-info` Autonomous
 Constellation operates without a central server, satellites exchange heartbeats to keep in touch.
 :::
 :::{grid-item-card} {octicon}`broadcast;1em;sd-text-info` Flexible
 Automatic network discovery of satellites make it easy to add and remove satellites on the fly.
 :::
-:::{grid-item-card} {octicon}`zap;1em;sd-text-info` Fast Integration
-The finite state machine and satellite interface are designed for fast and easy integration of devices.
-:::
 :::{grid-item-card} {octicon}`tools;1em;sd-text-info` Robust
 Constellation is based on widely adopted networking libraries such as [ZMQ](https://zeromq.org/) and [MsgPack](https://msgpack.org/).
 :::
+:::{grid-item-card} {octicon}`code;1em;sd-text-info` Python & C++ APIs
+Integrate new components easily using modern APIs for both rapid prototyping and high-performance systems.
+:::
+:::{grid-item-card} {octicon}`graph;1em;sd-text-info` Telemetry & Monitoring
+Collect metrics, monitor health, and visualize telemetry data in real time across the entire experiment.
+:::
 ::::
 
-:::::
 
-::::::
+## Key Concepts in Constellation
 
-# Key Features
 
 :::::{grid} 1 2 2 2
 :gutter: 3
-
-::::{grid-item-card}
-:shadow: none
-:class-card: sd-border-0
-:columns: 12 2 2 2
-
-:::{image} _static/undraw_code_typing_re_p8b9.svg
-:::
-
-::::
-
-::::{grid-item-card}
-:shadow: none
-:class-card: sd-border-0
-:columns: 12 10 10 10
-
-:::{div} key-features-text
-<strong>Built on Solid Protocols</strong><br/>
-All communication between Constellation components is based on protocols designed for flexible cross-language communication and serialization.
-A Constellation can consist of constituents written in any language, such as the main implementations in C++ and Python.
-:::
-::::
-
-::::{grid-item-card}
-:shadow: none
-:class-card: sd-border-0
-:columns: 12 2 2 2
-
-:::{image} _static/undraw_set_preferences_kwia.svg
-:::
-
-::::
-
-::::{grid-item-card}
-:shadow: none
-:class-card: sd-border-0
-:columns: 12 10 10 10
-
-:::{div} key-features-text
-<strong>Independent User Interfaces</strong><br/>
-Constellation works independently of connected user interfaces, which can be started and closed as needed. They are stateless and will
-reconnect to the Constellation and its satellites upon start, displaying the latest state of the network.
-:::
-::::
 
 ::::{grid-item-card}
 :shadow: none
@@ -150,9 +121,40 @@ reconnect to the Constellation and its satellites upon start, displaying the lat
 :columns: 12 10 10 10
 
 :::{div} key-features-text
-<strong>Autonomous Operation</strong><br/>
-Constellation allows autonomous operation, i.e. without a central server of user interface connected. It uses heartbeats to distribute
-information between satellites and to take action - such as entering a safe mode when identifying errors, or orchestrating launch sequences.
+<strong>Autonomously Operating Satellites</strong><br/>
+Satellites are the main actors in a constellation and control instruments or provide functionality.
+Constellation is built around the concept of autonomous operation, i.e. satellites run without a central server or user interface connected.
+The satellite nodes use heartbeats to exchange information and to take action - such as entering a safe mode when identifying errors, or orchestrating launch sequences.
+
+<a href="./operator_guide/concepts/constellation.html" class="homepage-button-link">Learn about the System Architecture →</a>
+
+:::
+::::
+
+::::{grid-item-card}
+:shadow: none
+:class-card: sd-border-0
+:columns: 12 2 2 2
+
+:::{image} _static/undraw_set_preferences_kwia.svg
+:::
+
+::::
+
+
+::::{grid-item-card}
+:shadow: none
+:class-card: sd-border-0
+:columns: 12 10 10 10
+
+:::{div} key-features-text
+<strong>Independent User Interfaces</strong><br/>
+Constellation user interfaces for controlling or monitoring satellites can be started and closed at any time.
+They are stateless and will reconnect to the running Constellation and its satellites upon start, displaying the latest state of the network.
+Satellites are independent of these interfaces and continue to run and exchange heartbeat information.
+
+<a href="./operator_guide/concepts/controller.html" class="homepage-button-link">More on Controller Interfaces →</a>
+
 :::
 ::::
 
@@ -172,10 +174,14 @@ information between satellites and to take action - such as entering a safe mode
 :columns: 12 10 10 10
 
 :::{div} key-features-text
-<strong>Extensively Documented</strong><br/>
-Constellation is extensively documented and provides a comprehensive user guide featuring descriptions of the basic concepts of the framework,
+<strong>Extensive Documentation</strong><br/>
+Scientific software is often only as good as its documentation.
+This is why Constellation is extensively documented and provides a comprehensive user guide featuring descriptions of the basic concepts of the framework,
 how-to guides for specific tasks as well as a set of tutorials which ease starting to use it. In addition, in-depth developer documentation
 guides novel contributors.
+
+<a href="./operator_guide/index.html" class="homepage-button-link">Start with the Operators Guide →</a>
+
 :::
 ::::
 
@@ -197,8 +203,10 @@ guides novel contributors.
 :::{div} key-features-text
 <strong>Free & Open Source Software</strong><br/>
 Constellation is entirely free and open source software. The code is released under the [EUPL1.2](https://opensource.org/licenses/EUPL-1.2) license,
-and its documentation and this website are licensed under [Creative Commons CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). The source code
-is available on [DESY's GitLab instance](https://gitlab.desy.de/constellation/constellation).
+and its documentation and this website are licensed under [Creative Commons CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/).
+
+<a href="./about.html" class="homepage-button-link">Information on citation & license intent →</a>
+
 :::
 ::::
 
