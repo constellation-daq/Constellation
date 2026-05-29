@@ -74,7 +74,7 @@ namespace constellation::utils {
     template <typename T, typename U> inline constexpr bool is_one_of_v = is_one_of<T, U>::value;
 
     // Type trait to extend variant with monostate
-    template <typename T> struct monostate_variant {}; // NOLINT(readability-identifier-naming)
+    template <typename T> struct monostate_variant;
     template <typename... Ts> struct monostate_variant<std::variant<Ts...>> {
         using type = std::variant<std::monostate, Ts...>;
     };
