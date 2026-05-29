@@ -33,4 +33,11 @@ SpaceBeforeCpp11BracedList: true
 ---
 Language: Json
 BasedOnStyle: LLVM
+---
+Language: JavaScript
+BasedOnStyle: LLVM
+UseTab: Never
+IndentWidth: 4
+TabWidth: 4
+ContinuationIndentWidth: 4
 ...
