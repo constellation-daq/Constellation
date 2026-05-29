@@ -29,10 +29,65 @@ html[data-theme="dark"] {
 /* -------------------- HOMEPAGE -------------------- */
 
 /* Hero */
-.hero {
+.hero {/*
+  min-height: min(calc(55vh), 1000px); /* Make hero fill up most of the page on load */
+  padding: 7rem 0 4rem 0;
+  justify-content: center;
+}
+
+.hero-title-row {
   display: flex;
-  flex-direction: row;
-  min-height: min(calc(60vh), 1100px); /* Make hero fill up most of the page on load */
+  align-items: center;
+  justify-content: center;
+
+  gap: 1.5rem;
+  flex-wrap: wrap;
+
+  text-align: center;
+  width: 100%;
+}
+
+.hero-logo {
+  width: 64px;
+  height: 64px;
+}
+
+.hero-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: wrap;
+
+  font-size: clamp(24px, 6vw, 52px);
+  font-weight: 600;
+  line-height: 1.05;
+}
+
+.hero-subtitle {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  padding-top: 2rem;
+  flex-wrap: wrap;
+  width: 42rem;
+  line-height: 1.05;
+}
+
+.typewrite {
+  display: inline-flex;
+  align-items: baseline;
+  min-width: 18ch;
+  height: 1.1em;
+  padding-right: 0.05em;
+  margin-left: 0.3ch;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .hero-logo {
+    width: 56px;
+    height: 56px;
+  }
 }
 
 .homepage-button-container {
@@ -70,18 +125,21 @@ html[data-theme="dark"] {
   border: 1px solid var(--pst-color-secondary);
 }
 
-/* Key Features */
-#key-features .sd-card-body {
-  display: flex;
+/* Eyebrow titles, turn off margin of following titles */
+.eyebrow {
+  font-size: 0.85rem;
+  color: var(--pst-color-text-muted);
+  font-weight: 300;
+  margin-top: 2.75rem;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
 }
-#key-features .sd-card img {
-  width: 160px;
-  height: 160px;
-  background-color: transparent;
+
+p.eyebrow + section h2 {
+  margin-top: 0;
 }
-#key-features .sd-card-body .key-features-text {
-  min-width: 70%;
-  padding: 20px 30px;
+section:has(.eyebrow) + section h2 {
+  margin-top: 0;
 }
 
 /* ----------------- Sphinx Design --------------------- */
