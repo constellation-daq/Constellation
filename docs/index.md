@@ -8,9 +8,16 @@ sd_hide_title: true
 
 <!-- CSS overrides on the homepage only -->
 <style>
-.bd-main .bd-content .bd-article-container {
-  max-width: 75rem; /* Make homepage a little wider instead of 60em */
-}
+  .bd-container .bd-page-width {
+    max-width: none;
+  }
+  .bd-main .bd-content .bd-article-container {
+    max-width: none;
+    padding: 0px;
+  }
+  .bd-main .bd-content .bd-article-container .bd-article {
+    padding: 0;
+  }
 </style>
 
 # Constellation
@@ -56,6 +63,9 @@ sd_hide_title: true
     </div>
   </div>
   </div>
+
+<div class="homepage-content">
+  <div class="homepage-container">
 
 <p class="eyebrow">Why Constellation?</p>
 
@@ -223,3 +233,7 @@ About <about>
 🧩 Integrate <application_development/index>
 🔧 Contribute <framework_reference/index>
 ```
+
+
+</div>
+</div>

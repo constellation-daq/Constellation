@@ -29,10 +29,27 @@ html[data-theme="dark"] {
 /* -------------------- HOMEPAGE -------------------- */
 
 /* Hero */
-.hero {/*
-  min-height: min(calc(55vh), 1000px); /* Make hero fill up most of the page on load */
+.hero {
+  min-height: 55vh;
   padding: 7rem 0 4rem 0;
   justify-content: center;
+  background-image: radial-gradient(#cccccc 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+.homepage-content {
+  background-color: var(--pst-color-on-background) !important;
+  box-shadow: 0 -.125rem .25rem 0 var(--pst-color-shadow);
+  justify-content: center;
+  display: flex;
+  max-width: 100vw;
+  width: 100%;
+}
+
+.homepage-container {
+  max-width: 70rem;
+  padding-left: 2rem;
+  padding-top: 1.5rem;
 }
 
 .hero-title-row {
