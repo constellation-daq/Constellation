@@ -33,7 +33,9 @@ namespace std {
 
 namespace std {
     [[noreturn]] inline void unreachable() {
-#ifdef __GNUC__
+#if defined(_MSC_VER) && !defined(__clang__)
+        __assume(false);
+#else
         __builtin_unreachable();
 #endif
     }
