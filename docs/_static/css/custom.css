@@ -13,6 +13,19 @@ html[data-theme="dark"] {
     --pst-color-table-row-hover-bg: #2da8d829;
 }
 
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("../fonts/SpaceGrotesk[wght].woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --pst-font-family-base: "Space Grotesk", system-ui, -apple-system, sans-serif;
+  --pst-font-family-heading: "Space Grotesk", system-ui, -apple-system, sans-serif;
+}
+
 /* -------------------- HOMEPAGE -------------------- */
 
 /* Hero */
