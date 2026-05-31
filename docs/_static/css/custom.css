@@ -31,7 +31,7 @@ html[data-theme="dark"] {
 /* Hero */
 .hero {
   min-height: 55vh;
-  padding: 7rem 0 4rem 0;
+  padding: 13vh 0 4rem 0;
   justify-content: center;
   background-image: radial-gradient(#cccccc 1px, transparent 1px);
   background-size: 16px 16px;
