@@ -292,9 +292,6 @@ namespace constellation::config {
          */
         CNSTLN_API std::string to_string() const;
 
-        // Key filter function signature (if return value is true then key is accepted)
-        using key_filter = bool(std::string_view key);
-
         /**
          * @brief Format dictionary to YAML-style string
          *
