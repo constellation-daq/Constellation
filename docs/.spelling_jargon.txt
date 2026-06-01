@@ -95,3 +95,11 @@ doi
 et
 al
 natively
+comparator
+comparators
+TTL
+millivolts
+broadcasted
+MHits
+hardcoded
+readback
