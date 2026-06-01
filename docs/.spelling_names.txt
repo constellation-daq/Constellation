@@ -43,3 +43,8 @@ arXiv
 Nucl
 nima
 Nextcloud
+Alibava
+Rohde
+Schwarz
+HMP
+TTi
