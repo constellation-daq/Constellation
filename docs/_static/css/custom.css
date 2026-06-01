@@ -33,8 +33,17 @@ html[data-theme="dark"] {
   min-height: 55vh;
   padding: 13vh 0 4rem 0;
   justify-content: center;
-  background-image: radial-gradient(#cccccc 1px, transparent 1px);
   background-size: 16px 16px;
+}
+
+/* Light mode */
+html[data-theme="light"] .hero {
+  background-image: radial-gradient(#cccccc 1px, transparent 1px);
+}
+
+/* Dark mode */
+html[data-theme="dark"] .hero {
+  background-image: radial-gradient(#444444 1px, transparent 1px);
 }
 
 .homepage-content {
@@ -67,6 +76,10 @@ html[data-theme="dark"] {
 .hero-logo {
   width: 64px;
   height: 64px;
+  background: transparent !important;
+  filter:
+    drop-shadow(0 0 10px var(--pst-color-primary))
+    drop-shadow(0 0 30px var(--pst-color-primary)) !important;
 }
 
 .hero-title {
