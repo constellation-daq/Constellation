@@ -30,9 +30,94 @@ html[data-theme="dark"] {
 
 /* Hero */
 .hero {
+  min-height: 55vh;
+  padding: 13vh 0 4rem 0;
+  justify-content: center;
+  background-size: 16px 16px;
+}
+
+/* Light mode */
+html[data-theme="light"] .hero {
+  background-image: radial-gradient(#cccccc 1px, transparent 1px);
+}
+
+/* Dark mode */
+html[data-theme="dark"] .hero {
+  background-image: radial-gradient(#444444 1px, transparent 1px);
+}
+
+.homepage-content {
+  background-color: var(--pst-color-on-background) !important;
+  box-shadow: 0 -.125rem .25rem 0 var(--pst-color-shadow);
+  justify-content: center;
   display: flex;
-  flex-direction: row;
-  min-height: min(calc(60vh), 1100px); /* Make hero fill up most of the page on load */
+  max-width: 100vw;
+  width: 100%;
+}
+
+.homepage-container {
+  max-width: 70rem;
+  padding-left: 2rem;
+  padding-top: 1.5rem;
+}
+
+.hero-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 1.5rem;
+  flex-wrap: wrap;
+
+  text-align: center;
+  width: 100%;
+}
+
+.hero-logo {
+  width: 64px;
+  height: 64px;
+  background: transparent !important;
+  filter:
+    drop-shadow(0 0 10px var(--pst-color-primary))
+    drop-shadow(0 0 30px var(--pst-color-primary)) !important;
+}
+
+.hero-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  flex-wrap: wrap;
+
+  font-size: clamp(24px, 6vw, 52px);
+  font-weight: 600;
+  line-height: 1.05;
+}
+
+.hero-subtitle {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  padding-top: 2rem;
+  flex-wrap: wrap;
+  width: 42rem;
+  line-height: 1.05;
+}
+
+.typewrite {
+  display: inline-flex;
+  align-items: baseline;
+  min-width: 18ch;
+  height: 1.1em;
+  padding-right: 0.05em;
+  margin-left: 0.3ch;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .hero-logo {
+    width: 56px;
+    height: 56px;
+  }
 }
 
 .homepage-button-container {
@@ -70,18 +155,21 @@ html[data-theme="dark"] {
   border: 1px solid var(--pst-color-secondary);
 }
 
-/* Key Features */
-#key-features .sd-card-body {
-  display: flex;
+/* Eyebrow titles, turn off margin of following titles */
+.eyebrow {
+  font-size: 0.85rem;
+  color: var(--pst-color-text-muted);
+  font-weight: 300;
+  margin-top: 2.75rem;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
 }
-#key-features .sd-card img {
-  width: 160px;
-  height: 160px;
-  background-color: transparent;
+
+p.eyebrow + section h2 {
+  margin-top: 0;
 }
-#key-features .sd-card-body .key-features-text {
-  min-width: 70%;
-  padding: 20px 30px;
+section:has(.eyebrow) + section h2 {
+  margin-top: 0;
 }
 
 /* ----------------- Sphinx Design --------------------- */
