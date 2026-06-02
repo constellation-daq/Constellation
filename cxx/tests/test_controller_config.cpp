@@ -22,10 +22,12 @@
 #include "constellation/controller/ControllerConfiguration.hpp"
 #include "constellation/controller/exceptions.hpp"
 #include "constellation/core/config/value_types.hpp"
+#include "constellation/core/utils/time.hpp"
 
 using namespace Catch::Matchers;
 using namespace constellation::config;
 using namespace constellation::controller;
+using namespace constellation::utils;
 
 namespace {
     std::filesystem::path test_files_dir() {
@@ -353,18 +355,26 @@ TEST_CASE("Valid TOML file", "[controller]") {
     REQUIRE(global_config.at("binint").get<int>() == 0b11);
     REQUIRE(global_config.at("float").get<double>() == 3.14);
     REQUIRE(global_config.at("string").get<std::string>() == "global");
-    global_config.at("time").get<std::chrono::system_clock::time_point>();
     REQUIRE_THAT(global_config.at("array_bool").get<std::vector<bool>>(),
                  RangeEquals(std::vector<bool>({true, false, false, true})));
     REQUIRE_THAT(global_config.at("array_int").get<std::vector<int>>(), RangeEquals(std::vector<int>({1, 2, 3})));
     REQUIRE_THAT(global_config.at("array_float").get<std::vector<double>>(), RangeEquals(std::vector<double>({0.5, 1.0})));
     REQUIRE_THAT(global_config.at("array_string").get<std::vector<std::string>>(),
                  RangeEquals(std::vector<std::string>({"global1", "global2"})));
-    global_config.at("array_time").get<std::vector<std::chrono::system_clock::time_point>>();
     REQUIRE(global_config.at("empty_array").get<std::vector<int>>().empty());
     REQUIRE_THAT(global_config.at("dict").get<Dictionary>().at("subdict").get<Dictionary>().getMap<int>(),
                  RangeEquals(std::map<std::string, int>({{"key", -1}})));
     REQUIRE(global_config.at("empty_dict").get<Dictionary>().empty());
+
+    // Local time uses current system date:
+    REQUIRE(global_config.at("time").get<std::chrono::system_clock::time_point>() == localtime_to_system(12, 34, 56));
+    REQUIRE(global_config.at("array_time").get<std::vector<std::chrono::system_clock::time_point>>() ==
+            std::vector<std::chrono::system_clock::time_point>(
+                {localtime_to_system(11, 11, 0), localtime_to_system(13, 14, 15)}));
+    REQUIRE(global_config.at("date").get<std::chrono::system_clock::time_point>() == localdate_to_system(2025, 9, 30));
+    REQUIRE(global_config.at("array_date").get<std::vector<std::chrono::system_clock::time_point>>() ==
+            std::vector<std::chrono::system_clock::time_point>(
+                {localdate_to_system(2001, 2, 3), localdate_to_system(2011, 12, 13)}));
 
     // Global + Type
     const auto type_config = config.getSatelliteConfiguration("Dummy.NotASatellite");
@@ -408,18 +418,26 @@ TEST_CASE("Valid YAML file", "[controller]") {
     REQUIRE(global_config.at("binint").get<int>() == 0b11);
     REQUIRE(global_config.at("float").get<double>() == 3.14);
     REQUIRE(global_config.at("string").get<std::string>() == "global");
-    // TODO(stephan.lachnit): check chrono
     REQUIRE_THAT(global_config.at("array_bool").get<std::vector<bool>>(),
                  RangeEquals(std::vector<bool>({true, false, false, true})));
     REQUIRE_THAT(global_config.at("array_int").get<std::vector<int>>(), RangeEquals(std::vector<int>({1, 2, 3})));
     REQUIRE_THAT(global_config.at("array_float").get<std::vector<double>>(), RangeEquals(std::vector<double>({0.5, 1.0})));
     REQUIRE_THAT(global_config.at("array_string").get<std::vector<std::string>>(),
                  RangeEquals(std::vector<std::string>({"global1", "global2"})));
-    // TODO(stephan.lachnit): check chrono
     REQUIRE(global_config.at("empty_array").get<std::vector<int>>().empty());
     REQUIRE_THAT(global_config.at("dict").get<Dictionary>().at("subdict").get<Dictionary>().getMap<int>(),
                  RangeEquals(std::map<std::string, int>({{"key", -1}})));
     REQUIRE(global_config.at("empty_dict").get<Dictionary>().empty());
+
+    // Local time uses current system date:
+    REQUIRE(global_config.at("time").get<std::chrono::system_clock::time_point>() == localtime_to_system(12, 34, 56));
+    REQUIRE(global_config.at("array_time").get<std::vector<std::chrono::system_clock::time_point>>() ==
+            std::vector<std::chrono::system_clock::time_point>(
+                {localtime_to_system(11, 11, 0), localtime_to_system(13, 14, 15)}));
+    REQUIRE(global_config.at("date").get<std::chrono::system_clock::time_point>() == localdate_to_system(2025, 9, 30));
+    REQUIRE(global_config.at("array_date").get<std::vector<std::chrono::system_clock::time_point>>() ==
+            std::vector<std::chrono::system_clock::time_point>(
+                {localdate_to_system(2001, 2, 3), localdate_to_system(2011, 12, 13)}));
 
     // Global + Type
     const auto type_config = config.getSatelliteConfiguration("Dummy.NotASatellite");

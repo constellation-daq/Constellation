@@ -161,6 +161,7 @@ install_headers(
   'utils/string.hpp',
   'utils/string_hash_map.hpp',
   'utils/thread.hpp',
+  'utils/time.hpp',
   'utils/timers.hpp',
   'utils/type.hpp',
   'utils/windows.hpp',
