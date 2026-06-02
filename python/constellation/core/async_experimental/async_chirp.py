@@ -1,6 +1,8 @@
 """
 SPDX-FileCopyrightText: 2026 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
+
+Async CHIRP listener and manager.
 """
 
 import asyncio
@@ -9,8 +11,10 @@ import sys
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum, auto
+from typing import Any
 from uuid import UUID
 
+from constellation.core.base import BaseSatelliteFrame
 from constellation.core.chirp import (
     CHIRP_MULTICAST_ADDRESS,
     CHIRP_PORT,
@@ -20,6 +24,7 @@ from constellation.core.chirp import (
     get_uuid,
 )
 from constellation.core.multicast import MULTICAST_TTL
+from constellation.core.network import get_interface_addresses
 
 
 class CHIRPEvent(Enum):
@@ -233,12 +238,10 @@ class AsyncCHIRPListener:
         for svc in list(self._discovered_services):
             if svc.host_id == msg.host_uuid and svc.service_id == msg.serviceid:
                 if svc.port != msg.port:
-                    # Port changed (assume old service is gone)
                     self._discovered_services.remove(svc)
                     for cb in self._callbacks.values():
                         cb(CHIRPEvent.SERVICE_DISCONNECTED, svc)
                 else:
-                    # Same service, same port (accumulate address if new)
                     if from_address not in svc.addresses:
                         svc.addresses.append(from_address)
                     already_discovered = True
@@ -266,22 +269,62 @@ class AsyncCHIRPListener:
                 break
 
 
-class AsyncCHIRPManager(AsyncCHIRPListener):
-    """Async CHIRP manager with service registry.
+class AsyncCHIRPManager(BaseSatelliteFrame):
+    """Async equivalent of CHIRPManager.
 
-    Inherits AsyncCHIRPListener and adds the ability to register
-    services to offer and to send service requests.
+    Owns an AsyncCHIRPListener and directly implements the service registry.
+    Replaces both the former async_chirpmanager.AsyncCHIRPManager wrapper and
+    the former AsyncCHIRPManager(AsyncCHIRPListener) registry class.
+    Registers CHIRP discovery as a coroutine via _add_com_task.
     """
 
     def __init__(
         self,
         name: str,
         group: str,
-        interface_addresses: list[str],
+        interface: list[str] | None,
+        **kwds: Any,
     ) -> None:
-        super().__init__(name, group, interface_addresses)
+        super().__init__(name=name, **kwds)
+        self.group = group
+        interface_addresses = get_interface_addresses(interface)
+        self._host_uuid = get_uuid(self.name)
+        self._group_uuid = get_uuid(group)
+        self._listener = AsyncCHIRPListener(
+            name=self.name,
+            group=group,
+            interface_addresses=interface_addresses,
+        )
         self._registered_services: dict[CHIRPServiceIdentifier, int] = {}
-        self.request_callback = self._handle_request
+        self._listener.request_callback = self._handle_request
+
+    def _add_com_task(self) -> None:
+        """Register the async CHIRP discovery coroutine."""
+        super()._add_com_task()
+        self._com_task_factories.append(self._run_chirp)
+
+    async def _run_chirp(self, stop: asyncio.Event) -> None:
+        """Start CHIRP discovery and run until stop is set."""
+        loop = asyncio.get_running_loop()
+        await self._listener.start(loop)
+        await stop.wait()
+        self._listener.close()
+
+    def register_chirp_callback(
+        self,
+        callback_id: str,
+        callback_func: Callable[[CHIRPEvent, DiscoveredService], None],
+    ) -> None:
+        """Register a callback for CHIRP service events."""
+        self._listener.register_callback(callback_id, callback_func)
+
+    def unregister_chirp_callback(self, callback_id: str) -> None:
+        """Remove a previously registered CHIRP callback."""
+        self._listener.unregister_callback(callback_id)
+
+    def get_discovered(self, service_id: CHIRPServiceIdentifier) -> list[DiscoveredService]:
+        """Return discovered services matching service_id."""
+        return self._listener.get_discovered(service_id)
 
     def request(self, service_id: CHIRPServiceIdentifier) -> None:
         """Send a CHIRP REQUEST for a specific service type."""
@@ -292,13 +335,13 @@ class AsyncCHIRPManager(AsyncCHIRPListener):
             service_id,
             0,
         )
-        self.send_chirp_message(msg)
+        self._listener.send_chirp_message(msg)
 
     def register_service(self, service_id: CHIRPServiceIdentifier, port: int) -> None:
         """Register a service to offer via CHIRP.
 
-        If the service was already registered on a different port, sends DEPART
-        for the old port first. Sends OFFER immediately upon registration.
+        Sends DEPART for the old port if already registered.
+        Sends OFFER immediately upon registration.
         """
         if service_id in self._registered_services:
             old_port = self._registered_services[service_id]
@@ -309,7 +352,7 @@ class AsyncCHIRPManager(AsyncCHIRPListener):
                 service_id,
                 old_port,
             )
-            self.send_chirp_message(depart)
+            self._listener.send_chirp_message(depart)
         self._registered_services[service_id] = port
         offer = CHIRPMessage(
             CHIRPMessageType.OFFER,
@@ -318,7 +361,7 @@ class AsyncCHIRPManager(AsyncCHIRPListener):
             service_id,
             port,
         )
-        self.send_chirp_message(offer)
+        self._listener.send_chirp_message(offer)
 
     def unregister_service(self, service_id: CHIRPServiceIdentifier) -> None:
         """Unregister a service and send DEPART."""
@@ -331,7 +374,7 @@ class AsyncCHIRPManager(AsyncCHIRPListener):
                 service_id,
                 port,
             )
-            self.send_chirp_message(msg)
+            self._listener.send_chirp_message(msg)
 
     def emit_offers(self) -> None:
         """Send OFFER for all registered services."""
@@ -343,7 +386,7 @@ class AsyncCHIRPManager(AsyncCHIRPListener):
                 service_id,
                 port,
             )
-            self.send_chirp_message(msg)
+            self._listener.send_chirp_message(msg)
 
     def _handle_request(self, service_id: CHIRPServiceIdentifier) -> None:
         """Respond to incoming CHIRP requests with matching offers."""
@@ -356,4 +399,4 @@ class AsyncCHIRPManager(AsyncCHIRPListener):
                 service_id,
                 port,
             )
-            self.send_chirp_message(msg)
+            self._listener.send_chirp_message(msg)
