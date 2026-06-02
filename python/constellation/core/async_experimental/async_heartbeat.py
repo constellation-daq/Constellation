@@ -1,6 +1,8 @@
 """
 SPDX-FileCopyrightText: 2026 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
+
+Async heartbeat receiver and checker.
 """
 
 import asyncio
@@ -8,15 +10,16 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 import zmq.asyncio
 
+from constellation.core.async_experimental.async_pools import AsyncSubscriberPool
+from constellation.core.base import BaseSatelliteFrame
 from constellation.core.chp import CHPRole, chp_decode_message
 from constellation.core.protocol.cscp1 import SatelliteState
 from constellation.core.util import case_insensitive_dict
-
-from .async_pools import AsyncSubscriberPool
 
 
 @dataclass
@@ -172,3 +175,69 @@ class AsyncHeartbeatReceiver:
         self._pool.close()
         self._states.clear()
         self._name_to_uuid.clear()
+
+
+class AsyncHeartbeatChecker(BaseSatelliteFrame):
+    """Async equivalent of HeartbeatChecker.
+
+    Owns an AsyncHeartbeatReceiver internally.
+    Uses self._async_ctx from BaseSatelliteFrame.
+    Callbacks fire on the event loop — no call_soon_threadsafe needed.
+    """
+
+    def __init__(self, **kwds: Any) -> None:
+        super().__init__(**kwds)
+        self._hb_receiver = AsyncHeartbeatReceiver(
+            self._async_ctx,
+            on_state_change=self._on_state_change,
+            on_satellite_dead=self._on_satellite_dead,
+        )
+
+    def _add_com_task(self) -> None:
+        """Register the async heartbeat receiver coroutine."""
+        super()._add_com_task()
+        self._com_task_factories.append(self._hb_receiver.run)
+
+    def register_heartbeat_host(
+        self,
+        uuid: UUID,
+        address: str,
+        port: int,
+        name: str,
+    ) -> None:
+        """Register a satellite for heartbeat tracking."""
+        self._hb_receiver.add_satellite(uuid, address, port, name)
+
+    def unregister_heartbeat_host(self, uuid: UUID) -> None:
+        """Deregister a satellite from heartbeat tracking."""
+        self._hb_receiver.remove_satellite(uuid)
+
+    @property
+    def heartbeat_states(self) -> case_insensitive_dict[SatelliteState]:
+        """Current states keyed by canonical name."""
+        return self._hb_receiver.states
+
+    @property
+    def heartbeat_state_changes(self) -> case_insensitive_dict[datetime]:
+        """Last state change timestamps keyed by canonical name."""
+        return self._hb_receiver.state_changes
+
+    @property
+    def heartbeat_statuses(self) -> case_insensitive_dict[str]:
+        """Last status messages keyed by canonical name."""
+        return self._hb_receiver.statuses
+
+    def _on_state_change(
+        self,
+        name: str,
+        old_state: SatelliteState,
+        new_state: SatelliteState,
+    ) -> None:
+        """Called when a satellite changes state. Override in subclass."""
+
+    def _on_satellite_dead(self, name: str) -> None:
+        """Called when a satellite stops sending heartbeats. Override in subclass."""
+
+    def close(self) -> None:
+        """Close all heartbeat sockets."""
+        self._hb_receiver.close()

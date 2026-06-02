@@ -9,10 +9,18 @@ import logging
 from typing import Any
 from uuid import UUID
 
-from ..message.cmdp1 import CMDP1LogMessage, CMDP1Message, CMDP1StatMessage
-from .async_chirp import CHIRPEvent, DiscoveredService
-from .async_chirpmanager import AsyncCHIRPManager
-from .async_pools import AsyncSubscriberPool
+from constellation.core.async_experimental.async_chirp import (
+    AsyncCHIRPManager,
+    CHIRPEvent,
+    DiscoveredService,
+)
+from constellation.core.async_experimental.async_pools import AsyncSubscriberPool
+from constellation.core.chirp import CHIRPServiceIdentifier
+from constellation.core.message.cmdp1 import (
+    CMDP1LogMessage,
+    CMDP1Message,
+    CMDP1StatMessage,
+)
 
 
 class AsyncMonitoringListener(AsyncCHIRPManager):
@@ -20,6 +28,7 @@ class AsyncMonitoringListener(AsyncCHIRPManager):
 
     Inherits AsyncCHIRPManager and adds CMDP log/metric receiving
     via AsyncSubscriberPool.
+    _async_ctx is provided by BaseSatelliteFrame.__init__ via the MRO chain.
     """
 
     def __init__(self, **kwds: Any) -> None:
@@ -41,6 +50,8 @@ class AsyncMonitoringListener(AsyncCHIRPManager):
 
     def _on_monitoring_service(self, event: CHIRPEvent, service: DiscoveredService) -> None:
         """Handle MONITORING service connect/disconnect."""
+        if service.service_id != CHIRPServiceIdentifier.MONITORING:
+            return
         if event == CHIRPEvent.SERVICE_CONNECTED:
             self._cmdp_pool.add_socket(service.host_id, service.addresses[0], service.port)
         elif event == CHIRPEvent.SERVICE_DISCONNECTED:
