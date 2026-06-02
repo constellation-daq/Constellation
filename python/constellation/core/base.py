@@ -16,6 +16,7 @@ from queue import Queue
 from typing import Any, cast
 
 import zmq
+import zmq.asyncio
 
 from . import __version__, __version_code_name__
 from .logging import ConstellationLogger
@@ -110,6 +111,7 @@ class BaseSatelliteFrame:
         # add type name to create the canonical name
         self.name = f"{self.type}.{name}"
         self.context = zmq.Context()
+        self._async_ctx = zmq.asyncio.Context()
 
         self.log = self.get_logger(self.type.upper())
 
@@ -200,6 +202,7 @@ class BaseSatelliteFrame:
         """Terminate the satellite."""
         self.log.debug("Terminating ZMQ context.")
         self.context.term()
+        self._async_ctx.term()
 
 
 SATELLITE_LIST: list[BaseSatelliteFrame] = []
