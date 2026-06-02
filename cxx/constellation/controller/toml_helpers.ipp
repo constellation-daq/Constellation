@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
+#include <sstream>
 #include <string>
 #include <vector>
 

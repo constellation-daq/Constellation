@@ -14,8 +14,15 @@
 #include <string>
 #include <utility>
 
-#if __cpp_lib_format >= 201907L
+#if __cpp_lib_chrono < 201907L
+#include <ctime>
+#endif
+
+#if __cpp_lib_format >= 201907L && __cpp_lib_chrono >= 201907L
 #include <format>
+#else
+#include <ctime>
+#include <sstream>
 #endif
 
 namespace constellation::utils {

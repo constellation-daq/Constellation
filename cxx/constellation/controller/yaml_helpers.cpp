@@ -109,7 +109,7 @@ namespace {
         T rv;
         for(const auto& element : node) {
             bool success {false};
-            if constexpr(std::is_same_v<T, std::chrono::system_clock::time_point>) {
+            if constexpr(std::same_as<T, std::chrono::system_clock::time_point>) {
                 success = parse_yaml_time(element, rv);
             } else {
                 success = YAML::convert<T>::decode(element, rv);
