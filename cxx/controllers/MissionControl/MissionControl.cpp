@@ -197,11 +197,11 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
     runcontrol_.start();
 }
 
-std::pair<std::string, std::size_t> MissionControl::split_run_identifier(const std::string& run_id) const {
+std::pair<std::string, std::int64_t> MissionControl::split_run_identifier(const std::string& run_id) const {
     // Attempt to find a sequence number:
     const std::size_t pos = run_id.find_last_of('_');
     const auto& identifier = (pos != std::string::npos ? run_id.substr(0, pos) : run_id);
-    int sequence = -1;
+    std::int64_t sequence = -1;
     try {
         sequence = (pos != std::string::npos ? std::stoi(run_id.substr(pos + 1)) : 0);
         return {identifier, sequence};

@@ -176,7 +176,7 @@ private:
      * @param run_id Run identifier string
      * @return Run name and sequence
      */
-    std::pair<std::string, std::size_t> split_run_identifier(const std::string& run_id) const;
+    std::pair<std::string, std::int64_t> split_run_identifier(const std::string& run_id) const;
 
     /**
      * @brief Helper to parse the configuration file for all satellites
