@@ -204,11 +204,11 @@ std::pair<std::string, std::size_t> MissionControl::split_run_identifier(const s
     std::size_t sequence = 0;
     try {
         sequence = (pos != std::string::npos ? std::stoi(run_id.substr(pos + 1)) : 0);
+        return {identifier, sequence};
     } catch(const std::invalid_argument&) {
         LOG(logger_, DEBUG) << "Could not detect a sequence number in run identifier, appending 0 instead";
+        return {run_id, sequence};
     }
-
-    return {identifier, sequence};
 }
 
 void MissionControl::startup(std::size_t num) {
