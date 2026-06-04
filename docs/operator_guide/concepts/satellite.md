@@ -243,6 +243,11 @@ reconfiguring -[dotted]up-> ORBIT
 
 This transition needs to be specifically implemented in individual satellites in order to make this transition available in the FSM.
 
+```{important}
+All parameters provided to the {bdg-secondary}`reconfiguring` transition have to be used by the target satellite. Any unused parameter triggers a transition to the {bdg-secondary}`ERROR` state.
+The purpose of this behavior is to detect misconfigurations or missing configurations, e.g., during a script-driven parameter scan.
+```
+
 ### Adding Conditions
 
 In some cases it can be required to launch, start or stop satellites in a specific order - they might for example depend on receiving a hardware clock from another satellite that is only available after initializing.
