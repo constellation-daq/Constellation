@@ -245,7 +245,7 @@ This transition needs to be specifically implemented in individual satellites in
 
 ```{important}
 All parameters provided to the {bdg-secondary}`reconfiguring` transition have to be used by the target satellite. Any unused parameter triggers a transition to the {bdg-secondary}`ERROR` state.
-The purpose of this behavior is to detect misconfigurations or missing configurations, e.g., during a script-driven parameter scan.
+The purpose of this behavior is to detect missed configurations, e.g., during a script-driven parameter scan.
 ```
 
 ### Adding Conditions
