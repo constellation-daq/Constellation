@@ -180,7 +180,7 @@ namespace constellation::satellite {
          * @brief Initialize receiver components of satellite
          *
          * Reads the following config parameters:
-         * * `_data.allow_overwriting`
+         * * `_data.file_conflict_strategy`
          * * `_data.receive_from`
          * * `_data.eor_timeout`
          *
@@ -199,7 +199,7 @@ namespace constellation::satellite {
          * @brief Reconfigure receiver components of satellite
          *
          * Supports reconfiguring of the following config parameters:
-         * * `_data.allow_overwriting`
+         * * `_data.file_conflict_strategy`
          * * `_data.eor_timeout`
          *
          * @param partial_config Changes to the configuration of the satellite

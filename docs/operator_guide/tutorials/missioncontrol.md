@@ -289,7 +289,7 @@ output_directory = '/tmp/test'
     role = 'DYNAMIC'
 
     [eudaqnativewriter.receiver._data]
-    allow_overwriting = false
+    file_conflict_strategy = 'RENAME'
     eor_timeout = 10
     receive_from = [ 'RandomTransmitter.Sender' ]
 ```

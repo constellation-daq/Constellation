@@ -160,7 +160,7 @@ TEST_CASE("Receiver / Reconfigure transmitters", "[satellite]") {
     auto config = Dictionary();
     auto config_data = Dictionary();
     config_data["eor_timeout"] = 1;
-    config_data["allow_overwriting"] = true;
+    config_data["file_conflict_strategy"] = "OVERWRITE";
     config["_data"] = std::move(config_data);
     receiver.reactFSM(FSM::Transition::initialize, std::move(config));
     receiver.reactFSM(FSM::Transition::launch);
@@ -289,7 +289,7 @@ TEST_CASE("Successful run", "[satellite]") {
 
     auto config2_receiver = Dictionary();
     auto config2_receiver_data = Dictionary();
-    config2_receiver_data["allow_overwriting"] = true;
+    config2_receiver_data["file_conflict_strategy"] = "OVERWRITE";
     config2_receiver_data["eor_timeout"] = 1;
     config2_receiver["_data"] = std::move(config2_receiver_data);
     auto config2_transmitter = Dictionary();
