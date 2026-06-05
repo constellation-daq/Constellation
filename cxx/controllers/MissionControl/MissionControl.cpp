@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -197,18 +198,18 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
     runcontrol_.start();
 }
 
-std::pair<std::string, std::size_t> MissionControl::split_run_identifier(const std::string& run_id) const {
+std::pair<std::string, std::int64_t> MissionControl::split_run_identifier(const std::string& run_id) const {
     // Attempt to find a sequence number:
     const std::size_t pos = run_id.find_last_of('_');
     const auto& identifier = (pos != std::string::npos ? run_id.substr(0, pos) : run_id);
-    std::size_t sequence = 0;
+    std::int64_t sequence = -1;
     try {
         sequence = (pos != std::string::npos ? std::stoi(run_id.substr(pos + 1)) : 0);
+        return {identifier, sequence};
     } catch(const std::invalid_argument&) {
-        LOG(logger_, DEBUG) << "Could not detect a sequence number in run identifier, appending 0 instead";
+        LOG(logger_, DEBUG) << "Could not detect a sequence number in run identifier, setting to none instead";
+        return {run_id, sequence};
     }
-
-    return {identifier, sequence};
 }
 
 void MissionControl::startup(std::size_t num) {
@@ -237,11 +238,18 @@ void MissionControl::update_run_identifier(const QString& text, int number) {
     runSequence->setValue(number);
 
     if(!text.isEmpty()) {
-        current_run_ = text + "_";
+        current_run_ = text;
     } else {
         current_run_.clear();
     }
-    current_run_ += QString::number(number);
+    if(number >= 0) {
+        current_run_ += "_" + QString::number(number);
+    }
+
+    // We cannot have an empty run identifier!
+    if(current_run_.isEmpty()) {
+        current_run_ = "_";
+    }
 
     LOG(logger_, DEBUG) << "Updated run identifier to " << current_run_.toStdString();
 }

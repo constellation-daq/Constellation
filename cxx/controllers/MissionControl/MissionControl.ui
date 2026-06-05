@@ -294,6 +294,12 @@
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Run sequence&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
+            <property name="specialValueText">
+             <string>None</string>
+            </property>
+            <property name="minimum">
+             <number>-1</number>
+            </property>
             <property name="maximum">
              <number>999999</number>
             </property>
