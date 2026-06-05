@@ -481,7 +481,7 @@ class Satellite(
         # Remove unused entries
         unused_keys = partial_config._remove_unused_entries()
         if unused_keys:
-            self.log.warning(f"{len(unused_keys)} keys of the configuration were not used: {unused_keys}")
+            raise RuntimeError(f"{len(unused_keys)} keys of the configuration were not used: {unused_keys}")
 
         # Update configuration
         self._config._update(partial_config)

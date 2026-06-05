@@ -494,8 +494,8 @@ std::size_t BaseSatellite::update_config(Configuration& partial_config) {
     // Remove unused entries
     const auto unused_keys = partial_config.removeUnusedEntries();
     if(!unused_keys.empty()) {
-        LOG(logger_, WARNING) << unused_keys.size()
-                              << " keys of the configuration were not used: " << range_to_string(unused_keys, true);
+        throw SatelliteError(to_string(unused_keys.size()) +
+                             " keys of the configuration were not used: " + range_to_string(unused_keys, true));
     }
 
     // Update configuration
