@@ -63,7 +63,7 @@ private:
     /**
      * @brief Helper function to check a file path for validity
      * @details This tests whether the file exists and either deletes it or throws an exception, depending on whether the
-     *          "allow_overwrite" flag is set or not. If not a file, it checks if it is an existing directory. The method
+     *          "allow_overwriting" flag is set or not. If not a file, it checks if it is an existing directory. The method
      *          creates all parent folders, attempts to open the file and converts the path to a canonical file path
      *
      * @param file_path Input file path to be validated
