@@ -68,7 +68,9 @@ void NextcloudTalkSatellite::initializing(Configuration& config) {
     const auto ignore_topics_v = config.getArray<std::string>("ignore_topics", {"FSM"});
     LOG_IF(INFO, !ignore_topics_v.empty()) << "Ignore log messages with topics " << range_to_string(ignore_topics_v);
     ignore_topics_.clear();
-    ignore_topics_.insert(ignore_topics_v.begin(), ignore_topics_v.end());
+    for(const auto& topic : ignore_topics_v) {
+        ignore_topics_.emplace(transform(topic, ::toupper));
+    }
 
     // Subscribe to configured log topics
     auto& topics_section = config.getSection("subscribe_topics", {});
@@ -77,7 +79,10 @@ void NextcloudTalkSatellite::initializing(Configuration& config) {
         if(ignore_topics_.contains(topic)) {
             throw InvalidKeyError(topics_section, topic, "Topic found in list of ignored topics");
         }
-        subscribeLogTopic(topic, topics_section.get<Level>(topic));
+        const auto topic_uc = transform(topic, ::toupper);
+        const auto level = topics_section.get<Level>(topic);
+        LOG(INFO) << "Subscribing to log topic " << topic_uc << " on level " << level;
+        subscribeLogTopic(topic_uc, level);
     }
 
     only_in_run_ = config.get<bool>("only_in_run", false);

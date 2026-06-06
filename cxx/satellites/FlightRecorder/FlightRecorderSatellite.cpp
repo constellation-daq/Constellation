@@ -146,7 +146,9 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
     const auto ignore_topics_v = config.getOptionalArray<std::string>("ignore_topics");
     if(ignore_topics_v.has_value()) {
         LOG(INFO) << "Ignore log messages with topics " << range_to_string(ignore_topics_v.value());
-        ignore_topics_.insert(ignore_topics_v.value().begin(), ignore_topics_v.value().end());
+        for(const auto& topic : ignore_topics_v.value()) {
+            ignore_topics_.emplace(transform(topic, ::toupper));
+        }
     }
 
     // Subscribe to configured log topics
