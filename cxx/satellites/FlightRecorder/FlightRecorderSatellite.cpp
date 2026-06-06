@@ -65,8 +65,9 @@ FlightRecorderSatellite::FlightRecorderSatellite(std::string_view type, std::str
         return msg_logged_run_.load();
     });
 
-    register_command(
-        "flush", "Flush log sink", {State::INIT, State::ORBIT, State::RUN, State::SAFE}, [this]() { sink_->flush(); });
+    register_command("flush", "Flush log sink", states_except({State::NEW, State::initializing, State::ERROR}), [this]() {
+        sink_->flush();
+    });
 }
 
 void FlightRecorderSatellite::initializing(Configuration& config) {
@@ -129,6 +130,9 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
     // Set pattern containing only the timestamp and the message
     sink_->set_pattern("[%Y-%m-%d %H:%M:%S.%e] %v");
 
+    // Set sink log level to lowest to make sure we log all messages
+    sink_->set_level(spdlog::level::trace);
+
     // Start the log receiver pool
     startPool();
 
@@ -152,7 +156,10 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
         if(ignore_topics_.contains(topic)) {
             throw InvalidKeyError(topics_section, topic, "Topic found in list of ignored topics");
         }
-        subscribeLogTopic(topic, topics_section.get<Level>(topic));
+        const auto topic_uc = transform(topic, ::toupper);
+        const auto level = topics_section.get<Level>(topic);
+        LOG(INFO) << "Subscribing to log topic " << topic_uc << " on level " << level;
+        subscribeLogTopic(topic_uc, level);
     }
 }
 
@@ -231,7 +238,7 @@ void FlightRecorderSatellite::failure(State /*previous_state*/, std::string_view
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 void FlightRecorderSatellite::log_message(CMDP1LogMessage&& msg) {
     // Skip if ignored topic
-    if(ignore_topics_.contains(msg.getTopic())) {
+    if(ignore_topics_.contains(msg.getLogTopic())) {
         return;
     }
 
