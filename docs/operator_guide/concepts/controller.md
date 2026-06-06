@@ -7,7 +7,7 @@ Controllers connect directly to individual satellites as show in {numref}`fig-ct
 ```{figure} CSCP.svg
 :align: center
 :name: fig-ctrl-schema
-Schematic drawing of CSCP
+Schematic drawing of the Constellation control communication
 ```
 
 ```{seealso}

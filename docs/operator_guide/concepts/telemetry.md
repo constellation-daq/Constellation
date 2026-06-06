@@ -7,3 +7,5 @@ A satellite can send register and send metrics for this purpose, which consist o
 Details about how to implement telemetry and metrics can be found in the
 [application development guide](../../application_development/functionality/metrics.md).
 ```
+
+## Real-Time Dashboard
