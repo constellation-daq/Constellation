@@ -34,7 +34,7 @@ using namespace constellation::utils;
 
 LogListener::LogListener(std::string_view log_topic, std::function<void(CMDP1LogMessage&&)> callback)
     : CMDPListener(
-          log_topic,
+          transform(log_topic, ::toupper),
           [callback = std::move(callback)](CMDP1Message&& msg) mutable { callback(CMDP1LogMessage(std::move(msg))); }),
       global_log_level_(Level::OFF) {
     // Subscribe to notifications:
@@ -48,7 +48,7 @@ std::vector<std::string> LogListener::generate_topics(const std::string& log_top
     for(int level_it = std::to_underlying(lower_level); level_it < std::to_underlying(upper_level); ++level_it) {
         auto topic = "LOG/" + enum_name(Level(level_it));
         if(!log_topic.empty()) [[likely]] {
-            topic += "/" + log_topic;
+            topic += "/" + transform(log_topic, ::toupper);
         }
         topics.emplace_back(std::move(topic));
     }

@@ -74,10 +74,9 @@ void MattermostSatellite::initializing(Configuration& config) {
         if(ignore_topics_.contains(topic)) {
             throw InvalidKeyError(topics_section, topic, "Topic found in list of ignored topics");
         }
-        const auto topic_uc = transform(topic, ::toupper);
         const auto level = topics_section.get<Level>(topic);
-        LOG(INFO) << "Subscribing to log topic " << topic_uc << " on level " << level;
-        subscribeLogTopic(topic_uc, level);
+        LOG(INFO) << "Subscribing to log topic " << topic << " on level " << level;
+        subscribeLogTopic(topic, level);
     }
 
     only_in_run_ = config.get<bool>("only_in_run", false);
