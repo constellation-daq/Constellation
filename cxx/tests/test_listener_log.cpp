@@ -229,3 +229,48 @@ TEST_CASE("Empty extra topic subscription", "[listener]") {
     listener.stopPool();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
+
+TEST_CASE("Case-insensitive topic subscriptions", "[listener]") {
+    // Create CHIRP manager for monitoring service discovery
+    create_chirp_manager();
+
+    // Start pool
+    auto listener = LogListener("listener", {});
+    listener.startPool();
+
+    // Subscribe to topic
+    listener.subscribeLogTopic("fSm", Level::INFO);
+
+    // Start the sender and mock via chirp
+    auto sender = CMDPSender("CMDPSender.s1");
+    sender.mockChirpService();
+
+    // Pop subscription messages (note: subscriptions come alphabetically if iterated from set)
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/CRITICAL/FSM"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/INFO/FSM"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS/FSM"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/WARNING/FSM"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG?"));
+
+    // Subscribe to new topic
+    listener.subscribeLogTopic("cTrL", Level::WARNING);
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/WARNING/CTRL"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS/CTRL"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/CRITICAL/CTRL"));
+
+    // Check subscribed topics
+    REQUIRE_THAT(listener.getLogTopicSubscriptions(),
+                 RangeEquals(std::map<std::string, Level>({{"FSM", Level::INFO}, {"CTRL", Level::WARNING}})));
+
+    // Unsubscribe from a topic
+    listener.unsubscribeLogTopic("CtRl");
+    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/WARNING/CTRL"));
+    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/STATUS/CTRL"));
+    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/CRITICAL/CTRL"));
+
+    // Check subscribed topics again
+    REQUIRE_THAT(listener.getLogTopicSubscriptions(), RangeEquals(std::map<std::string, Level>({{"FSM", Level::INFO}})));
+
+    listener.stopPool();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+}
