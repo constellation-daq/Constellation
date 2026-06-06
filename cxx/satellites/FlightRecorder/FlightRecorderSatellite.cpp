@@ -135,6 +135,25 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
     // Subscribe for all endpoints to global topic
     const auto global_level = config.get<Level>("global_recording_level", WARNING);
     setGlobalLogLevel(global_level);
+    LOG(STATUS) << "Set log level to " << global_level;
+
+    // Ignore topics
+    ignore_topics_.clear();
+    const auto ignore_topics_v = config.getOptionalArray<std::string>("ignore_topics");
+    if(ignore_topics_v.has_value()) {
+        LOG(INFO) << "Ignore log messages with topics " << range_to_string(ignore_topics_v.value());
+        ignore_topics_.insert(ignore_topics_v.value().begin(), ignore_topics_v.value().end());
+    }
+
+    // Subscribe to configured log topics
+    auto& topics_section = config.getSection("subscribe_topics", {});
+    topics_section.setDefault("OP", Level::INFO);
+    for(const auto& topic : topics_section.getKeys()) {
+        if(ignore_topics_.contains(topic)) {
+            throw InvalidKeyError(topics_section, topic, "Topic found in list of ignored topics");
+        }
+        subscribeLogTopic(topic, topics_section.get<Level>(topic));
+    }
 }
 
 std::filesystem::path FlightRecorderSatellite::validate_file_path(const std::filesystem::path& file_path) const {
@@ -211,6 +230,11 @@ void FlightRecorderSatellite::failure(State /*previous_state*/, std::string_view
 
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 void FlightRecorderSatellite::log_message(CMDP1LogMessage&& msg) {
+    // Skip if ignored topic
+    if(ignore_topics_.contains(msg.getTopic())) {
+        return;
+    }
+
     const auto& header = msg.getHeader();
 
 #ifdef __cpp_lib_format

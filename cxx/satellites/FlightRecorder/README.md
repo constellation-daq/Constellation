@@ -46,10 +46,24 @@ The following parameters are read and interpreted by this satellite. Parameters 
 | `file_path` | String | Path to the target log file | - |
 | `allow_overwriting` | Boolean | Flag to allow or deny overwriting of existing log files | `false` |
 | `global_recording_level` | String | Global log level to be recorded by this satellite | `WARNING` |
+| `subscribe_topics` | Section with individual log topics and the respective subscription log level. | Section | {`OP`: `INFO`} |
+| `ignore_topics` | Ignore log messages with certain topics | list of strings | - |
 | `flush_period` | Integer | Period in seconds after which log messages are regularly flushed to storage | `10` |
 | `rotate_max_files` | Integer | Maximum number of files to be user for rotating. Only used for `method = "ROTATE"` | `10` |
 | `rotate_filesize` | Integer | Maximum file size Mb after which the log is rotated. Only used for `method = "ROTATE"` | `100` |
 | `daily_switching_time` | Local time | Local time in the format `hh:mm:ss` at which the log file should be switched. Only used for `method = "DAILY"` | - |
+
+The `subscribe_topics` section can be used to change the subscription levels of individual topics beyond the `global_recording_level` setting.
+For example the `OP` topic logging operator actions will be subscribed to on `INFO` log level by default. Other topics can be
+added similarly:
+
+```toml
+[FlightRecorder.RunLogger.subscribe_topics]
+OP =  "INFO"
+CTRL =  "DEBUG"
+```
+
+The parameters `ignore_topics` and `subscribe_topics` are mutually exclusive, and a log topic can only appear in one of them.
 
 ### Configuration Example
 
