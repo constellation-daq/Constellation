@@ -162,7 +162,7 @@ class ReceiverSatellite(Satellite):
         """Receive end-of-run (EOR)"""
         raise NotImplementedError()
 
-    def do_run(self) -> str:
+    def do_run(self) -> str | None:
         """Run loop
 
         NOTE: This must not be overridden by receiver satellite implementations!
