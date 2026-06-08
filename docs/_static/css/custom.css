@@ -188,6 +188,11 @@ section:has(.eyebrow) + section h2 {
   }
 }
 
+a.reference.external::after {
+    content: " ↗";
+    font-size: 0.8em;
+}
+
 /* ----------------- Code Language Labels --------------------- */
 
 /* Base style for language label */
