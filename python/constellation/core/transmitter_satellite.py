@@ -229,7 +229,7 @@ class TransmitterSatellite(Satellite):
         """Mark the current run as tainted"""
         self._mark_run_tainted = True
 
-    def do_run(self) -> str:
+    def do_run(self) -> str | None:
         """Perform the data acquisition and enqueue the results.
 
         This is only an abstract method. Inheriting classes must implement their

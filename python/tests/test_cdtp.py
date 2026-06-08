@@ -120,16 +120,16 @@ class DummyReceiverSatellite(ReceiverSatellite):
         self.last_data_records: list[tuple[str, DataRecord]] = []
         self.last_eors: list[tuple[str, dict[str, Any], dict[str, Any]]] = []
 
-    def receive_bor(self, sender: str, user_tags: dict[str, Any], configuration: dict[str, Any]):
+    def receive_bor(self, sender: str, user_tags: dict[str, Any], configuration: dict[str, Any]) -> None:
         self.last_bors.append((sender, user_tags, configuration))
 
-    def receive_data(self, sender: str, data_record: DataRecord):
+    def receive_data(self, sender: str, data_record: DataRecord) -> None:
         self.last_data_records.append((sender, data_record))
 
-    def receive_eor(self, sender: str, user_tags: dict[str, Any], run_metadata: dict[str, Any]):
+    def receive_eor(self, sender: str, user_tags: dict[str, Any], run_metadata: dict[str, Any]) -> None:
         self.last_eors.append((sender, user_tags, run_metadata))
 
-    def do_run(self) -> str:
+    def do_run(self) -> str | None:
         while not self.stop_requested():
             if self.throw_run:
                 raise Exception("throwing in RUN as requested")
