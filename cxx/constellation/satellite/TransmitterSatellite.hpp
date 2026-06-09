@@ -83,16 +83,12 @@ namespace constellation::satellite {
         /**
          * @brief Set tag for the BOR message metadata send at the begin of the run
          */
-        template <typename T> void setBORTag(std::string key, const T& value) {
-            bor_tags_.insert_or_assign(std::move(key), value);
-        }
+        template <typename T> void setBORTag(std::string key, const T& value) { bor_tags_[std::move(key)] = value; }
 
         /**
          * @brief Set tag for the EOR message metadata send at the end of the run
          */
-        template <typename T> void setEORTag(std::string key, const T& value) {
-            eor_tags_.insert_or_assign(std::move(key), value);
-        }
+        template <typename T> void setEORTag(std::string key, const T& value) { eor_tags_[std::move(key)] = value; }
 
         /**
          * @brief Return the ephemeral port number to which the CDTP socket is bound to
