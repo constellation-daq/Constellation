@@ -463,7 +463,10 @@ void ReceiverSatellite::handle_cdtp_message(CDTP2Message&& message) {
 void ReceiverSatellite::handle_bor_message(const CDTP2BORMessage& bor_message) {
     const auto sender = bor_message.getSender();
     LOG(BasePoolT::pool_logger_, INFO) << "Received BOR from " << sender
-                                       << " with configuration:" << bor_message.getConfiguration().format(true);
+                                       << " with configuration:" << bor_message.getConfiguration().format(true)
+                                       << (bor_message.getUserTags().empty()
+                                               ? ""
+                                               : "\nand user tags:" + bor_message.getUserTags().format(true));
 
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
     auto data_transmitter_it = data_transmitter_states_.find(sender);
@@ -511,7 +514,10 @@ void ReceiverSatellite::handle_data_message(const CDTP2Message& data_message) {
 void ReceiverSatellite::handle_eor_message(const CDTP2EORMessage& eor_message) {
     const auto sender = eor_message.getSender();
     LOG(BasePoolT::pool_logger_, INFO) << "Received EOR from " << sender
-                                       << " with run metadata:" << eor_message.getRunMetadata().format(true);
+                                       << " with run metadata:" << eor_message.getRunMetadata().format(true)
+                                       << (eor_message.getUserTags().empty()
+                                               ? ""
+                                               : "\nand user tags:" + eor_message.getUserTags().format(true));
 
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
     auto data_transmitter_it = data_transmitter_states_.find(sender);

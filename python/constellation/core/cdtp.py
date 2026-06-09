@@ -562,7 +562,9 @@ class DataReceiver:
             self._handle_eor_message(CDTP2EORMessage.cast(msg))
 
     def _handle_bor_message(self, msg: CDTP2BORMessage) -> None:
-        self.log_cdtp.info("Received BOR from %s with config %s", msg.sender, msg.configuration)
+        self.log_cdtp.info(
+            "Received BOR from %s with configuration %s and user tags %s", msg.sender, msg.configuration, msg.user_tags
+        )
 
         # If registered in states, raise if already connected
         if (
@@ -600,7 +602,9 @@ class DataReceiver:
             self._receive_data(msg.sender, data_record)
 
     def _handle_eor_message(self, msg: CDTP2EORMessage) -> None:
-        self.log_cdtp.info("Received EOR from %s with run metadata %s", msg.sender, msg.run_metadata)
+        self.log_cdtp.info(
+            "Received EOR from %s with run metadata %s and user tags %s", msg.sender, msg.run_metadata, msg.user_tags
+        )
 
         # Check that BOR was received
         self._check_bor_received(CDTP2Message.Type.EOR, msg.sender)
