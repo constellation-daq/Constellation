@@ -507,34 +507,6 @@ lint:clang-scan-build:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
   <<: *cpp-hi-load
 
-lint:coverity-scan:
-  extends:
-    - .lint
-    - .cpp-hi-load
-    - .ubuntu-24.04
-  needs:
-    - job: build:ubuntu-24.04
-      artifacts: false
-  script:
-    - curl -s https://scan.coverity.com/download/linux64 -o /tmp/cov-analysis-linux64.tgz
-      --form project=$COVERITY_SCAN_PROJECT_NAME --form token=$COVERITY_SCAN_TOKEN
-    - tar -xzf /tmp/cov-analysis-linux64.tgz
-    - rm -r /tmp/cov-analysis-linux64.tgz
-    - PATH=$PATH:$(echo cov-analysis-linux64-*/bin)
-    - CC=gcc; CXX=g++ # Set directly to avoid ccache
-    - cov-configure --gcc
-    - meson setup build -Dcxx_tests=disabled -Dbuildtype=debug
-    - cov-build --dir cov-int ninja -C build ${NINJA_OPTIONS}
-    - tar -czf cov-int.tgz cov-int
-    - curl -s https://scan.coverity.com/builds?project=$COVERITY_SCAN_PROJECT_NAME
-      --form token=$COVERITY_SCAN_TOKEN --form email=$GITLAB_USER_EMAIL
-      --form file=@cov-int.tgz --form version="$CI_COMMIT_REF_NAME"
-      --form description="$CI_COMMIT_REF_NAME / $CI_COMMIT_SHA / $CI_PIPELINE_ID"
-  cache:
-    - *meson-wrap-cache
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
-
 # format stage
 
 .format:
