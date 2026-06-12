@@ -33,7 +33,22 @@ meson configure build -Dsatellite_nextcloud_talk=true
 | `account` | Account name of the user to connect with | string | - |
 | `app_password` | App password of the account to be used, for example `SLyPa-oTfTc-57zTn-QlPsZ-91PW7` | string | - |
 | `log_level` | Minimum log level of the logger | string | `WARNING` |
+| `subscribe_topics` | Section with individual log topics and the respective subscription log level. | Section | {`OP`: `INFO`} |
 | `ignore_topics` | Ignore log messages with certain topics | list of strings | [`FSM`] |
 | `only_in_run` | Only log to Nextcloud Talk in the `RUN`, `interrupting` or `SAFE` state | bool | `false` |
 | `max_retries` | Number of retries for sending a message to Nextcloud Talk | Integer | 5 |
 | `backoff_time` | Initial time in milliseconds for the back-off between retrying to send messages | Integer | 500 |
+
+The `subscribe_topics` section can be used to change the subscription levels of individual topics beyond the global `log_level` setting.
+For example the `OP` topic logging operator actions will be subscribed to on `INFO` log level by default. Other topics can be
+added similarly:
+
+```yaml
+Nextcloud:
+  Logger:
+    subscribe_topics:
+      OP: "INFO"
+      CTRL: "DEBUG"
+```
+
+The parameters `ignore_topics` and `subscribe_topics` are mutually exclusive, and a log topic can only appear in one of them.

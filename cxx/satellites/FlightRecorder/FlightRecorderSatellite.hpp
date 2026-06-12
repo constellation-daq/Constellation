@@ -21,6 +21,7 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/string_hash_map.hpp"
 #include "constellation/listener/LogListener.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
@@ -76,6 +77,7 @@ private:
     std::filesystem::path path_;
     bool allow_overwriting_ {false};
     std::shared_ptr<spdlog::logger> sink_;
+    constellation::utils::string_hash_set ignore_topics_;
     std::atomic<std::size_t> msg_logged_total_ {0};
     std::atomic<std::size_t> msg_logged_warning_ {0};
     std::atomic<std::size_t> msg_logged_run_ {0};

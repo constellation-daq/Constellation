@@ -32,7 +32,22 @@ meson configure build -Dsatellite_mattermost=true
 |------------|-------------|------|---------------|
 | `webhook_url` | URL of the Mattermost webhook | string | - |
 | `log_level` | Minimum log level of the logger | string | `WARNING` |
+| `subscribe_topics` | Section with individual log topics and the respective subscription log level. | Section | {`OP`: `INFO`} |
 | `ignore_topics` | Ignore log messages with certain topics | list of strings | [`FSM`] |
 | `only_in_run` | Only log to Mattermost in the `RUN`, `interrupting` or `SAFE` state | bool | `false` |
 | `max_retries` | Number of retries for sending a message to Mattermost | Integer | 5 |
 | `backoff_time` | Initial time in milliseconds for the back-off between retrying to send messages | Integer | 500 |
+
+The `subscribe_topics` section can be used to change the subscription levels of individual topics beyond the global `log_level` setting.
+For example the `OP` topic logging operator actions will be subscribed to on `INFO` log level by default. Other topics can be
+added similarly:
+
+```yaml
+Mattermost:
+  Logger:
+    subscribe_topics:
+      OP: "INFO"
+      CTRL: "DEBUG"
+```
+
+The parameters `ignore_topics` and `subscribe_topics` are mutually exclusive, and a log topic can only appear in one of them.

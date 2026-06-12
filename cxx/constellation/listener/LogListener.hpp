@@ -60,14 +60,14 @@ namespace constellation::listener {
          * @param log_topic Topic to subscribe to
          * @param level Lowest log level to subscribe to
          */
-        void subscribeLogTopic(const std::string& log_topic, log::Level level);
+        void subscribeLogTopic(std::string_view log_topic, log::Level level);
 
         /**
          * @brief Unsubscribe from a specific log topic
          *
          * @param log_topic Topic to unsubscribe from
          */
-        void unsubscribeLogTopic(const std::string& log_topic);
+        void unsubscribeLogTopic(std::string_view log_topic);
 
         /**
          * @brief Get map of subscribed log topics
@@ -87,7 +87,7 @@ namespace constellation::listener {
          * @param log_topic Topic to subscribe to
          * @param level Lowest log level to subscribe to
          */
-        void subscribeExtaLogTopic(const std::string& host, const std::string& log_topic, log::Level level);
+        void subscribeExtaLogTopic(std::string_view host, std::string_view log_topic, log::Level level);
 
         /**
          * @brief Unsubscribe from an extra log topic for a specific host
@@ -95,17 +95,17 @@ namespace constellation::listener {
          * @param host Canonical name of the host
          * @param log_topic Topic to unsubscribe from
          */
-        void unsubscribeExtraLogTopic(const std::string& host, const std::string& log_topic);
+        void unsubscribeExtraLogTopic(std::string_view host, std::string_view log_topic);
 
         /**
          * @brief Get map of subscribed extra log topics for a specific host
          *
          * @return Map with log topics and their lowest subscribed levels
          */
-        std::map<std::string, log::Level> getExtraLogTopicSubscriptions(const std::string& host);
+        std::map<std::string, log::Level> getExtraLogTopicSubscriptions(std::string_view host);
 
     private:
-        CNSTLN_LOCAL static std::vector<std::string> generate_topics(const std::string& log_topic,
+        CNSTLN_LOCAL static std::vector<std::string> generate_topics(std::string_view log_topic,
                                                                      log::Level level,
                                                                      bool subscribe = true);
         CNSTLN_LOCAL static std::pair<std::string_view, log::Level> demangle_topic(std::string_view topic);

@@ -215,15 +215,15 @@ std::set<std::string> CMDPListener::getTopicSubscriptions() {
     return subscribed_topics_;
 }
 
-void CMDPListener::subscribeExtraTopic(const std::string& host, std::string topic) {
+void CMDPListener::subscribeExtraTopic(std::string_view host, std::string topic) {
     multiscribeExtraTopics(host, {}, {std::move(topic)});
 }
 
-void CMDPListener::unsubscribeExtraTopic(const std::string& host, std::string topic) {
+void CMDPListener::unsubscribeExtraTopic(std::string_view host, std::string topic) {
     multiscribeExtraTopics(host, {std::move(topic)}, {});
 }
 
-void CMDPListener::multiscribeExtraTopics(const std::string& host,
+void CMDPListener::multiscribeExtraTopics(std::string_view host,
                                           const std::vector<std::string>& unsubscribe_topics,
                                           const std::vector<std::string>& subscribe_topics) {
     const std::scoped_lock subscribed_topics_lock {subscribed_topics_mutex_};
@@ -260,7 +260,7 @@ void CMDPListener::multiscribeExtraTopics(const std::string& host,
     }
 }
 
-std::set<std::string> CMDPListener::getExtraTopicSubscriptions(const std::string& host) {
+std::set<std::string> CMDPListener::getExtraTopicSubscriptions(std::string_view host) {
     const std::scoped_lock subscribed_topics_lock {subscribed_topics_mutex_};
     const auto host_it = extra_subscribed_topics_.find(host);
     if(host_it != extra_subscribed_topics_.end()) {
@@ -269,7 +269,7 @@ std::set<std::string> CMDPListener::getExtraTopicSubscriptions(const std::string
     return {};
 }
 
-void CMDPListener::removeExtraTopicSubscriptions(const std::string& host) {
+void CMDPListener::removeExtraTopicSubscriptions(std::string_view host) {
     const std::scoped_lock subscribed_topics_lock {subscribed_topics_mutex_};
     const auto host_it = extra_subscribed_topics_.find(host);
     if(host_it != extra_subscribed_topics_.end()) {

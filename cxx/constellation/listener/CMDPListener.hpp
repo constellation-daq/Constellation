@@ -87,7 +87,7 @@ namespace constellation::listener {
          * @param host Canonical name of the host to subscribe to
          * @param topic Topic to subscribe to
          */
-        void subscribeExtraTopic(const std::string& host, std::string topic);
+        void subscribeExtraTopic(std::string_view host, std::string topic);
 
         /**
          * @brief Unsubscribe from a given topic for a specific socket
@@ -97,7 +97,7 @@ namespace constellation::listener {
          * @param host Canonical name of the host to unsubscribe from
          * @param topic Topic to unsubscribe from
          */
-        void unsubscribeExtraTopic(const std::string& host, std::string topic);
+        void unsubscribeExtraTopic(std::string_view host, std::string topic);
 
         /**
          * @brief Unsubscribe from and subscribe to multiple extra topics for a specific socket
@@ -106,7 +106,7 @@ namespace constellation::listener {
          * @param unsubscribe_topics List of topics to unsubscribe from
          * @param subscribe_topics List of topics to subscribe to
          */
-        void multiscribeExtraTopics(const std::string& host,
+        void multiscribeExtraTopics(std::string_view host,
                                     const std::vector<std::string>& unsubscribe_topics,
                                     const std::vector<std::string>& subscribe_topics);
 
@@ -117,14 +117,14 @@ namespace constellation::listener {
          *
          * @return Set containing the currently subscribed extra topics for given host
          */
-        std::set<std::string> getExtraTopicSubscriptions(const std::string& host);
+        std::set<std::string> getExtraTopicSubscriptions(std::string_view host);
 
         /**
          * @brief Remove extra topics for a specific socket
          *
          * @param host Canonical name of the host
          */
-        void removeExtraTopicSubscriptions(const std::string& host);
+        void removeExtraTopicSubscriptions(std::string_view host);
 
         /**
          * @brief Remove extra topics for all sockets

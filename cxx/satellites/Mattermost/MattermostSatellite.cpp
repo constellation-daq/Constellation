@@ -59,10 +59,25 @@ void MattermostSatellite::initializing(Configuration& config) {
     setGlobalLogLevel(log_level);
     LOG(STATUS) << "Set log level to " << log_level;
 
+    // Ignore topics
     const auto ignore_topics_v = config.getArray<std::string>("ignore_topics", {"FSM"});
     LOG_IF(INFO, !ignore_topics_v.empty()) << "Ignore log messages with topics " << range_to_string(ignore_topics_v);
     ignore_topics_.clear();
-    ignore_topics_.insert(ignore_topics_v.begin(), ignore_topics_v.end());
+    for(const auto& topic : ignore_topics_v) {
+        ignore_topics_.emplace(transform(topic, ::toupper));
+    }
+
+    // Subscribe to configured log topics
+    auto& topics_section = config.getSection("subscribe_topics", {});
+    topics_section.setDefault("OP", Level::INFO);
+    for(const auto& topic : topics_section.getKeys()) {
+        if(ignore_topics_.contains(topic)) {
+            throw InvalidKeyError(topics_section, topic, "Topic found in list of ignored topics");
+        }
+        const auto level = topics_section.get<Level>(topic);
+        LOG(INFO) << "Subscribing to log topic " << topic << " on level " << level;
+        subscribeLogTopic(topic, level);
+    }
 
     only_in_run_ = config.get<bool>("only_in_run", false);
     LOG_IF(INFO, only_in_run_) << "Only logging to Mattermost in RUN state";

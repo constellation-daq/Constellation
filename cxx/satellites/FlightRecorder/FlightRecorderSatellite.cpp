@@ -65,8 +65,9 @@ FlightRecorderSatellite::FlightRecorderSatellite(std::string_view type, std::str
         return msg_logged_run_.load();
     });
 
-    register_command(
-        "flush", "Flush log sink", {State::INIT, State::ORBIT, State::RUN, State::SAFE}, [this]() { sink_->flush(); });
+    register_command("flush", "Flush log sink", states_except({State::NEW, State::initializing, State::ERROR}), [this]() {
+        sink_->flush();
+    });
 }
 
 void FlightRecorderSatellite::initializing(Configuration& config) {
@@ -129,12 +130,38 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
     // Set pattern containing only the timestamp and the message
     sink_->set_pattern("[%Y-%m-%d %H:%M:%S.%e] %v");
 
+    // Set sink log level to lowest to make sure we log all messages
+    sink_->set_level(spdlog::level::trace);
+
     // Start the log receiver pool
     startPool();
 
     // Subscribe for all endpoints to global topic
     const auto global_level = config.get<Level>("global_recording_level", WARNING);
     setGlobalLogLevel(global_level);
+    LOG(STATUS) << "Set log level to " << global_level;
+
+    // Ignore topics
+    ignore_topics_.clear();
+    const auto ignore_topics_v = config.getOptionalArray<std::string>("ignore_topics");
+    if(ignore_topics_v.has_value()) {
+        LOG(INFO) << "Ignore log messages with topics " << range_to_string(ignore_topics_v.value());
+        for(const auto& topic : ignore_topics_v.value()) {
+            ignore_topics_.emplace(transform(topic, ::toupper));
+        }
+    }
+
+    // Subscribe to configured log topics
+    auto& topics_section = config.getSection("subscribe_topics", {});
+    topics_section.setDefault("OP", Level::INFO);
+    for(const auto& topic : topics_section.getKeys()) {
+        if(ignore_topics_.contains(topic)) {
+            throw InvalidKeyError(topics_section, topic, "Topic found in list of ignored topics");
+        }
+        const auto level = topics_section.get<Level>(topic);
+        LOG(INFO) << "Subscribing to log topic " << topic << " on level " << level;
+        subscribeLogTopic(topic, level);
+    }
 }
 
 std::filesystem::path FlightRecorderSatellite::validate_file_path(const std::filesystem::path& file_path) const {
@@ -211,6 +238,11 @@ void FlightRecorderSatellite::failure(State /*previous_state*/, std::string_view
 
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 void FlightRecorderSatellite::log_message(CMDP1LogMessage&& msg) {
+    // Skip if ignored topic
+    if(ignore_topics_.contains(msg.getLogTopic())) {
+        return;
+    }
+
     const auto& header = msg.getHeader();
 
 #ifdef __cpp_lib_format

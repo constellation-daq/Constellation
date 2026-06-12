@@ -37,14 +37,14 @@ namespace constellation::listener {
          *
          * @param metric Telemetry topic to subscribe to
          */
-        void subscribeMetric(const std::string& metric);
+        void subscribeMetric(std::string_view metric);
 
         /**
          * @brief Unsubscribe from a specific metric from all connected hosts
          *
          * @param metric Telemetry topic to unsubscribe from
          */
-        void unsubscribeMetric(const std::string& metric);
+        void unsubscribeMetric(std::string_view metric);
 
         /**
          * @brief Get set of subscribed metrics
@@ -61,7 +61,7 @@ namespace constellation::listener {
          * @param host Canonical name of the host
          * @param metric Telemetry topic to subscribe to
          */
-        void subscribeMetric(const std::string& host, const std::string& metric);
+        void subscribeMetric(std::string_view host, std::string_view metric);
 
         /**
          * @brief Unsubscribe from an extra telemetry topic for a specific host
@@ -69,16 +69,17 @@ namespace constellation::listener {
          * @param host Canonical name of the host
          * @param metric Telemetry topic to subscribe to
          */
-        void unsubscribeMetric(const std::string& host, const std::string& metric);
+        void unsubscribeMetric(std::string_view host, std::string_view metric);
 
         /**
          * @brief Get subscribed extra metrics for a specific host
          *
          * @return Set with telemetry topics
          */
-        std::set<std::string> getMetricSubscriptions(const std::string& host);
+        std::set<std::string> getMetricSubscriptions(std::string_view host);
 
     private:
+        CNSTLN_LOCAL static std::string prefix_topic(std::string_view topic);
         CNSTLN_LOCAL static std::string_view demangle_topic(std::string_view topic);
 
         // Hide subscribe/unsubscribe functions from CMDPListener

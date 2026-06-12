@@ -31,18 +31,24 @@ StatListener::StatListener(std::string_view log_topic, std::function<void(CMDP1S
     CMDPListener::subscribeTopic("STAT?");
 }
 
+std::string StatListener::prefix_topic(std::string_view topic) {
+    std::string out = "STAT/";
+    out += topic;
+    return out;
+}
+
 std::string_view StatListener::demangle_topic(std::string_view topic) {
     return topic.substr(5);
 }
 
-void StatListener::subscribeMetric(const std::string& metric) {
+void StatListener::subscribeMetric(std::string_view metric) {
     LOG(BasePoolT::pool_logger_, DEBUG) << "Subscribing to telemetry topic " << metric;
-    CMDPListener::subscribeTopic("STAT/" + metric);
+    CMDPListener::subscribeTopic(prefix_topic(metric));
 }
 
-void StatListener::unsubscribeMetric(const std::string& metric) {
+void StatListener::unsubscribeMetric(std::string_view metric) {
     LOG(BasePoolT::pool_logger_, DEBUG) << "Unsubscribing from telemetry topic " << metric;
-    CMDPListener::unsubscribeTopic("STAT/" + metric);
+    CMDPListener::unsubscribeTopic(prefix_topic(metric));
 }
 
 std::set<std::string> StatListener::getMetricSubscriptions() {
@@ -57,17 +63,17 @@ std::set<std::string> StatListener::getMetricSubscriptions() {
     return metric_subscriptions;
 }
 
-void StatListener::subscribeMetric(const std::string& host, const std::string& metric) {
+void StatListener::subscribeMetric(std::string_view host, std::string_view metric) {
     LOG(BasePoolT::pool_logger_, DEBUG) << "Subscribing to extra telemetry topic " << metric << " for host " << host;
-    CMDPListener::subscribeExtraTopic(host, "STAT/" + metric);
+    CMDPListener::subscribeExtraTopic(host, prefix_topic(metric));
 }
 
-void StatListener::unsubscribeMetric(const std::string& host, const std::string& metric) {
+void StatListener::unsubscribeMetric(std::string_view host, std::string_view metric) {
     LOG(BasePoolT::pool_logger_, DEBUG) << "Unsubscribing from extra telemetry topic " << metric << " for host " << host;
-    CMDPListener::unsubscribeExtraTopic(host, "STAT/" + metric);
+    CMDPListener::unsubscribeExtraTopic(host, prefix_topic(metric));
 }
 
-std::set<std::string> StatListener::getMetricSubscriptions(const std::string& host) {
+std::set<std::string> StatListener::getMetricSubscriptions(std::string_view host) {
     std::set<std::string> metric_subscriptions {};
     for(const std::string_view topic : CMDPListener::getExtraTopicSubscriptions(host)) {
         // Ignore notification
