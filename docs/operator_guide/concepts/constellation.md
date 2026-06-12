@@ -58,7 +58,8 @@ situation, such as `SUCCESS` when the command was executed successfully, `INVALI
 that is not possible from the current state, or `UNKNOWN` in case the command is not known to the satellite.
 
 The satellite command palette contains a set of standard commands to query properties and initiate state transitions, but can
-be extended by the specific implementation as described in the [Satellite Section](./satellite].
+be extended by the specific implementation as described in the [Satellite Section](./satellite.md). The operating principle
+of controller nodes is described in the [Controller Section](./controller.md).
 
 ### Data Transmission
 
@@ -72,8 +73,10 @@ different message types:
 * `DATA`: This is the standard message type, consisting of the header frame and any number of so-called **data records**
   containing the data of the respective instrument. Each data record may contain multiple data blocks and is marked with an
   incrementing data sequence counter, providing the possibility for additional offline data integrity checks.
-* `EOR` - **End of Run**: This message is sent automatically at the end of a measurement, i.e. when the sending satellite\
+* `EOR` - **End of Run**: This message is sent automatically at the end of a measurement, i.e. when the sending satellite
   leaves the {bdg-secondary}`RUN`. It contains metadata collected by the satellite over the course of the run.
+
+A detailed description of the data transmission, message structure, and data storage is provided in the [Data Processing Section](./data.md).
 
 ### Logging & Telemetry
 
@@ -86,8 +89,8 @@ These subscriptions are completely independent of other protocols and can be per
 This means that listeners receiving log messages can be ended and restarted at will, and the subscriptions can be changed
 while the Constellation is running undisturbed, enabling flexible and adaptable monitoring configurations.
 
-More information can be found in the dedicated chapters on [logging](../concepts/logging.md) and
-[telemetry](../concepts/telemetry.md).
+More information can be found in [Listener Section](./listener.md) as well as the dedicated chapters on
+[logging](../concepts/logging.md) and [telemetry](../concepts/telemetry.md).
 
 
 ## Limitations

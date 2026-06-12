@@ -75,5 +75,6 @@ affected by them appearing or disappearing during operations.
 
 A typical example for a listener component is a log message interface which subscribes to logging information from satellites
 in the Constellation and displays them to the operator.
+More information on the operating principle of listeners can be found in the [Concepts section](../concepts/listener.md).
 The two use cases for a listener, logging and telemetry, are described separately in the
 [logging chapter](../concepts/logging.md) and [telemetry chapter](../concepts/telemetry.md).
