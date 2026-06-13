@@ -36,7 +36,7 @@ namespace constellation::config {
         const auto key_lc = utils::transform(key, tolower);
 
         if constexpr(utils::is_duration_v<std::remove_cvref_t<T>>) {
-            dictionary_->try_emplace(key_lc, static_cast<std::int64_t>(default_value.count()));
+            dictionary_->try_emplace(key_lc, static_cast<std::uint64_t>(default_value.count()));
         } else {
             dictionary_->try_emplace(key_lc, std::forward<T>(default_value));
         }
@@ -50,7 +50,7 @@ namespace constellation::config {
 
         // Resolve duration from integer
         if constexpr(utils::is_duration_v<T>) {
-            return T {get<std::int64_t>(key)};
+            return T {get<std::uint64_t>(key)};
         } else {
 
             const auto key_lc = utils::transform(key, tolower);
