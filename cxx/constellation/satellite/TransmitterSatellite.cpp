@@ -118,9 +118,9 @@ CDTP2Message::DataRecord TransmitterSatellite::newDataRecord(std::size_t blocks)
 void TransmitterSatellite::initializing_transmitter(Configuration& config) {
     auto& config_data = config.getSection("_data", {});
 
-    data_bor_timeout_ = std::chrono::seconds(config_data.get<std::uint64_t>("bor_timeout", 10));
-    data_eor_timeout_ = std::chrono::seconds(config_data.get<std::uint64_t>("eor_timeout", 10));
-    data_msg_timeout_ = std::chrono::seconds(config_data.get<std::uint64_t>("data_timeout", 10));
+    data_bor_timeout_ = config_data.get<std::chrono::seconds>("bor_timeout", 10s);
+    data_eor_timeout_ = config_data.get<std::chrono::seconds>("eor_timeout", 10s);
+    data_msg_timeout_ = config_data.get<std::chrono::seconds>("data_timeout", 10s);
     LOG(cdtp_logger_, DEBUG) << "Timeout for BOR message " << data_bor_timeout_ << ", for EOR message " << data_eor_timeout_
                              << ", for DATA message " << data_msg_timeout_;
 
@@ -142,21 +142,21 @@ void TransmitterSatellite::reconfiguring_transmitter(const Configuration& partia
     if(config_data_opt.has_value()) {
         const auto& config_data = config_data_opt.value().get();
 
-        const auto bor_timeout_opt = config_data.getOptional<std::uint64_t>("bor_timeout");
+        const auto bor_timeout_opt = config_data.getOptional<std::chrono::seconds>("bor_timeout");
         if(bor_timeout_opt.has_value()) {
-            data_bor_timeout_ = std::chrono::seconds(bor_timeout_opt.value());
+            data_bor_timeout_ = bor_timeout_opt.value();
             LOG(cdtp_logger_, INFO) << "Reconfigured timeout for BOR message: " << data_bor_timeout_;
         }
 
-        const auto eor_timeout_opt = config_data.getOptional<std::uint64_t>("eor_timeout");
+        const auto eor_timeout_opt = config_data.getOptional<std::chrono::seconds>("eor_timeout");
         if(eor_timeout_opt.has_value()) {
-            data_eor_timeout_ = std::chrono::seconds(eor_timeout_opt.value());
+            data_eor_timeout_ = eor_timeout_opt.value();
             LOG(cdtp_logger_, INFO) << "Reconfigured timeout for EOR message: " << data_eor_timeout_;
         }
 
-        const auto data_timeout_opt = config_data.getOptional<std::uint64_t>("data_timeout");
+        const auto data_timeout_opt = config_data.getOptional<std::chrono::seconds>("data_timeout");
         if(data_timeout_opt.has_value()) {
-            data_msg_timeout_ = std::chrono::seconds(data_timeout_opt.value());
+            data_msg_timeout_ = data_timeout_opt.value();
             LOG(cdtp_logger_, INFO) << "Reconfigured timeout for DATA message: " << data_msg_timeout_;
         }
 

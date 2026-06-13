@@ -242,7 +242,7 @@ void ReceiverSatellite::initializing_receiver(Configuration& config) {
     }
     reset_data_transmitter_states();
 
-    data_eor_timeout_ = std::chrono::seconds(config_data.get<std::uint64_t>("eor_timeout", 10));
+    data_eor_timeout_ = config_data.get<std::chrono::seconds>("eor_timeout", 10s);
     LOG(BasePoolT::pool_logger_, DEBUG) << "Timeout for EOR messages is " << data_eor_timeout_;
 }
 
@@ -291,9 +291,9 @@ void ReceiverSatellite::reconfiguring_receiver(const Configuration& partial_conf
                 << "Reconfigured solution strategy for file name conflicts: " << conflict_strategy_;
         }
 
-        const auto eor_timeout_opt = config_data.getOptional<std::uint64_t>("eor_timeout");
+        const auto eor_timeout_opt = config_data.getOptional<std::chrono::seconds>("eor_timeout");
         if(eor_timeout_opt.has_value()) {
-            data_eor_timeout_ = std::chrono::seconds(eor_timeout_opt.value());
+            data_eor_timeout_ = eor_timeout_opt.value();
             LOG(BasePoolT::pool_logger_, INFO) << "Reconfigured timeout for EOR message: " << data_eor_timeout_;
         }
 

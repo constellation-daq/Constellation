@@ -463,7 +463,7 @@ void FSM::initialize_fsm(Configuration& config) {
     }
 
     // Set timeout for conditional transitions
-    remote_condition_timeout_ = std::chrono::seconds(config_conditions.get<std::uint64_t>("transition_timeout", 30));
+    remote_condition_timeout_ = config_conditions.get<std::chrono::seconds>("transition_timeout", 30s);
 }
 
 // NOLINTBEGIN(performance-unnecessary-value-param,readability-convert-member-functions-to-static)
