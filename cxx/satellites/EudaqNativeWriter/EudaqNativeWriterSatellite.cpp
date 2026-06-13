@@ -40,6 +40,7 @@ using namespace constellation::message;
 using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
+using namespace std::chrono_literals;
 
 EudaqNativeWriterSatellite::EudaqNativeWriterSatellite(std::string_view type, std::string_view name)
     : ReceiverSatellite(type, name), flush_timer_({}) {}
@@ -66,7 +67,7 @@ void EudaqNativeWriterSatellite::initializing(Configuration& config) {
     validate_output_directory(base_path_);
 
     buffer_size_ = config.get<std::size_t>("buffer_size", 128) * 1024;
-    flush_timer_ = TimeoutTimer(std::chrono::seconds(config.get<std::size_t>("flush_interval", 3)));
+    flush_timer_ = TimeoutTimer(config.get<std::chrono::seconds>("flush_interval", 3s));
 
     try {
         file_name_pattern_ = config.get<std::string>("file_name_pattern", "data_{}.raw");

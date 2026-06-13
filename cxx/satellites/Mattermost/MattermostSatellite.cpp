@@ -83,7 +83,7 @@ void MattermostSatellite::initializing(Configuration& config) {
     LOG_IF(INFO, only_in_run_) << "Only logging to Mattermost in RUN state";
 
     max_retries_ = config.get<std::size_t>("max_retries", 5);
-    backoff_time_ = static_cast<std::chrono::milliseconds>(config.get<std::size_t>("backoff_time", 500));
+    backoff_time_ = config.get<std::chrono::milliseconds>("backoff_time", 500ms);
 
     // Stop pool in case it was already started
     stopPool();
