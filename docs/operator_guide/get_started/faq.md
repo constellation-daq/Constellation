@@ -71,3 +71,43 @@ constellation.MySatellite.One.reconfigure({'devices': {'ADC': {'registers': {'th
 
 More information on section syntax can be found in the concepts section on [Configuration Files](../concepts/configuration_files.md#sections).
 :::
+
+
+## Scripted Controller
+
+:::{dropdown} Controller script fails with timeout in `await_state`
+Either a transition of a connected satellite took longer than time timeout for the `await_state` call, or one of the
+satellites has not received the transition command leading to the awaited state.
+
+The former could for example happen when slowly ramping an output voltage, and the ramp duration exceeds the default timeout
+of 60 seconds. The solution is to ensure sufficient time is given to all satellites to conclude their transition by passing
+and explicit timeout to the function that is adapted to the expected transition time:
+
+```python
+ctrl.await_state(SatelliteState.ORBIT, 120)
+```
+
+The latter situation can occur when a controller script is started, and a command is sent before all satellites
+have connected:
+
+```python
+ctrl = ScriptableController(group_name)
+ctrl.constellation.start("new_run")
+ctrl.await_state(SatelliteState.RUN)
+```
+
+This creates a race condition where not all satellites were connected when the `start` command was sent, and they consequently
+remain in {bdg-secondary}`ORBIT` state. It is therefore strongly recommended to ensure that all satellites of the
+Constellation have connected to the controller before sending commands. The controller class provides helper
+functions for this purpose:
+
+```python
+# Wait until all listed satellites are connected
+ctrl.await_satellites(["Sputnik.One", "Mariner.Nine"])
+
+# Alternatively, wait until a certain number of satellites has connected
+ctrl.await_n_satellites(2)
+```
+
+Example scripts can be found in the How-To Guide on [Parameter Scans with Python](../howtos/scanning_python.md).
+:::
