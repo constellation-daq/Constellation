@@ -51,3 +51,23 @@ literally in the final value, the following items should be checked:
 The [Configuration Files](../concepts/configuration_files.md#environment-variables) concept section describes the full
 available syntax for parsing environment variables.
 :::
+
+:::{dropdown} Reconfiguration of parameters in configuration section fails
+Configuration sections behave like nested Python dictionaries, and when attempting to reconfigure a parameter in a section,
+for example when using the [scriptable controller](../concepts/controller.md#scriptable-controller), noting the key
+hierarchy using the dot notation known from configuration files in the TOML format will lead to errors:
+
+```python
+constellation.MySatellite.One.reconfigure({'devices.ADC.registers.threshold': 123})
+```
+
+The issue is that the enclosing quotes mark the entire key as single string, and it is parsed and transmitted as such. In
+order to reproduce the nested section structure of the configuration, the parameter to be reconfigured has to be provided
+using this full structure. For the above example, this means writing:
+
+```python
+constellation.MySatellite.One.reconfigure({'devices': {'ADC': {'registers': {'threshold': 123}}}})
+```
+
+More information on section syntax can be found in the concepts section on [Configuration Files](../concepts/configuration_files.md#sections).
+:::
