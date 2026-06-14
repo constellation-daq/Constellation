@@ -42,10 +42,10 @@ literally in the final value, the following items should be checked:
 * **Controller-side vs. satellite-side syntax.** Variables written as `${VARIABLE}` are resolved on the satellite host at the
   time the configuration key is first accessed by the satellite. Variables written as `$_{VARIABLE}` are resolved by the
   controller before the configuration is sent to individual satellites, and has to be present on the controller machine.
-* **The variable is not set in the environment.** It should be ensured, e.g. by running `echo $VARIABLE` in the same shell as
+* The **variable is not set** in the environment. It should be ensured, e.g. by running `echo $VARIABLE` in the same shell as
   the node in question, that the variable in question is exported to the environment. Shell variables defined without the
   `export` keyword are not visible to child processes.
-* **A default fallback can be specified** using the `:-` syntax: `${VARIABLE:-fallback}`. This prevents errors for absent
+* A **default fallback can be specified** using the `:-` syntax: `${VARIABLE:-fallback}`. This prevents errors for absent
   variables and is especially useful during initial setup of a Constellation.
 
 The [Configuration Files](../concepts/configuration_files.md#environment-variables) concept section describes the full
@@ -70,6 +70,30 @@ constellation.MySatellite.One.reconfigure({'devices': {'ADC': {'registers': {'th
 ```
 
 More information on section syntax can be found in the concepts section on [Configuration Files](../concepts/configuration_files.md#sections).
+:::
+
+## State Transitions and Errors
+
+:::{dropdown} A satellite is stuck in a transitional state
+Satellites execute their configuration or hardware setup and communication in transitional states of their finite state
+machine ({bdg-secondary}`initializing`, {bdg-secondary}`launching`, {bdg-secondary}`landing`, {bdg-secondary}`starting`,
+{bdg-secondary}`stopping`, {bdg-secondary}`reconfiguring`). If a satellite remains in one of these states longer than
+expected, the following possible causes should be checked:
+
+* A **conditional transition is waiting** for another satellite. [Conditional transitions](../concepts/autonomy.md#conditional-transitions)
+  enable satellites to depend on the successful transitions of remote satellites. If the parameter
+  `_conditions.require_<state>_after` has been configured, the satellite waits until the listed remote satellites have
+  completed the corresponding transition. If any of the listed remote satellites enters {bdg-secondary}`ERROR` state, the
+  condition is aborted. If a remote satellite is in a different state and will not reach conclude the configured transition,
+  the waiting satellite will eventually time out and enter {bdg-secondary}`ERROR`. The default timeout is set to 30 seconds,
+  and can be adjusted with the `_conditions.transition_timeout` parameter.
+* The instrument **hardware is slow** to respond or a slow procedure is carried out by the satellite. Some hardware such as
+  high-voltage power supplies can require significant time to ramp during {bdg-secondary}`launching` or {bdg-secondary}`landing`.
+  Usually, satellites communicate such procedures via their log messages.
+* A **hardware communication failure** occurred. While in most cases, a hardware communication failure will trigger a
+  transition into the {bdg-secondary}`ERROR` state, it can happen that hardware does not respond anymore and the satellite
+  remains waiting for an answer without a programmed timeout. In these cases the issue should be identified and the satellite
+  code optimized to time out correctly when communication breaks down.
 :::
 
 ## Logging and Monitoring
