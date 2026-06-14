@@ -151,7 +151,7 @@ def main(args=None) -> None:
     parser.add_argument(
         "--file-level",
         choices=["TRACE", "DEBUG", "INFO", "WARNING", "STATUS", "CRITICAL"],
-        default="DEBUG",
+        default="INFO",
         type=str.upper,
         help="The maximum level of log messages to write to the file.",
     )
