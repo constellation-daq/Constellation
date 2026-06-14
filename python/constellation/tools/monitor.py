@@ -100,10 +100,18 @@ class Monitor(StandaloneListener, MonitoringListener):
         self.log.handle(record)
 
     def receive_metric(self, sender: str, metric: Metric, timestamp: datetime, value: Any) -> None:
-        self.log.info(
-            f"Received {metric.name} metric from {sender} with value {value}{metric.unit}",
-            extra={"sender": monitor_sender()},
+        record = logging.makeLogRecord(
+            {
+                "name": metric.name,
+                "levelname": LogLevel.INFO.name,
+                "levelno": LogLevel.INFO.value,
+                "msg": f"{value} {metric.unit}",
+                "created": timestamp.timestamp(),
+                "sender": sender,
+            }
         )
+        self.log.handle(record)
+
         if self.output_path is not None:
             path = self.output_path / f"{sender}.{metric.name.lower()}.csv"
             with open(path, "a", encoding="utf-8") as csv:
