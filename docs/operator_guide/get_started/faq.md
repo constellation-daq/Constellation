@@ -8,10 +8,10 @@ This is a list of frequently asked questions and commonly encountered issues whe
 When satellites are not discovered or do not show up in controller interfaces such as MissionControl, the reason likely is an
 issue in the network communication:
 
-* The machines are not on the same subnet. The `ping` command can be used to test connection between machines.
-* The satellite is in a different Constellation group. Groups are explained in the [Systems Architecture section](../concepts/constellation.md#network-discovery).
-* A firewall is blocking incoming UDP or TCP packets. The [Configuring Firewalls](../howtos/firewalls.md) How-To Guide describes in detail which settings of the firewall need to be adjusted.
-* The communication is routed over the wrong network interface. When starting Constellation nodes, the `-i`/`--interface` command line argument can be used to restrict communication to one or several network interfaces. Command line arguments are documented in the [Satellite section](../concepts/satellite.md#the-satellite-executable).
+* The machines are not **on the same subnet**. The `ping` command can be used to test connection between machines.
+* The satellite is in a **different Constellation group**. Groups are explained in the [Systems Architecture section](../concepts/constellation.md#network-discovery).
+* A **firewall is blocking** incoming UDP or TCP packets. The [Configuring Firewalls](../howtos/firewalls.md) How-To Guide describes in detail which settings of the firewall need to be adjusted.
+* The communication is **routed over the wrong network** interface. When starting Constellation nodes, the `-i`/`--interface` command line argument can be used to restrict communication to one or several network interfaces. Command line arguments are documented in the [Satellite section](../concepts/satellite.md#the-satellite-executable).
 :::
 
 :::{dropdown} Satellites on macOS cannot access the network
@@ -72,6 +72,22 @@ constellation.MySatellite.One.reconfigure({'devices': {'ADC': {'registers': {'th
 More information on section syntax can be found in the concepts section on [Configuration Files](../concepts/configuration_files.md#sections).
 :::
 
+## Logging and Monitoring
+
+:::{dropdown} Observatory shows no log messages
+If Observatory connects to the Constellation but displays no log messages even when there is activity in the Constellation,
+such as satellite finite state machine transitions, this could have the following reasons:
+
+* The **global log level is set too high.** If the global subscription level is `CRITICAL`, only `CRITICAL` messages will be
+  received. A lower status such as `WARNING` or `INFO` is recommended in order to see routine operation messages.
+* A **message filter prevents display** of the relevant messages. Message filters are temporary filters to aid searching in
+  the already received messages. All filters can be reset using the {bdg-primary}`Reset` button in the top bar.
+* Observatory was **started after the activity** occurred. Any message emitted before the Observatory instance connected to
+  the Constellation are not resent retroactively, only messages sent after connecting and subscribing to the desired log
+  topics are transmitted and displayed by the Observatory.
+
+A detailed tutorial on using the Observatory is available in the [Tutorials section](../tutorials/observatory.md).
+:::
 
 ## Scripted Controller
 
