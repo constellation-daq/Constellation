@@ -103,8 +103,8 @@ class Monitor(StandaloneListener, MonitoringListener):
         record = logging.makeLogRecord(
             {
                 "name": metric.name,
-                "levelname": LogLevel.INFO.name,
-                "levelno": LogLevel.INFO.value,
+                "levelname": LogLevel.STATUS.name,
+                "levelno": LogLevel.STATUS.value,
                 "msg": f"{value} {metric.unit}",
                 "created": timestamp.timestamp(),
                 "sender": sender,
