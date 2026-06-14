@@ -30,6 +30,13 @@ def monitor_sender() -> str:
     return f"Monitor.{socket.gethostname()}"
 
 
+class MetricFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        if hasattr(record, "metric") and record.metric:
+            return False
+        return True
+
+
 class SenderLogFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         if not hasattr(record, "sender"):
@@ -59,6 +66,7 @@ def create_file_handler(output_path: pathlib.Path, backup_count: int, file_level
 
     # Format csv-style
     file_handler.addFilter(SenderLogFilter())
+    file_handler.addFilter(MetricFilter())
     file_handler.setFormatter(
         EscapeFormatter(
             '{asctime}.{msecs:03.0f},{levelname},{sender},{name},"{message}"', style="{", datefmt="%Y-%m-%dT%H:%M:%S"
@@ -108,6 +116,7 @@ class Monitor(StandaloneListener, MonitoringListener):
                 "msg": f"{value} {metric.unit}",
                 "created": timestamp.timestamp(),
                 "sender": sender,
+                "metric": True,
             }
         )
         self.log.handle(record)
