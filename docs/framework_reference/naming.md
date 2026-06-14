@@ -1,6 +1,6 @@
 # Naming Conventions & Case Sensitivity
 
-Constellation aims to strike between a maximum convenience for users and
+This page documents the naming conventions for both the user-facing interface and the internal C++ and Python implementations.
 
 ## User Input is Case-Insensitive
 
@@ -13,6 +13,7 @@ and types, commands etc. The goal of this is to minimize the possibility of long
 * Command names should be `snake_case` for quicker typing and easy tab completion.
 * Commands starting with an underscore shall be treated as hidden commands and not advertised e.g. through the `get_commands` call.
 * Configuration parameters should best be defined in `snake_case`, i.e. all lower-case with underscores separating words.
+* Metric names should be `UPPER_SNAKE_CASE`, i.e. all upper-case with underscores separating words, e.g. `EVENT_RATE`.
 
 ## Code Naming Conventions
 
