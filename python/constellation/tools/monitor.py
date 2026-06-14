@@ -151,7 +151,7 @@ def main(args=None) -> None:
     parser.add_argument(
         "--file-level",
         choices=["TRACE", "DEBUG", "INFO", "WARNING", "STATUS", "CRITICAL"],
-        default="INFO",
+        required=False,
         type=str.upper,
         help="The maximum level of log messages to write to the file.",
     )
@@ -167,12 +167,15 @@ def main(args=None) -> None:
     # Pop argument specific for Monitor
     metrics: list[str] | None = args.pop("metrics")
     output_path: pathlib.Path | None = args.pop("output_path")
-    file_level: str = args.pop("file_level")
+    file_level: str | None = args.pop("file_level")
     backup_count: int = args.pop("backup_count")
 
     # Set up logging
     level = args.pop("level")
     setup_cli_logging(level)
+
+    if file_level is None:
+        file_level = level
 
     # Add file handler to root handlers
     if output_path is not None:
