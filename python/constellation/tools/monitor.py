@@ -114,6 +114,17 @@ def main(args=None) -> None:
     # Add argument specific for Monitor to parser
     parser = ConstellationArgumentParser(description=main.__doc__, epilog=EPILOG)
     parser.add_argument(
+        "--metrics",
+        nargs="*",
+        metavar="METRIC",
+        default=None,
+        help=(
+            "Metric names to subscribe to, e.g. TEMPERATURE VOLTAGE. "
+            "If passed no names, all metrics are subscribed. "
+            "If omitted, metric subscription is disabled entirely."
+        ),
+    )
+    parser.add_argument(
         "-o",
         "--output-path",
         type=pathlib.Path,
@@ -125,7 +136,7 @@ def main(args=None) -> None:
         choices=["TRACE", "DEBUG", "INFO", "WARNING", "STATUS", "CRITICAL"],
         default="DEBUG",
         type=str.upper,
-        help="The maximum level of log messages to written to the file.",
+        help="The maximum level of log messages to write to the file.",
     )
     parser.add_argument(
         "--backup-count",
@@ -137,6 +148,7 @@ def main(args=None) -> None:
     args = vars(parser.parse_args(args))
 
     # Pop argument specific for Monitor
+    metrics: list[str] | None = args.pop("metrics")
     output_path: pathlib.Path | None = args.pop("output_path")
     file_level: str = args.pop("file_level")
     backup_count: int = args.pop("backup_count")
@@ -158,7 +170,13 @@ def main(args=None) -> None:
     min_level = LogLevel[level.upper()]
     if output_path is not None:
         min_level = min(min_level, LogLevel[file_level.upper()])
-    mon.set_topics(["STAT/"] + generate_log_topics(min_level))
+    if metrics is None:
+        metric_topics = []
+    elif not metrics:
+        metric_topics = ["STAT/"]
+    else:
+        metric_topics = [f"STAT/{m.upper()}" for m in metrics]
+    mon.set_topics(metric_topics + generate_log_topics(min_level))
 
     # Adapt default logging handlers
     adapt_default_handlers()
