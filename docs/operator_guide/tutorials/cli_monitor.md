@@ -93,7 +93,7 @@ Log messages and telemetry data are written separately:
 **A rotating log file** is used for all log messages. The file is created at `<output_path>/log.csv` and every log message
 received from any satellite is appended as a single CSV row in the following format:
 
-```csv
+```text
 2026-06-16T13:12:56.242,STATUS,Sputnik.Two,FSM,"New state: RUN"
 2026-06-16T13:12:56.243,INFO,Sputnik.Two,FSM,"Calling running function of satellite..."
 2026-06-16T13:12:57.603,INFO,MissionControl.zeus,OP,"Sending transition command `stop`"
@@ -108,7 +108,7 @@ doubled (`""`) and newline sequences `\n`, respectively.
 `<output_path>/<sender>.<metric>.csv`, where `<metric>` is the lower-case name of the corresponding metric, and each received
 value is appended as a new CSV row with the following format:
 
-```csv
+```text
 1781436058.856382, -49.88287555005745, 'degC'
 1781436061.873698, -49.99978310615272, 'degC'
 ```

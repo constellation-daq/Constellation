@@ -32,7 +32,7 @@ def monitor_sender() -> str:
 
 class MetricFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
-        if hasattr(record, "metric") and record.metric:
+        if hasattr(record, "metric"):
             return False
         return True
 
@@ -174,13 +174,10 @@ def main(args=None) -> None:
     level = args.pop("level")
     setup_cli_logging(level)
 
-    if file_level is None:
-        file_level = level
-
     # Add file handler to root handlers
     if output_path is not None:
         output_path = check_output_path(output_path)
-        file_handler = create_file_handler(output_path, backup_count, file_level)
+        file_handler = create_file_handler(output_path, backup_count, file_level if file_level is not None else level)
         logging.root.addHandler(file_handler)
 
     # Start Monitor with remaining args
@@ -188,7 +185,7 @@ def main(args=None) -> None:
 
     # Set topics to listen to
     min_level = LogLevel[level.upper()]
-    if output_path is not None:
+    if output_path is not None and file_level is not None:
         min_level = min(min_level, LogLevel[file_level.upper()])
     if metrics is None:
         metric_topics = []
