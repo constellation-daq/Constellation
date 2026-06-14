@@ -101,7 +101,7 @@ in question does, which should be evident from the code itself.
 
 The Python code is expected to follow the guidelines of [PEP 8](https://peps.python.org/pep-0008/) for indentation, line
 length, imports, and overall layout. The line length limit is 125 characters. Public modules, classes, functions and methods
-should be documented with docstrings following [PEP 257](https://peps.python.org/pep-0257/).
+should be documented with doc strings following [PEP 257](https://peps.python.org/pep-0257/).
 
 #### File Names
 
@@ -111,7 +111,7 @@ the module file.
 #### Class Names & Declaration Order
 
 Class names should be typeset in `PascalCase`, e.g. `class HeartbeatManager`. Every public class must be documented with a
-docstring describing its functionality.
+doc string describing its functionality.
 
 Within a class, elements should be stored according to the following order:
 
