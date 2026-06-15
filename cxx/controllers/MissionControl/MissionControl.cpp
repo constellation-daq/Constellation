@@ -416,7 +416,7 @@ void MissionControl::update_button_states(CSCP::State state) {
     btnGenConf->setEnabled(CSCP::is_not_one_of_states<NEW, initializing, ERROR>(state) &&
                            runcontrol_.getConnectionCount() > 0);
     txtConfigFileName->setEnabled(CSCP::is_one_of_states<NEW, initializing, INIT, SAFE, ERROR>(state));
-    btnStart->setEnabled(CSCP::transitions_from(starting, state));
+    btnStart->setEnabled(CSCP::transitions_from(starting, state) && runcontrol_.isInGlobalState());
     btnStop->setEnabled(CSCP::transitions_from(stopping, state));
     btnShutdown->setEnabled(CSCP::is_shutdown_allowed(state));
 
