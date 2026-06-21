@@ -445,6 +445,18 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
                 )
             time.sleep(0.1)
 
+    def await_n_satellites(self, satellites: int, timeout: int = 60) -> None:
+        """Blocks until a defined number of satellites is connected."""
+        self.log.info("Awaiting %d satellites", satellites)
+        start = time.time()
+        while not len(self._constellation.satellites) == satellites:
+            if time.time() - start > timeout:
+                raise Exception(
+                    f"Timeout after {timeout}s while waiting for {satellites} satellites: "
+                    f"only {len(self._constellation.satellites)} connected"
+                )
+            time.sleep(0.1)
+
     @property
     def constellation(self) -> SatelliteArray:
         """Returns the currently active SatelliteArray of controlled Satellites."""
