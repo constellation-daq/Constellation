@@ -74,6 +74,7 @@ Supported OVP values:
 |-----------|-------------|------|---------------|
 | `device` | Device | String | - |
 | `port` | Serial port to connect to | String | - |
+| `skip_reset` | Skip resetting the device. This can be used to start a satellite when a device is already operating and an output is active, in order to not set deactivate the output first. **This skips resetting the device and configuring relevant settings such as auto-range or the output terminal**. | Boolean | `false` |
 | `terminal` | Terminal output to control | String | - |
 | `voltage` | Target output voltage | Float | - |
 | `voltage_step` | Voltage step in which to ramp to target voltage | Float | - |

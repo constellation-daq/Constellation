@@ -50,8 +50,20 @@ class Keithley(Satellite):
             if self.terminal not in terminals:
                 raise ValueError(f"{self.terminal} not a valid terminal (choose from {terminals})")
 
+        self.skip_reset = config.get_bool("skip_reset", default_value=False)
+        if self.device.output_enabled() and not self.skip_reset:
+            raise RuntimeError(
+                "Output is currently enabled but reset is not skipped."
+                "Either manually disable output first or enable `skip_reset`"
+            )
+
+        if not self.skip_reset:
+            self.log.debug("Resetting Keithly")
+            self.device.reset()
+
         self.log.info(f"Initializing Keithley {device_name}")
         self.device.initialize()
+
         identify = self.device.identify()
         if not identify:
             del self.device
@@ -59,16 +71,16 @@ class Keithley(Satellite):
         self.log.info("Device: %s", identify)
 
     def do_launching(self) -> str:
-        self.device.set_terminal(self.terminal)
         self._set_ovp()
         self._set_compliance()
 
-        # Set voltage to zero in case it wasn't properly reset for some reason
-        self.device.enable_output(False)
-        self.device.set_voltage(0.0)
+        if not self.skip_reset:
+            self.device.set_terminal(self.terminal)
+            # Set voltage to zero in case it wasn't properly reset for some reason
+            self.device.set_voltage(0.0)
+            self.device.enable_output(True)
 
         # Ramp to target voltage
-        self.device.enable_output(True)
         self._ramp(self.voltage)
 
         return f"Keithley at {self.device.get_voltage()}V"
