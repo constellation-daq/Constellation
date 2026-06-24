@@ -40,49 +40,65 @@ class EtrocTransmitter(TransmitterSatellite):
         cmd_interpret.write_pulse_reg_decoded(self.connection_socket, "fc_init")
         time.sleep(0.01)
 
-    def _execute_fc_command(self, base_reg12: int, cmd_offset: int, base_val: int, loops: int, uniform: bool, do_loop: bool) -> None:
-        """Helper to handle the initial command and its optional repeating loop."""
-        reg12_val = base_reg12 + cmd_offset
+    def _execute_fc_command(self, base_reg12: int, loops: int, send_qinj: bool, send_l1a: bool) -> None:
+        """Helper to handle QInj and L1A commands using non-overlapping bunches.
 
-        # 1. Send the initial base command
-        self._send_fc_sequence(reg12_val, base_val, base_val)
+        If loops = 1, it executes only the first combination.
+        If loops > 1, it loops up to a maximum of 378 times.
+        """
+        qinj_reg = base_reg12 + 0x5
+        l1a_reg = base_reg12 + 0x6
 
-        # 2. Execute the loop if requested
-        if do_loop and loops > 0:
-            interval = (3000 // 16) // loops if uniform else 1
-            for i in range(loops):
-                step_val = base_val + (interval * i * 0x010) if uniform else base_val + (i * 0x010)
-                self._send_fc_sequence(reg12_val, step_val, step_val)
+        # Cap the iterations to our safe maximum of 378, ensuring at least 1 run
+        num_iterations = min(max(loops, 1), 378)
+
+        for i in range(num_iterations):
+            # 1. Map iteration index i to the correct bunch values
+            if i < 126:  # Bunch 1
+                qinj_val = 0x005 + (i * 4)
+                l1a_val = 0x1fd + (i * 4)
+            elif i < 252:  # Bunch 2
+                j = i - 126
+                qinj_val = 0x3f5 + (j * 4)
+                l1a_val = 0x5ed + (j * 4)
+            else:  # Bunch 3 (covers up to 378)
+                j = i - 252
+                qinj_val = 0x7e5 + (j * 4)
+                l1a_val = 0x9dd + (j * 4)
+
+            # 2. Conditionally send the commands (Option A: QInj first)
+            if send_qinj:
+                self._send_fc_sequence(qinj_reg, qinj_val, qinj_val)
+
+            if send_l1a:
+                self._send_fc_sequence(l1a_reg, l1a_val, l1a_val)
 
     def configure_memo_FC(self, memo=None) -> None:
         memo_str = memo if memo is not None else self.fast_command_memo
-        words = memo_str.split(' ')
+        words = memo_str.split()
 
         # 1. Parse all flags into a clean dictionary
         flags = {
             "QInj": "QInj" in words,
-            "repeatedQInj": any("repeatedQInj" in w for w in words),
+            "multiple": any("multiple" in w for w in words),
             "L1A": "L1A" in words,
-            "L1ARange": "L1ARange" in words,
             "BCR": "BCR" in words,
             "Triggerbit": "Triggerbit" in words,
             "Start": "Start" in words,
-            "uniform": "uniform" in words,
         }
 
         # 2. Extract loop count safely
-        qinj_loop = 1
-        for word in words:
-            if "repeatedQInj=" in word:
-                try:
-                    qinj_loop = int(word.split('=')[1])
-                    self.log.info(f'Repeat charge injection by {qinj_loop}')
-                except ValueError:
-                    self.log.info('Invalid repeat value. Defaulting to single charge injection.')
-                break
-        else:
-            if flags["QInj"]:
-                self.log.info('Only do single charge injection')
+        qinj_loop = 1  # Default to 1 (single run)
+
+        if flags["multiple"]:
+            for w in words:
+                if "multiple=" in w:
+                    try:
+                        # Split at "=" and convert the second part to an integer
+                        qinj_loop = int(w.split("=")[1])
+                    except (ValueError, IndexError):
+                        # Fallback to 1 if conversion fails or structure is unexpected
+                        qinj_loop = 1
 
         # 3. Determine base register 12 value
         base_reg12 = 0x0070 if flags["Triggerbit"] else 0x0030
@@ -99,11 +115,12 @@ class EtrocTransmitter(TransmitterSatellite):
         if flags["BCR"]:
             self._send_fc_sequence(base_reg12 + 0x2, 0x000, 0x000)
 
-        if flags["QInj"]:
-            self._execute_fc_command(base_reg12, 0x5, 0x005, qinj_loop, flags["uniform"], flags["repeatedQInj"])
+        if flags["QInj"] and flags["L1A"]:
+            self._execute_fc_command(base_reg12, qinj_loop, send_qinj=True, send_l1a=True)
 
-        if flags["L1A"]:
-            self._execute_fc_command(base_reg12, 0x6, 0x1fd, qinj_loop, flags["uniform"], flags["L1ARange"])
+        # 2. Only QInj active: Self-trigger scan (No L1A)
+        elif flags["QInj"]:
+            self._execute_fc_command(base_reg12, qinj_loop, send_qinj=True, send_l1a=False)
 
         # Final signal start
         cmd_interpret.write_pulse_reg_decoded(self.connection_socket, "fc_signal_start")
