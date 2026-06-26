@@ -53,18 +53,20 @@ class EtrocTransmitter(TransmitterSatellite):
         num_iterations = min(max(loops, 1), 378)
 
         for i in range(num_iterations):
-            # 1. Map iteration index i to the correct bunch values
-            if i < 126:  # Bunch 1
-                qinj_val = 0x005 + (i * 4)
-                l1a_val = 0x1fd + (i * 4)
-            elif i < 252:  # Bunch 2
-                j = i - 126
-                qinj_val = 0x3f5 + (j * 4)
-                l1a_val = 0x5ed + (j * 4)
-            else:  # Bunch 3 (covers up to 378)
-                j = i - 252
-                qinj_val = 0x7e5 + (j * 4)
-                l1a_val = 0x9dd + (j * 4)
+            # Determine the bunch (0, 1, or 2) and the offset index within that bunch
+            bunch_index = i % 3
+            step_index = i // 3
+
+            # 1. Map step_index to the correct bunch values based on bunch_index
+            if bunch_index == 0:  # Bunch 1
+                qinj_val = 0x005 + (step_index * 4)
+                l1a_val = 0x1fd + (step_index * 4)
+            elif bunch_index == 1:  # Bunch 2
+                qinj_val = 0x3f5 + (step_index * 4)
+                l1a_val = 0x5ed + (step_index * 4)
+            else:  # bunch_index == 2 (Bunch 3)
+                qinj_val = 0x7e5 + (step_index * 4)
+                l1a_val = 0x9dd + (step_index * 4)
 
             # 2. Conditionally send the commands (Option A: QInj first)
             if send_qinj:
