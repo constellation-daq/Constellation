@@ -120,12 +120,14 @@ class TransmitterSatellite(Satellite):
 
         Stops the data transmitter and sends the EOR message after `do_stopping()` has finished.
         """
-        self._update_run_metadata(RunCondition.GOOD)
-
         res: str = super()._wrap_stop(payload)
 
         # Stop data transmitter
         self._dtm.stop_sending()
+
+        # Update run metadata
+        self._update_run_metadata(RunCondition.GOOD)
+
         # Send EOR message
         self._dtm.send_eor(self._eor, self._run_metadata)
 
