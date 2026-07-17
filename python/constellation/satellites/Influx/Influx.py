@@ -49,6 +49,8 @@ class Influx(Satellite, MonitoringListener):
             self._influxdb_connected = True
             self.log.info("Connected to InfluxDB")
 
+        self._unit_tag = config.get_bool("unit_tag", True)
+
         # Subscribe to all metric messages
         self.set_topics(["STAT/"])
 
@@ -57,6 +59,8 @@ class Influx(Satellite, MonitoringListener):
             if self._influxdb_connected:
                 if isinstance(value, (float, int, bool, str)):
                     record = Point(sender).field(metric.name, value).time(timestamp)
+                    if self._unit_tag:
+                        record.tag("unit", metric.unit)
                     self.log.trace("Writing metric %s to InfluxDB", metric.name)
                     self.write_api.write(bucket=self.bucket, record=record)
                 else:

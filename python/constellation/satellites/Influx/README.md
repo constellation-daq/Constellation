@@ -56,3 +56,4 @@ the [operator guide](../../operator_guide/howtos/setup_influxdb_grafana).
 | `org` | Organization | String | - |
 | `bucket` | Measurement bucket | String | `constellation` |
 | `flush_interval` | Interval in seconds with which telemetry data is flushed to the InfluxDB | Float | 2.5 |
+| `unit_tag` | Add metric's unit as tag "unit" to the Influx data point | bool | `true` |
