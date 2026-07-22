@@ -6,6 +6,7 @@ Async CHIRP listener and manager.
 """
 
 import asyncio
+import random
 import socket
 import sys
 from collections.abc import Callable
@@ -26,6 +27,10 @@ from constellation.core.chirp import (
 from constellation.core.multicast import MULTICAST_TTL
 from constellation.core.network import get_interface_addresses
 
+# Spreads REQUEST replies so listeners do not all answer at once. Not mandated
+# by the CHIRP protocol, sized for a handful of satellites replying to a one time burst.
+REQUEST_REPLY_JITTER_RANGE = (0.0, 0.2)
+
 
 class CHIRPEvent(Enum):
     """Event type for CHIRP service callbacks."""
@@ -38,9 +43,8 @@ class CHIRPEvent(Enum):
 class DiscoveredService:
     """A service discovered via CHIRP.
 
-    addresses is a list because a host may be reachable on multiple network
-    interfaces. Additional addresses are appended as OFFERs arrive from the
-    same host on different interfaces.
+    addresses is a list because a host may be reachable on multiple
+    interfaces. Additional addresses are appended as OFFERs arrive.
     """
 
     group_id: UUID
@@ -57,13 +61,12 @@ class DiscoveredService:
 
 
 class AsyncMulticastSocket(asyncio.DatagramProtocol):
-    """Async-compatible multicast socket and DatagramProtocol.
+    """Async multicast socket and DatagramProtocol.
 
-    Owns the raw socket setup and the asyncio transport layer.
-    Incoming datagrams are forwarded to datagram_callback when set.
-
-    Send sockets remain synchronous since UDP sendto writes to the
-    kernel buffer without blocking.
+    Owns raw socket setup and the asyncio transport layer. Incoming
+    datagrams are forwarded to datagram_callback when set. Send
+    sockets remain synchronous since UDP sendto writes to the kernel
+    buffer without blocking.
     """
 
     def __init__(
@@ -144,11 +147,8 @@ class AsyncCHIRPListener:
     """Async CHIRP listener.
 
     Owns an AsyncMulticastSocket, decodes incoming CHIRP messages,
-    maintains a list of discovered services (mirroring CHIRPManager logic),
+    maintains discovered services (mirroring CHIRPManager logic),
     and dispatches to registered callbacks.
-
-    Callbacks receive (CHIRPEvent, DiscoveredService).
-    REQUEST messages are forwarded to request_callback if set.
     """
 
     def __init__(
@@ -226,7 +226,9 @@ class AsyncCHIRPListener:
 
         if msg.msgtype == CHIRPMessageType.REQUEST:
             if self._request_callback is not None:
-                self._request_callback(msg.serviceid)
+                loop = asyncio.get_running_loop()
+                delay = random.uniform(*REQUEST_REPLY_JITTER_RANGE)
+                loop.call_later(delay, self._request_callback, msg.serviceid)
         elif msg.msgtype == CHIRPMessageType.OFFER:
             self._discover_service(msg, addr[0])
         elif msg.msgtype == CHIRPMessageType.DEPART and msg.port != 0:
@@ -272,9 +274,7 @@ class AsyncCHIRPListener:
 class AsyncCHIRPManager(BaseSatelliteFrame):
     """Async equivalent of CHIRPManager.
 
-    Owns an AsyncCHIRPListener and directly implements the service registry.
-    Replaces both the former async_chirpmanager.AsyncCHIRPManager wrapper and
-    the former AsyncCHIRPManager(AsyncCHIRPListener) registry class.
+    Owns an AsyncCHIRPListener and implements the service registry.
     Registers CHIRP discovery as a coroutine via _add_com_task.
     """
 
@@ -308,6 +308,9 @@ class AsyncCHIRPManager(BaseSatelliteFrame):
         loop = asyncio.get_running_loop()
         await self._listener.start(loop)
         await stop.wait()
+        for service_id in list(self._registered_services):
+            self.unregister_service(service_id)
+        await asyncio.sleep(0.05)  # let the DEPART datagrams actually go out
         self._listener.close()
 
     def register_chirp_callback(

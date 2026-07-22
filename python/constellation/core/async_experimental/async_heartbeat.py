@@ -47,11 +47,11 @@ class AsyncHeartbeatReceiver:
     """Async heartbeat receiver backed by AsyncSubscriberPool.
 
     Socket management is delegated to an internal AsyncSubscriberPool.
-    CHP has no topic filtering so the pool subscribes to "" for all sockets,
-    applied automatically to every socket added via add_satellite().
+    CHP has no topic filtering so the pool subscribes to "" for all
+    sockets, applied automatically via add_satellite().
 
-    Call add_satellite() and remove_satellite() from the event loop.
-    When calling from another thread use loop.call_soon_threadsafe().
+    Call add_satellite and remove_satellite from the event loop.
+    Use loop.call_soon_threadsafe when calling from another thread.
     """
 
     INIT_LIVES = 3
@@ -92,6 +92,12 @@ class AsyncHeartbeatReceiver:
         if hb is not None:
             self._name_to_uuid.pop(hb.name, None)
 
+    def remove_by_name(self, name: str) -> None:
+        """Remove a satellite from tracking by name if known."""
+        uuid = self._name_to_uuid.get(name)
+        if uuid is not None:
+            self.remove_satellite(uuid)
+
     @property
     def states(self) -> case_insensitive_dict[SatelliteState]:
         """Current states keyed by canonical name."""
@@ -131,19 +137,26 @@ class AsyncHeartbeatReceiver:
         if hb is None:
             return
 
-        if hb.name.casefold() != name.casefold():
+        old_state = hb.state
+
+        # A satellite may be registered under a placeholder name if its
+        # HEARTBEAT service was discovered before CONTROL resolved the
+        # canonical name. CHP payload always carries the real name, so
+        # correct it here and treat the correction as broadcast-worthy.
+        renamed = hb.name.casefold() != name.casefold()
+        if renamed:
             self._name_to_uuid.pop(hb.name, None)
             hb.name = name
             self._name_to_uuid[name] = uuid
 
         state = SatelliteState(state_val)
-
-        if state != hb.state:
-            old_state = hb.state
+        state_changed = state != hb.state
+        if state_changed:
             hb.state = state
             hb.last_statechange = datetime.now()
-            if self._on_state_change:
-                self._on_state_change(name, old_state, state)
+
+        if (state_changed or renamed) and self._on_state_change:
+            self._on_state_change(name, old_state, hb.state)
 
         hb.refresh()
         hb.interval_ms = interval
@@ -156,19 +169,33 @@ class AsyncHeartbeatReceiver:
             hb.lives = self.INIT_LIVES
 
     def _check_stale_connections(self) -> None:
-        """Decrement lives for satellites that have missed heartbeats."""
-        for _uuid, hb in list(self._states.items()):
+        """Decrement lives for satellites that have missed heartbeats.
+
+        Exhausted lives means the controller lost contact. This does not
+        write to hb.state since it is not a satellite FSM report. The
+        satellite is dropped from tracking entirely, matching an explicit
+        CHIRP departure; reconnection creates a fresh entry.
+        """
+        newly_dead: list[UUID] = []
+        for uuid, hb in self._states.items():
             if hb.lives <= 0:
                 continue
             expected = (hb.interval_ms / 1000) * 1.5
             if hb.seconds_since_refresh() > expected:
                 hb.lives -= 1
                 if hb.lives == 0:
-                    if self._on_satellite_dead:
-                        self._on_satellite_dead(hb.name)
-                    hb.state = SatelliteState.DEAD
+                    newly_dead.append(uuid)
                 else:
                     hb.refresh()
+
+        for uuid in newly_dead:
+            hb = self._states.get(uuid)
+            if hb is None:
+                continue
+            name = hb.name
+            self.remove_satellite(uuid)
+            if self._on_satellite_dead:
+                self._on_satellite_dead(name)
 
     def close(self) -> None:
         """Close all sockets and clear state."""
@@ -180,9 +207,8 @@ class AsyncHeartbeatReceiver:
 class AsyncHeartbeatChecker(BaseSatelliteFrame):
     """Async equivalent of HeartbeatChecker.
 
-    Owns an AsyncHeartbeatReceiver internally.
-    Uses self._async_ctx from BaseSatelliteFrame.
-    Callbacks fire on the event loop — no call_soon_threadsafe needed.
+    Owns an AsyncHeartbeatReceiver internally. Uses self._async_ctx from
+    BaseSatelliteFrame. Callbacks fire on the event loop directly.
     """
 
     def __init__(self, **kwds: Any) -> None:
@@ -212,6 +238,10 @@ class AsyncHeartbeatChecker(BaseSatelliteFrame):
         """Deregister a satellite from heartbeat tracking."""
         self._hb_receiver.remove_satellite(uuid)
 
+    def forget_heartbeat_host(self, name: str) -> None:
+        """Remove a satellite from heartbeat tracking by name immediately."""
+        self._hb_receiver.remove_by_name(name)
+
     @property
     def heartbeat_states(self) -> case_insensitive_dict[SatelliteState]:
         """Current states keyed by canonical name."""
@@ -236,7 +266,9 @@ class AsyncHeartbeatChecker(BaseSatelliteFrame):
         """Called when a satellite changes state. Override in subclass."""
 
     def _on_satellite_dead(self, name: str) -> None:
-        """Called when a satellite stops sending heartbeats. Override in subclass."""
+        """Called when a satellite stops sending heartbeats. Override in
+        subclass. The satellite has already been removed from tracking
+        state maps by the time this fires."""
 
     def close(self) -> None:
         """Close all heartbeat sockets."""
