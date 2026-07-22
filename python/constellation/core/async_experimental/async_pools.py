@@ -4,11 +4,14 @@ SPDX-License-Identifier: EUPL-1.2
 """
 
 import asyncio
+import logging
 from collections.abc import Callable
 from uuid import UUID
 
 import zmq
 import zmq.asyncio
+
+_log = logging.getLogger(__name__)
 
 
 class AsyncSubscriberPool:
@@ -48,15 +51,17 @@ class AsyncSubscriberPool:
         sock = self._sockets.pop(uuid, None)
         if sock is not None:
             self._socket_to_uuid.pop(sock, None)
-            self._poller.unregister(sock)
+            try:
+                self._poller.unregister(sock)
+            except Exception:
+                pass
             sock.close()
 
     def subscribe(self, topic: str, uuid: UUID | None = None) -> None:
         """Subscribe to a topic on one or all sockets.
 
-        When uuid is None, topic is added to _topics so future sockets added
-        via add_socket() are automatically subscribed. When uuid is given,
-        only that socket is subscribed and _topics is not modified.
+        If uuid is None, the topic is applied globally and stored for
+        future sockets. If uuid is given, only that socket is subscribed.
         """
         if uuid is None:
             for sock in self._sockets.values():
@@ -71,8 +76,8 @@ class AsyncSubscriberPool:
     def unsubscribe(self, topic: str, uuid: UUID | None = None) -> None:
         """Unsubscribe from a topic on one or all sockets.
 
-        When uuid is None, topic is removed from _topics. When uuid is given,
-        only that socket is unsubscribed and _topics is not modified.
+        If uuid is None, the topic is removed globally. If uuid is
+        given, only that socket is unsubscribed.
         """
         if uuid is None:
             for sock in self._sockets.values():
@@ -115,6 +120,8 @@ class AsyncSubscriberPool:
                         self._callback(uuid, msg)
                 except zmq.ZMQError:
                     pass
+                except Exception:
+                    _log.exception("Unhandled error dispatching message from %s", uuid)
 
     def close(self) -> None:
         """Close all sockets."""

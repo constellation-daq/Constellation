@@ -27,8 +27,8 @@ class AsyncMonitoringListener(AsyncCHIRPManager):
     """Async equivalent of MonitoringListener.
 
     Inherits AsyncCHIRPManager and adds CMDP log/metric receiving
-    via AsyncSubscriberPool.
-    _async_ctx is provided by BaseSatelliteFrame.__init__ via the MRO chain.
+    via AsyncSubscriberPool. Uses _async_ctx provided by
+    BaseSatelliteFrame.__init__ through the MRO chain.
     """
 
     def __init__(self, **kwds: Any) -> None:
@@ -72,8 +72,9 @@ class AsyncMonitoringListener(AsyncCHIRPManager):
                     stat_msg.time,
                     stat_msg.value,
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            # Log via self.log from BaseSatelliteFrame.
+            self.log.debug("Failed to decode CMDP message from %s: %s", uuid, e)
 
     def receive_log(self, record: logging.LogRecord) -> None:
         """Called when a log message arrives. Override in subclass."""

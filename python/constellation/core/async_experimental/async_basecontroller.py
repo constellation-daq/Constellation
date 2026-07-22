@@ -16,7 +16,9 @@ from constellation.core.async_experimental.async_chirp import CHIRPEvent, Discov
 from constellation.core.async_experimental.async_heartbeat import AsyncHeartbeatChecker
 from constellation.core.async_experimental.async_monitoringlistener import AsyncMonitoringListener
 from constellation.core.chirp import CHIRPServiceIdentifier
+from constellation.core.configuration import Configuration
 from constellation.core.controller import SatelliteUpdate
+from constellation.core.controller_configuration import ControllerConfiguration
 from constellation.core.logging import setup_cli_logging
 from constellation.core.message.cscp1 import CSCP1Message
 
@@ -24,32 +26,46 @@ from constellation.core.message.cscp1 import CSCP1Message
 class AsyncBaseController(AsyncMonitoringListener, AsyncHeartbeatChecker):
     """Async equivalent of BaseController.
 
-    CSCP commands use zmq.asyncio with await send/recv directly, eliminating
-    the dedicated executor and synchronous context. _async_ctx from
-    BaseSatelliteFrame is used for all ZMQ sockets including CSCP REQ sockets.
-    Discovery and heartbeat run as coroutines.
+    CSCP commands use zmq.asyncio for direct send/recv, eliminating the
+    dedicated executor and synchronous context. All ZMQ sockets including
+    CSCP REQ sockets share _async_ctx from BaseSatelliteFrame. Discovery
+    and heartbeat run as coroutines.
     """
 
     def __init__(
         self,
-        loop: asyncio.AbstractEventLoop | None = None,
         **kwds: Any,
     ) -> None:
         super().__init__(**kwds)
         self._transmitters: dict[str, zmq.asyncio.Socket] = {}
         self._transmitter_uuids: dict[UUID, str] = {}
-        self._cscp_lock = asyncio.Lock()
+        self._cscp_locks: dict[str, asyncio.Lock] = {}
+        self._satellite_commands: dict[str, dict[str, str]] = {}
+        # In-flight _setup_transmitter tasks keyed by host_id, allowing
+        # SERVICE_DISCONNECTED to cancel mid-setup tasks safely.
+        self._pending_setups: dict[UUID, asyncio.Task] = {}
 
         self.register_chirp_callback("basecontroller_control", self._on_control_service)
         self.register_chirp_callback("basecontroller_heartbeat", self._on_heartbeat_service)
+
+    async def run(self, stop: asyncio.Event) -> None:
+        """Register (once) and run every async communication task until stop is set."""
+        if not self._com_task_factories:
+            self._add_com_task()
+        await self._start_com_tasks(stop)
 
     def _on_control_service(self, event: CHIRPEvent, service: DiscoveredService) -> None:
         """Handle CONTROL service connect/disconnect."""
         if service.service_id != CHIRPServiceIdentifier.CONTROL:
             return
         if event == CHIRPEvent.SERVICE_CONNECTED:
-            asyncio.ensure_future(self._setup_transmitter(service.host_id, service.addresses[0], service.port))
+            task = asyncio.ensure_future(self._setup_transmitter(service.host_id, service.addresses[0], service.port))
+            self._pending_setups[service.host_id] = task
+            task.add_done_callback(lambda _t, host_id=service.host_id: self._pending_setups.pop(host_id, None))
         elif event == CHIRPEvent.SERVICE_DISCONNECTED:
+            pending = self._pending_setups.pop(service.host_id, None)
+            if pending is not None and not pending.done():
+                pending.cancel()
             self._cleanup_transmitter(service.host_id)
 
     def _on_heartbeat_service(self, event: CHIRPEvent, service: DiscoveredService) -> None:
@@ -66,17 +82,18 @@ class AsyncBaseController(AsyncMonitoringListener, AsyncHeartbeatChecker):
         self,
         sock: zmq.asyncio.Socket,
         command: str,
-        payload: Any = None,
+        payload: Any,
+        lock: asyncio.Lock,
     ) -> CSCP1Message:
         """Send a CSCP1 request and await the response.
 
-        _cscp_lock serialises all REQ/REP exchanges so no two coroutines
-        share a socket simultaneously.
+        The caller-supplied lock serialises REQ/REP exchanges per satellite
+        socket, allowing concurrent commands to different satellites.
         """
         request = CSCP1Message(self.name, (CSCP1Message.Type.REQUEST, command))
         if payload is not None:
             request.payload = payload
-        async with self._cscp_lock:
+        async with lock:
             await sock.send_multipart(request.assemble().frames)
             response_frames = await sock.recv_multipart()
         return CSCP1Message.disassemble(response_frames)
@@ -87,17 +104,60 @@ class AsyncBaseController(AsyncMonitoringListener, AsyncHeartbeatChecker):
         sat: str = "",
         satcls: str = "",
         payload: Any = None,
-    ) -> str:
-        """Send a CSCP command on the event loop."""
+        timeout: float = 10.0,
+    ) -> CSCP1Message:
+        """Send a CSCP command on the event loop and return the raw response.
+
+        Callers should check verb_type (SUCCESS, INVALID, etc.) and inspect
+        payload structurally rather than pattern matching on verb_msg strings,
+        which are human readable and may change between versions.
+
+        A per satellite lock serialises REQ/REP exchanges so concurrent
+        commands to different satellites proceed in parallel. If a satellite
+        fails to respond within timeout seconds, its socket is torn down
+        (a ZMQ REQ socket cannot be reused after an abandoned recv) and a
+        TimeoutError is raised.
+
+        Raises ValueError if both sat and satcls are empty.
+        Raises RuntimeError if no transmitter is connected for the target.
+        Raises TimeoutError if the satellite does not respond in time.
+        """
         key = f"{satcls}.{sat}".strip(".")
+        if not key:
+            raise ValueError("satcls and sat must be provided (e.g. satcls='PyRandomTransmitter', sat='Sat1')")
         sock = self._transmitters.get(key)
         if sock is None:
-            return f"ERROR: No transmitter for {key}"
+            raise RuntimeError(f"No transmitter for {key}")
+        lock = self._cscp_locks.setdefault(key, asyncio.Lock())
+        payload = self._preprocess_payload(payload, key, cmd)
         try:
-            result = await self._cscp_request(sock, cmd, payload)
-            return f"{result.verb_msg}"
-        except Exception as e:
-            return f"ERROR: {e}"
+            return await asyncio.wait_for(
+                self._cscp_request(sock, cmd, payload, lock),
+                timeout=timeout,
+            )
+        except TimeoutError:
+            self._teardown_transmitter(key)
+            raise
+
+    def _preprocess_payload(self, payload: Any, key: str, cmd: str) -> Any:
+        """Pre-process payload for initialize and reconfigure commands.
+
+        Accepts a plain dict, Configuration, or ControllerConfiguration
+        and returns a plain dict suitable for CSCP transmission.
+        """
+        if cmd in ("initialize", "reconfigure"):
+            if isinstance(payload, ControllerConfiguration):
+                payload = payload.get_satellite_configuration(key)
+            elif payload is None or isinstance(payload, dict):
+                payload = Configuration(payload or {})
+            elif not isinstance(payload, Configuration):
+                raise RuntimeError("Payload needs to be a dictionary, configuration or controller configuration")
+            return payload._dictionary
+        return payload
+
+    def get_cached_commands(self, key: str) -> dict[str, str]:
+        """Return cached get_commands payload for a satellite, or {} if unknown."""
+        return self._satellite_commands.get(key, {})
 
     def _on_satellite_update(self, name: str, update_type: SatelliteUpdate) -> None:
         """Called on satellite connect/disconnect. Override in subclass."""
@@ -110,13 +170,22 @@ class AsyncBaseController(AsyncMonitoringListener, AsyncHeartbeatChecker):
         sock.connect(f"tcp://{address}:{port}")
         sock.setsockopt(zmq.LINGER, 2000)
         try:
-            msg = await asyncio.wait_for(self._cscp_request(sock, "get_commands"), timeout=5.0)
+            msg = await asyncio.wait_for(
+                self._cscp_request(sock, "get_commands", None, asyncio.Lock()),
+                timeout=5.0,
+            )
+        except asyncio.CancelledError:
+            # Cancelled by SERVICE_DISCONNECTED during setup; close and propagate.
+            sock.close()
+            raise
         except Exception:
             sock.close()
             return
         canonical_name = msg.sender
         self._transmitters[canonical_name] = sock
         self._transmitter_uuids[uuid] = canonical_name
+        self._cscp_locks[canonical_name] = asyncio.Lock()
+        self._satellite_commands[canonical_name] = msg.payload if isinstance(msg.payload, dict) else {}
         self._on_satellite_update(canonical_name, SatelliteUpdate.ADDED)
 
     def _cleanup_transmitter(self, uuid: UUID) -> None:
@@ -125,12 +194,37 @@ class AsyncBaseController(AsyncMonitoringListener, AsyncHeartbeatChecker):
         if canonical_name is None:
             return
         sock = self._transmitters.pop(canonical_name, None)
+        self._cscp_locks.pop(canonical_name, None)
+        self._satellite_commands.pop(canonical_name, None)
         if sock is not None:
             sock.close()
             self._on_satellite_update(canonical_name, SatelliteUpdate.REMOVED)
 
+    def _teardown_transmitter(self, key: str) -> None:
+        """Tear down a transmitter by canonical name after a timeout.
+
+        A ZMQ REQ socket cannot be reused once a reply is abandoned
+        mid-flight, so we must close it entirely. The satellite will
+        need to be rediscovered via CHIRP to reconnect.
+        """
+        sock = self._transmitters.pop(key, None)
+        self._cscp_locks.pop(key, None)
+        self._satellite_commands.pop(key, None)
+        uuid = next(
+            (u for u, name in self._transmitter_uuids.items() if name == key),
+            None,
+        )
+        if uuid is not None:
+            self._transmitter_uuids.pop(uuid, None)
+        if sock is not None:
+            sock.close()
+            self._on_satellite_update(key, SatelliteUpdate.REMOVED)
+
     def shutdown(self) -> None:
         """Shut down all components."""
+        for task in list(self._pending_setups.values()):
+            if not task.done():
+                task.cancel()
         for sock in self._transmitters.values():
             sock.close()
         self._hb_receiver.close()
