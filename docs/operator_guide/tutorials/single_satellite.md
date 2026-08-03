@@ -77,7 +77,7 @@ allows their control. Getting a dictionary containing the satellites could e.g. 
 
 ```python
 edda > constellation.satellites
-{'Sputnik.One': SatelliteCommLink(type=Sputnik, name=One)}
+{"Sputnik.One": SatelliteCommLink(type=Sputnik, name=One)}
 ```
 
 In order to obtain more information on a specific satellite, it can be directly addressed via its type and name
@@ -85,7 +85,7 @@ and a command can be sent. The response is then printed on the terminal:
 
 ```python
 edda > constellation.Sputnik.One.get_name()
-SatelliteResponse(msg='Sputnik.One')
+SatelliteResponse(msg="Sputnik.One")
 ```
 
 The controller supports tab completion, and suggestions for possible commands are displayed by typing
@@ -101,23 +101,27 @@ In the following example, the configuration is an empty dictionary (`{}`) and di
 
 ```python
 edda > constellation.Sputnik.One.initialize({})
-SatelliteResponse(msg='Transition initialize is being initiated')
+SatelliteResponse(msg="Transition initialize is being initiated")
 ```
 
 All satellites can be initialized together by sending the command to the entire constellation:
 
 ```python
 edda > constellation.initialize({})
-{'Sputnik.One': SatelliteResponse(msg='Transition initialize is being initiated')}
+{"Sputnik.One": SatelliteResponse(msg="Transition initialize is being initiated")}
 ```
 
 Whether the satellites has actually changed its state can be checked by retrieving the current state via:
 
 ```python
 edda > constellation.get_state()
-{'Sputnik.One': SatelliteResponse(
-                   msg='INIT', payload=32,
-                   meta={"last_changed": datetime.datetime(2025, 6, 19, 12, 4, 49, 594792, tzinfo=datetime.timezone.utc)})}
+{
+    "Sputnik.One": SatelliteResponse(
+        msg="INIT",
+        payload=32,
+        meta={"last_changed": datetime.datetime(2025, 6, 19, 12, 4, 49, 594792, tzinfo=datetime.timezone.utc)},
+    )
+}
 ```
 
 Here, the response of the satellite contain a message (`msg`) with the human-readable state name, a payload with the state
@@ -157,7 +161,7 @@ function:
 
 ```python
 edda > constellation.initialize(cfg)
-{'Sputnik.One': SatelliteResponse(msg='Transition initialize is being initiated')}
+{"Sputnik.One": SatelliteResponse(msg="Transition initialize is being initiated")}
 ```
 
 Alternatively, the configuration can be read and parsed in an already running interactive command line session using the

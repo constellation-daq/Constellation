@@ -128,7 +128,7 @@ for i in range(dset_data_idx.shape[0]):
         # Reached the end
         break
     # Slice the metadata out of the dataset and convert back to dict
-    tags = json.loads(str(dset_meta[prev_meta:idx], encoding='utf-8'))
+    tags = json.loads(str(dset_meta[prev_meta:idx], encoding="utf-8"))
     # Store current index value for next iteration
     prev_meta = idx
 

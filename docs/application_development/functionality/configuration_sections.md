@@ -86,14 +86,12 @@ channels_section = config.get_section("channels")
 
 # Read channel 0 & 1 as nested sections
 for n in [0, 1]:
-
     # Get section for channel n
-    channel_section = config.get_section(f"channel_{n}");
-
+    channel_section = config.get_section(f"channel_{n}")
     # Note that channel_section has the same methods available as config
 
     # Get if channel is enabled, its assigned name and the set voltage
-    enabled  = channel_section.get("enabled", return_type=bool)
+    enabled = channel_section.get("enabled", return_type=bool)
     name = channel_section.get("name", return_type=str)
     voltage = channel_section.get_num("voltage")
 ```
@@ -148,12 +146,10 @@ channels_section = config.get_section("channels", {})
 
 # Read 128 channels as nested configuration sections
 for n in range(0, 128):
-
     # Get section for channel n
-    channel_section = channels_section.get_section(f"channel_{n}", {});
-
+    channel_section = channels_section.get_section(f"channel_{n}", {})
     # Get if channel is enabled, its assigned name and the set voltage with defaults
-    enabled  = channel_section.get("enabled", False, return_type=bool)
+    enabled = channel_section.get("enabled", False, return_type=bool)
     name = channel_section.get("name", f"CHANNEL {n}", return_type=str)
     voltage = channel_section.get_num("voltage", 0.0)
 ```
@@ -266,18 +262,15 @@ subscriptions = config.get_section("subscriptions")
 
 # Iterate over all keys in the subscriptions section
 for canonical_name in subscriptions.get_keys():
-
     # Get section corresponding to key (= canonical satellite name)
     satellite_section = subscriptions.get_section(canonical_name)
 
     # Get configuration section for topics
-    topics = satellite_section.get_section("topics");
-
+    topics = satellite_section.get_section("topics")
     # Iterate over all keys in the topics section
     for topic in topics.get_keys():
-
         # Get log level for topic
-        log_level = topics.get(topic);
+        log_level = topics.get(topic)
 ```
 
 :::

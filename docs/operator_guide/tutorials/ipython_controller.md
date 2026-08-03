@@ -109,8 +109,7 @@ live map of the satellites in the Constellation. This map is always accessible v
 
 ```python
 edda > constellation.satellites
-{'Sputnik.One': SatelliteCommLink(type=Sputnik, name=One),
- 'Sputnik.Two': SatelliteCommLink(type=Sputnik, name=Two)}
+{"Sputnik.One": SatelliteCommLink(type=Sputnik, name=One), "Sputnik.Two": SatelliteCommLink(type=Sputnik, name=Two)}
 ```
 
 The dictionary keys are canonical names in the form `Type.Name`. The controller updates this map
@@ -123,14 +122,15 @@ and pressing {kbd}`Tab` after `constellation.Sputnik.One.` lists every command t
 
 ```python
 edda > constellation.Sputnik.One.get_name()
-SatelliteResponse(msg='Sputnik.One')
+SatelliteResponse(msg="Sputnik.One")
 
 edda > constellation.Sputnik.One.get_state()
 edda > constellation.Sputnik.One.get_state()
 SatelliteResponse(
-                   msg='NEW', payload=16,
-                   meta={"last_changed": datetime.datetime(2026, 5, 9, 12, 42, 52, 329643, tzinfo=datetime.timezone.utc)})
-
+    msg="NEW",
+    payload=16,
+    meta={"last_changed": datetime.datetime(2026, 5, 9, 12, 42, 52, 329643, tzinfo=datetime.timezone.utc)},
+)
 ```
 
 Every command returns a `SatelliteResponse` object. Its most useful fields are:
@@ -146,8 +146,10 @@ directly. The return value is then a dictionary mapping each canonical name to i
 
 ```python
 edda > constellation.get_state()
-{'Sputnik.One': SatelliteResponse(msg='NEW', payload=16, meta={...}),
- 'Sputnik.Two': SatelliteResponse(msg='NEW', payload=16, meta={...})}
+{
+    "Sputnik.One": SatelliteResponse(msg="NEW", payload=16, meta={...}),
+    "Sputnik.Two": SatelliteResponse(msg="NEW", payload=16, meta={...}),
+}
 ```
 
 All satellites of a given type can be addressed together as well, which is convenient when multiple
@@ -155,8 +157,10 @@ instances of the same type exist:
 
 ```python
 edda > constellation.Sputnik.get_state()
-{'Sputnik.One': SatelliteResponse(msg='NEW', payload=16, meta={...}),
- 'Sputnik.Two': SatelliteResponse(msg='NEW', payload=16, meta={...})}
+{
+    "Sputnik.One": SatelliteResponse(msg="NEW", payload=16, meta={...}),
+    "Sputnik.Two": SatelliteResponse(msg="NEW", payload=16, meta={...}),
+}
 ```
 
 Because the session is a full Python interpreter, the standard output methods can be used to format
@@ -189,8 +193,7 @@ inspected directly:
 
 ```python
 edda > cfg
-{'Sputnik.One': {'interval': 2500},
- 'Sputnik.Two': {'interval': 3000}}
+{"Sputnik.One": {"interval": 2500}, "Sputnik.Two": {"interval": 3000}}
 ```
 
 ## Initializing and Launching
@@ -200,8 +203,10 @@ the full `cfg` object and the controller takes care of routing each section to i
 
 ```python
 edda > constellation.initialize(cfg)
-{'Sputnik.One': SatelliteResponse(msg='Transition initialize is being initiated'),
- 'Sputnik.Two': SatelliteResponse(msg='Transition initialize is being initiated')}
+{
+    "Sputnik.One": SatelliteResponse(msg="Transition initialize is being initiated"),
+    "Sputnik.Two": SatelliteResponse(msg="Transition initialize is being initiated"),
+}
 ```
 
 The response is immediate since the satellites confirm their entering into the {bdg-secondary}`initializing` state in which
@@ -211,18 +216,23 @@ which is when instrument hardware is fully powered and ready for data taking:
 
 ```python
 edda > constellation.launch()
-{'Sputnik.One': SatelliteResponse(msg='Transition launch is being initiated'),
- 'Sputnik.Two': SatelliteResponse(msg='Transition launch is being initiated')}
+{
+    "Sputnik.One": SatelliteResponse(msg="Transition launch is being initiated"),
+    "Sputnik.Two": SatelliteResponse(msg="Transition launch is being initiated"),
+}
 ```
 
 The state and status message of individual satellites described in the [Satellite chapter](../concepts/satellite.md#state-and-status) can be polled at any time:
 
 ```python
 edda > constellation.Sputnik.One.get_state()
-SatelliteResponse(msg='ORBIT', payload=48,
-                  meta={"last_changed": datetime.datetime(2026, 5, 11, 8, 53, 55, 143613, tzinfo=datetime.timezone.utc)})
+SatelliteResponse(
+    msg="ORBIT",
+    payload=48,
+    meta={"last_changed": datetime.datetime(2026, 5, 11, 8, 53, 55, 143613, tzinfo=datetime.timezone.utc)},
+)
 edda > constellation.Sputnik.One.get_status()
-SatelliteResponse(msg='Satellite launched successfully')
+SatelliteResponse(msg="Satellite launched successfully")
 ```
 
 ## Starting and Stopping a Run
@@ -232,8 +242,10 @@ identifier is a free-form string composed of alphanumeric characters, underscore
 
 ```python
 edda > constellation.start("run_0001")
-{'Sputnik.One': SatelliteResponse(msg='Transition start is being initiated'),
- 'Sputnik.Two': SatelliteResponse(msg='Transition start is being initiated')}
+{
+    "Sputnik.One": SatelliteResponse(msg="Transition start is being initiated"),
+    "Sputnik.Two": SatelliteResponse(msg="Transition start is being initiated"),
+}
 ```
 
 All satellites are now in the {bdg-secondary}`RUN` state and data is being acquired. The run identifier can be
@@ -241,7 +253,7 @@ confirmed at any time:
 
 ```python
 edda > constellation.Sputnik.One.get_run_id()
-SatelliteResponse(msg='run_0001')
+SatelliteResponse(msg="run_0001")
 ```
 
 The controller can be closed without interrupting the run. Satellites operate autonomously and continue taking data
@@ -252,8 +264,10 @@ To end the run, the `stop` command is issues and satellites will to return to {b
 
 ```python
 edda > constellation.stop()
-{'Sputnik.One': SatelliteResponse(msg='Transition stop is being initiated'),
- 'Sputnik.Two': SatelliteResponse(msg='Transition stop is being initiated')}
+{
+    "Sputnik.One": SatelliteResponse(msg="Transition stop is being initiated"),
+    "Sputnik.Two": SatelliteResponse(msg="Transition stop is being initiated"),
+}
 ```
 
 ## Sending Commands to Individual Satellites
@@ -285,11 +299,9 @@ intended parameters were applied:
 ```python
 edda > constellation.Sputnik.One.get_config()
 SatelliteResponse(
-                   msg='Configuration attached in payload',
-                   payload={"_autonomy": {'max_heartbeat_interval': 30,
-                             'role': 'DYNAMIC'},
-                            "interval": 2500,
-                            "launch_delay": 0})
+    msg="Configuration attached in payload",
+    payload={"_autonomy": {"max_heartbeat_interval": 30, "role": "DYNAMIC"}, "interval": 2500, "launch_delay": 0},
+)
 ```
 
 Satellite implementations may expose additional custom commands beyond the standard set. These appear in the `get_commands`
@@ -298,15 +310,17 @@ Arguments to custom commands need to be provided as Python list:
 
 ```python
 edda > constellation.Sputnik.One.get_channel_reading([42])
-SatelliteResponse(msg='Command returned: 579.6', payload=579.6)
+SatelliteResponse(msg="Command returned: 579.6", payload=579.6)
 ```
 
 Similarly to accessing individual satellites, also all satellites of a specific type can be called via attribute access:
 
 ```python
 edda > constellation.Sputnik.get_status()
-{'Sputnik.Two': SatelliteResponse(msg='Satellite stopped run successfully'),
- 'Sputnik.One': SatelliteResponse(msg='Satellite stopped run successfully')}
+{
+    "Sputnik.Two": SatelliteResponse(msg="Satellite stopped run successfully"),
+    "Sputnik.One": SatelliteResponse(msg="Satellite stopped run successfully"),
+}
 ```
 
 ## Reconfiguring Without Relaunching
@@ -321,15 +335,17 @@ argument. Unchanged parameters are left as they are:
 
 ```python
 edda > constellation.Sputnik.One.reconfigure({"interval": 500})
-{'Sputnik.One': SatelliteResponse(msg='Transition reconfigure is being initiated')}
+{"Sputnik.One": SatelliteResponse(msg="Transition reconfigure is being initiated")}
 ```
 
 It is also possible to reconfigure all satellites of a given type simultaneously:
 
 ```python
 edda > constellation.Sputnik.reconfigure({"interval": 500})
-{'Sputnik.One': SatelliteResponse(msg='Transition reconfigure is being initiated'),
- 'Sputnik.Two': SatelliteResponse(msg='Transition reconfigure is being initiated')}
+{
+    "Sputnik.One": SatelliteResponse(msg="Transition reconfigure is being initiated"),
+    "Sputnik.Two": SatelliteResponse(msg="Transition reconfigure is being initiated"),
+}
 ```
 
 ```{seealso}
@@ -403,12 +419,16 @@ landed first:
 
 ```python
 edda > constellation.land()
-{'Sputnik.One': SatelliteResponse(msg='Transition land is being initiated'),
- 'Sputnik.Two': SatelliteResponse(msg='Transition land is being initiated')}
+{
+    "Sputnik.One": SatelliteResponse(msg="Transition land is being initiated"),
+    "Sputnik.Two": SatelliteResponse(msg="Transition land is being initiated"),
+}
 
 edda > constellation.shutdown()
-{'Sputnik.One': SatelliteResponse(msg='Shutting down satellite'),
- 'Sputnik.Two': SatelliteResponse(msg='Shutting down satellite')}
+{
+    "Sputnik.One": SatelliteResponse(msg="Shutting down satellite"),
+    "Sputnik.Two": SatelliteResponse(msg="Shutting down satellite"),
+}
 ```
 
 The `constellation.satellites` dictionary will become empty once the satellites have exited.

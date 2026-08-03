@@ -23,6 +23,7 @@ from constellation.core.logging import setup_cli_logging
 
 class TutorialMachine(Satellite):
     """An in-progress Satellite implementation."""
+
     pass  # NOTE placeholder statement until we start the implementation!
 
 
@@ -43,7 +44,6 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
-
 ```
 
 Most code so far deals with argument parsing and start-up, while the actual satellite does not implement any extra
@@ -96,6 +96,7 @@ The following code implements some basic transitions into the tutorial class:
 
 ```python
 import socket
+
 
 class TutorialMachine(Satellite):
     """An in-progress Satellite implementation."""
@@ -183,7 +184,6 @@ channels_section = config.get_section("channels")
 
 # Read channel 0 & 1 as nested sections
 for n in range(2):
-
     # Get section for channel n
     channel_section = channels_section.get_section(f"channel_{n}")
 
@@ -282,6 +282,7 @@ The following code can be run in a Python console (REPL) to see all members of a
 
 ```python
 from constellation.core.satellite import Satellite
+
 s = Satellite()
 dir(s)
 ```
