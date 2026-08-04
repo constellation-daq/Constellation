@@ -107,7 +107,13 @@ class AsyncSubscriberPool:
             if not self._sockets:
                 await asyncio.sleep(0.05)
                 continue
-            events = dict(await self._poller.poll(timeout=50))
+            try:
+                events = dict(await self._poller.poll(timeout=50))
+            except asyncio.CancelledError:
+                # Concurrent remove_socket invalidates the poller state.
+                if stop.is_set():
+                    break
+                continue
             for sock in events:
                 uuid = self._socket_to_uuid.get(sock)
                 if uuid is None:
