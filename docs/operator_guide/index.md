@@ -56,6 +56,7 @@ tutorials/single_satellite
 tutorials/missioncontrol
 tutorials/ipython_controller
 tutorials/observatory
+The Command-Line Monitor <tutorials/cli_monitor>
 tutorials/telemetryconsole
 ```
 

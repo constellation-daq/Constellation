@@ -30,6 +30,13 @@ def monitor_sender() -> str:
     return f"Monitor.{socket.gethostname()}"
 
 
+class MetricFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        if hasattr(record, "metric"):
+            return False
+        return True
+
+
 class SenderLogFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         if not hasattr(record, "sender"):
@@ -59,6 +66,7 @@ def create_file_handler(output_path: pathlib.Path, backup_count: int, file_level
 
     # Format csv-style
     file_handler.addFilter(SenderLogFilter())
+    file_handler.addFilter(MetricFilter())
     file_handler.setFormatter(
         EscapeFormatter(
             '{asctime}.{msecs:03.0f},{levelname},{sender},{name},"{message}"', style="{", datefmt="%Y-%m-%dT%H:%M:%S"
@@ -100,10 +108,19 @@ class Monitor(StandaloneListener, MonitoringListener):
         self.log.handle(record)
 
     def receive_metric(self, sender: str, metric: Metric, timestamp: datetime, value: Any) -> None:
-        self.log.info(
-            f"Received {metric.name} metric from {sender} with value {value}{metric.unit}",
-            extra={"sender": monitor_sender()},
+        record = logging.makeLogRecord(
+            {
+                "name": metric.name,
+                "levelname": LogLevel.STATUS.name,
+                "levelno": LogLevel.STATUS.value,
+                "msg": f"{value} {metric.unit}",
+                "created": timestamp.timestamp(),
+                "sender": sender,
+                "metric": True,
+            }
         )
+        self.log.handle(record)
+
         if self.output_path is not None:
             path = self.output_path / f"{sender}.{metric.name.lower()}.csv"
             with open(path, "a", encoding="utf-8") as csv:
@@ -114,6 +131,17 @@ def main(args=None) -> None:
     # Add argument specific for Monitor to parser
     parser = ConstellationArgumentParser(description=main.__doc__, epilog=EPILOG)
     parser.add_argument(
+        "--metrics",
+        nargs="*",
+        metavar="METRIC",
+        default=None,
+        help=(
+            "Metric names to subscribe to, e.g. TEMPERATURE VOLTAGE. "
+            "If passed no names, all metrics are subscribed. "
+            "If omitted, metric subscription is disabled entirely."
+        ),
+    )
+    parser.add_argument(
         "-o",
         "--output-path",
         type=pathlib.Path,
@@ -123,9 +151,9 @@ def main(args=None) -> None:
     parser.add_argument(
         "--file-level",
         choices=["TRACE", "DEBUG", "INFO", "WARNING", "STATUS", "CRITICAL"],
-        default="DEBUG",
+        required=False,
         type=str.upper,
-        help="The maximum level of log messages to written to the file.",
+        help="The maximum level of log messages to write to the file.",
     )
     parser.add_argument(
         "--backup-count",
@@ -137,8 +165,9 @@ def main(args=None) -> None:
     args = vars(parser.parse_args(args))
 
     # Pop argument specific for Monitor
+    metrics: list[str] | None = args.pop("metrics")
     output_path: pathlib.Path | None = args.pop("output_path")
-    file_level: str = args.pop("file_level")
+    file_level: str | None = args.pop("file_level")
     backup_count: int = args.pop("backup_count")
 
     # Set up logging
@@ -148,7 +177,7 @@ def main(args=None) -> None:
     # Add file handler to root handlers
     if output_path is not None:
         output_path = check_output_path(output_path)
-        file_handler = create_file_handler(output_path, backup_count, file_level)
+        file_handler = create_file_handler(output_path, backup_count, file_level if file_level is not None else level)
         logging.root.addHandler(file_handler)
 
     # Start Monitor with remaining args
@@ -156,9 +185,15 @@ def main(args=None) -> None:
 
     # Set topics to listen to
     min_level = LogLevel[level.upper()]
-    if output_path is not None:
+    if output_path is not None and file_level is not None:
         min_level = min(min_level, LogLevel[file_level.upper()])
-    mon.set_topics(["STAT/"] + generate_log_topics(min_level))
+    if metrics is None:
+        metric_topics = []
+    elif not metrics:
+        metric_topics = ["STAT/"]
+    else:
+        metric_topics = [f"STAT/{m.upper()}" for m in metrics]
+    mon.set_topics(metric_topics + generate_log_topics(min_level))
 
     # Adapt default logging handlers
     adapt_default_handlers()
