@@ -60,7 +60,7 @@ self.register_metric("NAME", "unit", "description")
 This metric can then be sent using the `stat` method:
 
 ```python
-self.stat("NAME", self.get_metric_value());
+self.stat("NAME", self.get_metric_value())
 ```
 
 Metrics that are evaluated regularly from a function can also be registered:

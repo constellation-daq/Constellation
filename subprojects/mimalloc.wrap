@@ -1,14 +1,14 @@
 [wrap-file]
-directory = mimalloc-3.2.7
-source_url = https://github.com/microsoft/mimalloc/archive/refs/tags/v3.2.7.tar.gz
-source_filename = mimalloc-3.2.7.tar.gz
-source_hash = 33621bea902711639b8f83128e64685ffc8224a65443625530747603a2d8726d
-source_fallback_url = https://wrapdb.mesonbuild.com/v2/mimalloc_3.2.7-1/get_source/mimalloc-3.2.7.tar.gz
-patch_filename = mimalloc_3.2.7-1_patch.zip
-patch_url = https://wrapdb.mesonbuild.com/v2/mimalloc_3.2.7-1/get_patch
-patch_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/mimalloc_3.2.7-1/mimalloc_3.2.7-1_patch.zip
-patch_hash = 887aa6fb636b6bf8f85f86cc577336afc50288d6af888fc9a396d3622f4a7429
-wrapdb_version = 3.2.7-1
+directory = mimalloc-3.3.2
+source_url = https://github.com/microsoft/mimalloc/archive/refs/tags/v3.3.2.tar.gz
+source_filename = mimalloc-3.3.2.tar.gz
+source_hash = ca02384e007f46950598500dfaebde5ff9948c1d231f5a81b058799afa64bbbb
+source_fallback_url = https://wrapdb.mesonbuild.com/v2/mimalloc_3.3.2-1/get_source/mimalloc-3.3.2.tar.gz
+patch_filename = mimalloc_3.3.2-1_patch.zip
+patch_url = https://wrapdb.mesonbuild.com/v2/mimalloc_3.3.2-1/get_patch
+patch_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/mimalloc_3.3.2-1/mimalloc_3.3.2-1_patch.zip
+patch_hash = a3ba520c69fd1c95cb3babdf76f15d29b55475e91be1fd4f2e3dca654c1759fe
+wrapdb_version = 3.3.2-1
 
 [provide]
 dependency_names = mimalloc

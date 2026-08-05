@@ -1,10 +1,10 @@
 [wrap-file]
-directory = atomic_queue-1.7.1
-source_url = https://github.com/max0x7ba/atomic_queue/archive/refs/tags/v1.7.1.tar.gz
-source_filename = atomic_queue-1.7.1.tar.gz
-source_hash = 6eeff578f8b0499717bf890d90e2c58106ac2b8076084b73f2183a631742b4ab
-source_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/atomic_queue_1.7.1-1/atomic_queue-1.7.1.tar.gz
-wrapdb_version = 1.7.1-1
+directory = atomic_queue-1.9.2
+source_url = https://github.com/max0x7ba/atomic_queue/archive/refs/tags/v1.9.2.tar.gz
+source_filename = atomic_queue-1.9.2.tar.gz
+source_hash = 7c3606f23cea69d39c3872996ffb83587bd4ab08da3c0c4c45aba7aa15eea9f8
+source_fallback_url = https://wrapdb.mesonbuild.com/v2/atomic_queue_1.9.2-1/get_source/atomic_queue-1.9.2.tar.gz
+wrapdb_version = 1.9.2-1
 
 [provide]
-atomic_queue = atomic_queue_dep
+dependency_names = atomic_queue

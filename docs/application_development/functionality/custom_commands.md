@@ -221,7 +221,16 @@ def COMMAND(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
  The `states_except([])` helper function allows to create a set of all states *except* the ones provided as argument. An example is shown below, limiting the usage of the `get_channel_reading` command to all states except {bdg-secondary}`NEW`, {bdg-secondary}`initializing`, {bdg-secondary}`reconfiguring` and {bdg-secondary}`ERROR`:
 
 ```python
-@cscp_requestable(states_except([SatelliteState.NEW, SatelliteState.initializing, SatelliteState.reconfiguring, SatelliteState.ERROR]))
+@cscp_requestable(
+    states_except(
+        [
+            SatelliteState.NEW,
+            SatelliteState.initializing,
+            SatelliteState.reconfiguring,
+            SatelliteState.ERROR,
+        ]
+    )
+)
 def get_channel_reading(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
     """Read the value of the channel given by the first supplied argument."""
     paramList = request.payload

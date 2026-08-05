@@ -286,7 +286,7 @@ std::string Dictionary::demangle() const {
 }
 
 void Dictionary::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
-    msgpack_packer.pack_map(size());
+    msgpack_packer.pack_map(static_cast<std::uint32_t>(size()));
     for(auto const& [key, val] : *this) {
         msgpack_packer.pack(key);
         msgpack_packer.pack(val);

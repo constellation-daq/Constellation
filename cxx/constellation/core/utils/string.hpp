@@ -74,7 +74,7 @@ namespace constellation::utils {
         std::string out {};
         out.resize(25);
         const auto res = std::to_chars(out.data(), out.data() + out.size(), t);
-        out.resize(res.ptr - out.data());
+        out.resize(static_cast<std::size_t>(res.ptr - out.data()));
         if constexpr(std::floating_point<A>) {
             // For floats, add trailing zero if no decimal point or exponential is found
             if(out.find('.') == std::string::npos && out.find('e') == std::string::npos) {
