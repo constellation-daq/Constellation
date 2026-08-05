@@ -121,7 +121,7 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
         default: std::unreachable();
         }
 
-        spdlog::flush_every(std::chrono::seconds(config.get<std::size_t>("flush_period", 10)));
+        spdlog::flush_every(config.get<std::chrono::seconds>("flush_period", 10s));
     } catch(const spdlog::spdlog_ex& ex) {
         throw SatelliteError(ex.what());
     }

@@ -28,12 +28,18 @@
 #include "constellation/core/utils/env.hpp"
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/core/utils/type.hpp"
 
 namespace constellation::config {
 
     template <typename T> void Section::setDefault(std::string_view key, T&& default_value) {
         const auto key_lc = utils::transform(key, tolower);
-        dictionary_->try_emplace(key_lc, std::forward<T>(default_value));
+
+        if constexpr(utils::is_duration_v<std::remove_cvref_t<T>>) {
+            dictionary_->try_emplace(key_lc, static_cast<std::uint64_t>(default_value.count()));
+        } else {
+            dictionary_->try_emplace(key_lc, std::forward<T>(default_value));
+        }
     }
 
     template <typename T> T Section::get(std::string_view key) const {
@@ -42,34 +48,41 @@ namespace constellation::config {
             throw utils::LogicError("`get<Dictionary>` called, usage of `getSection` required");
         }
 
-        const auto key_lc = utils::transform(key, tolower);
-        try {
-            const auto composite = dictionary_->at(key_lc);
-            auto value = composite.get<T>();
-            mark_used(key_lc);
+        // Resolve duration from integer
+        if constexpr(utils::is_duration_v<T>) {
+            return T {get<std::uint64_t>(key)};
+        } else {
 
-            // Resolve environment variables for string-type values:
-            if constexpr(std::is_same_v<T, std::string>) {
-                value = utils::resolve_satellite_env(value);
+            const auto key_lc = utils::transform(key, tolower);
+            try {
+                const auto composite = dictionary_->at(key_lc);
+                auto value = composite.get<T>();
+                mark_used(key_lc);
+
+                // Resolve environment variables for string-type values:
+                if constexpr(std::is_same_v<T, std::string>) {
+                    value = utils::resolve_satellite_env(value);
+                }
+
+                if constexpr(std::is_same_v<T, std::vector<std::string>>) {
+                    std::ranges::transform(
+                        value, value.begin(), [](const auto& v) { return utils::resolve_satellite_env(v); });
+                }
+
+                return value;
+            } catch(const std::out_of_range&) {
+                // Requested key has not been found in dictionary
+                throw MissingKeyError(*this, key);
+            } catch(const std::bad_variant_access&) {
+                // Value held by the dictionary entry could not be cast to desired type
+                throw InvalidTypeError(*this, key, dictionary_->at(key_lc).demangle(), utils::demangle<T>());
+            } catch(const std::invalid_argument& error) {
+                // Value held by the dictionary entry is not valid (e.g. out of range)
+                throw InvalidValueError(*this, key, error.what());
+            } catch(const utils::RuntimeError& error) {
+                // Issue when parsing the value
+                throw InvalidValueError(*this, key, error.what());
             }
-
-            if constexpr(std::is_same_v<T, std::vector<std::string>>) {
-                std::ranges::transform(value, value.begin(), [](const auto& v) { return utils::resolve_satellite_env(v); });
-            }
-
-            return value;
-        } catch(const std::out_of_range&) {
-            // Requested key has not been found in dictionary
-            throw MissingKeyError(*this, key);
-        } catch(const std::bad_variant_access&) {
-            // Value held by the dictionary entry could not be cast to desired type
-            throw InvalidTypeError(*this, key, dictionary_->at(key_lc).demangle(), utils::demangle<T>());
-        } catch(const std::invalid_argument& error) {
-            // Value held by the dictionary entry is not valid (e.g. out of range)
-            throw InvalidValueError(*this, key, error.what());
-        } catch(const utils::RuntimeError& error) {
-            // Issue when parsing the value
-            throw InvalidValueError(*this, key, error.what());
         }
     }
 

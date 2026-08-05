@@ -45,20 +45,18 @@ SputnikSatellite::SputnikSatellite(std::string_view type, std::string_view name)
 
 void SputnikSatellite::initializing(Configuration& config) {
     // Obtain the beeping interval from the configuration:
-    const auto interval = config.get<std::uint64_t>("interval", 3000U);
+    const auto interval = config.get<std::chrono::milliseconds>("interval", 3000ms);
 
     // Obtain launch delay from the configuration:
-    launch_delay_ = std::chrono::seconds(config.get<std::uint64_t>("launch_delay", 0));
+    launch_delay_ = config.get<std::chrono::seconds>("launch_delay", 0s);
 
-    register_timed_metric("BEEP", "beeps", "Sputnik beeps", std::chrono::milliseconds(interval), []() { return 42; });
+    register_timed_metric("BEEP", "beeps", "Sputnik beeps", interval, []() { return 42; });
 }
 
 void SputnikSatellite::reconfiguring(const constellation::config::Configuration& config) {
     if(config.has("interval")) {
         register_timed_metric(
-            "BEEP", "beeps", "Sputnik beeps", std::chrono::milliseconds(config.get<std::uint64_t>("interval")), []() {
-                return 42;
-            });
+            "BEEP", "beeps", "Sputnik beeps", config.get<std::chrono::milliseconds>("interval"), []() { return 42; });
     }
 }
 

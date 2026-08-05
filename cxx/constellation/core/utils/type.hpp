@@ -87,6 +87,11 @@ namespace constellation::utils {
     };
     template <typename T> using vector_variant_t = vector_variant<T>::type;
 
+    // Type traits for std::chrono::duration
+    template <typename T> struct is_duration : std::false_type {};
+    template <typename Rep, typename Period> struct is_duration<std::chrono::duration<Rep, Period>> : std::true_type {};
+    template <typename T> inline constexpr bool is_duration_v = is_duration<T>::value;
+
     /// @endcond
 
     /**
