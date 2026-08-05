@@ -11,7 +11,6 @@
 
 #include <chrono>
 #include <cstddef>
-#include <cstdint>
 #include <exception>
 #include <functional>
 #include <future>
