@@ -12,7 +12,6 @@
 #include <algorithm>
 #include <chrono>
 #include <compare>
-#include <cstdint>
 #include <exception>
 #include <functional>
 #include <future>
