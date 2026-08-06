@@ -17,7 +17,7 @@ import zmq.asyncio
 
 from constellation.core.async_experimental.async_pools import AsyncSubscriberPool
 from constellation.core.base import BaseSatelliteFrame
-from constellation.core.chp import CHPRole, chp_decode_message
+from constellation.core.chp import CHPMessageFlags, CHPRole, chp_decode_message
 from constellation.core.protocol.cscp1 import SatelliteState
 from constellation.core.util import case_insensitive_dict
 
@@ -46,12 +46,8 @@ class HeartbeatState:
 class AsyncHeartbeatReceiver:
     """Async heartbeat receiver backed by AsyncSubscriberPool.
 
-    Socket management is delegated to an internal AsyncSubscriberPool.
-    CHP has no topic filtering so the pool subscribes to "" for all
-    sockets, applied automatically via add_satellite().
-
-    Call add_satellite and remove_satellite from the event loop.
-    Use loop.call_soon_threadsafe when calling from another thread.
+    Manages per-satellite SUB sockets via an internal pool. CHP uses
+    no topic filtering so each socket subscribes to all messages.
     """
 
     INIT_LIVES = 3
@@ -61,22 +57,26 @@ class AsyncHeartbeatReceiver:
         self,
         ctx: zmq.asyncio.Context,
         on_state_change: Callable[[str, SatelliteState, SatelliteState], None] | None = None,
-        on_satellite_dead: Callable[[str], None] | None = None,
+        on_stale: Callable[[UUID], None] | None = None,
+        on_mark_degraded: Callable[[str], None] | None = None,
+        on_heartbeat_interrupt: Callable[[str], None] | None = None,
     ) -> None:
         self._on_state_change = on_state_change
-        self._on_satellite_dead = on_satellite_dead
+        self._on_stale = on_stale
+        self._on_mark_degraded = on_mark_degraded
+        self._on_heartbeat_interrupt = on_heartbeat_interrupt
 
         self._states: dict[UUID, HeartbeatState] = {}
         self._name_to_uuid: case_insensitive_dict[UUID] = case_insensitive_dict()
 
         self._pool = AsyncSubscriberPool(ctx, self._on_frames)
-        self._pool.set_topics([""])
 
     def add_satellite(self, uuid: UUID, address: str, port: int, name: str) -> None:
         """Register a satellite for heartbeat tracking."""
         if uuid in self._states:
             return
         self._pool.add_socket(uuid, address, port)
+        self._pool.subscribe("", host=uuid)
         self._states[uuid] = HeartbeatState(
             host=uuid,
             name=name,
@@ -97,6 +97,19 @@ class AsyncHeartbeatReceiver:
         uuid = self._name_to_uuid.get(name)
         if uuid is not None:
             self.remove_satellite(uuid)
+
+    def remove_on_departure(self, uuid: UUID) -> None:
+        """Deregister a satellite on explicit CHIRP departure.
+
+        Checks MARK_DEGRADED and DENY_DEPARTURE flags before removal.
+        """
+        hb = self._states.get(uuid)
+        if hb is not None:
+            if hb.role.role_requires(CHPMessageFlags.MARK_DEGRADED) and self._on_mark_degraded:
+                self._on_mark_degraded(f"{hb.name} departed illicitly")
+            if hb.role.role_requires(CHPMessageFlags.DENY_DEPARTURE) and self._on_heartbeat_interrupt:
+                self._on_heartbeat_interrupt(f"{hb.name} departed illicitly")
+        self.remove_satellite(uuid)
 
     @property
     def states(self) -> case_insensitive_dict[SatelliteState]:
@@ -139,10 +152,7 @@ class AsyncHeartbeatReceiver:
 
         old_state = hb.state
 
-        # A satellite may be registered under a placeholder name if its
-        # HEARTBEAT service was discovered before CONTROL resolved the
-        # canonical name. CHP payload always carries the real name, so
-        # correct it here and treat the correction as broadcast-worthy.
+        # Correct placeholder names with the canonical name from CHP payload
         renamed = hb.name.casefold() != name.casefold()
         if renamed:
             self._name_to_uuid.pop(hb.name, None)
@@ -150,6 +160,14 @@ class AsyncHeartbeatReceiver:
             self._name_to_uuid[name] = uuid
 
         state = SatelliteState(state_val)
+        hb.role = CHPRole.from_flags(flags)
+
+        # Check for ERROR or SAFE state with TRIGGER_INTERRUPT flag
+        call_interrupt = False
+        if hb.lives > 0 and state in (SatelliteState.ERROR, SatelliteState.SAFE):
+            hb.lives = 0
+            call_interrupt = self._on_heartbeat_interrupt is not None and bool(flags & CHPMessageFlags.TRIGGER_INTERRUPT)
+
         state_changed = state != hb.state
         if state_changed:
             hb.state = state
@@ -160,21 +178,24 @@ class AsyncHeartbeatReceiver:
 
         hb.refresh()
         hb.interval_ms = interval
-        hb.role = CHPRole.from_flags(flags)
 
         if status:
             hb.status = status
 
-        if hb.lives != self.INIT_LIVES:
-            hb.lives = self.INIT_LIVES
+        # Replenish lives only for non-error states
+        if state not in (SatelliteState.ERROR, SatelliteState.SAFE):
+            if hb.lives != self.INIT_LIVES:
+                hb.lives = self.INIT_LIVES
+
+        if call_interrupt:
+            self._on_heartbeat_interrupt(f"{hb.name} reports state {state.name}")
 
     def _check_stale_connections(self) -> None:
         """Decrement lives for satellites that have missed heartbeats.
 
-        Exhausted lives means the controller lost contact. This does not
-        write to hb.state since it is not a satellite FSM report. The
-        satellite is dropped from tracking entirely, matching an explicit
-        CHIRP departure; reconnection creates a fresh entry.
+        When lives are exhausted the satellite is removed from tracking
+        and on_stale fires so the controller can call forgetDiscoveredServices,
+        matching Controller.cpp controller_loop.
         """
         newly_dead: list[UUID] = []
         for uuid, hb in self._states.items():
@@ -192,10 +213,14 @@ class AsyncHeartbeatReceiver:
             hb = self._states.get(uuid)
             if hb is None:
                 continue
-            name = hb.name
+            msg = f"No signs of life detected anymore from {hb.name}"
+            if hb.role.role_requires(CHPMessageFlags.MARK_DEGRADED) and self._on_mark_degraded:
+                self._on_mark_degraded(msg)
+            if hb.role.role_requires(CHPMessageFlags.TRIGGER_INTERRUPT) and self._on_heartbeat_interrupt:
+                self._on_heartbeat_interrupt(msg)
             self.remove_satellite(uuid)
-            if self._on_satellite_dead:
-                self._on_satellite_dead(name)
+            if self._on_stale:
+                self._on_stale(uuid)
 
     def close(self) -> None:
         """Close all sockets and clear state."""
@@ -216,7 +241,9 @@ class AsyncHeartbeatChecker(BaseSatelliteFrame):
         self._hb_receiver = AsyncHeartbeatReceiver(
             self._async_ctx,
             on_state_change=self._on_state_change,
-            on_satellite_dead=self._on_satellite_dead,
+            on_stale=self._on_heartbeat_stale,
+            on_mark_degraded=self._mark_degraded,
+            on_heartbeat_interrupt=self._heartbeat_interrupt,
         )
 
     def _add_com_task(self) -> None:
@@ -235,8 +262,8 @@ class AsyncHeartbeatChecker(BaseSatelliteFrame):
         self._hb_receiver.add_satellite(uuid, address, port, name)
 
     def unregister_heartbeat_host(self, uuid: UUID) -> None:
-        """Deregister a satellite from heartbeat tracking."""
-        self._hb_receiver.remove_satellite(uuid)
+        """Deregister a satellite from heartbeat tracking on explicit departure."""
+        self._hb_receiver.remove_on_departure(uuid)
 
     def forget_heartbeat_host(self, name: str) -> None:
         """Remove a satellite from heartbeat tracking by name immediately."""
@@ -265,10 +292,17 @@ class AsyncHeartbeatChecker(BaseSatelliteFrame):
     ) -> None:
         """Called when a satellite changes state. Override in subclass."""
 
-    def _on_satellite_dead(self, name: str) -> None:
-        """Called when a satellite stops sending heartbeats. Override in
-        subclass. The satellite has already been removed from tracking
-        state maps by the time this fires."""
+    def _on_heartbeat_stale(self, uuid: UUID) -> None:
+        """Called when a satellite's heartbeat lives are exhausted.
+
+        Override in subclass to propagate removal to CHIRP.
+        """
+
+    def _mark_degraded(self, reason: str) -> None:
+        """Called when marking the run as degraded. Override in subclass."""
+
+    def _heartbeat_interrupt(self, reason: str) -> None:
+        """Called when triggering an interrupt. Override in subclass."""
 
     def close(self) -> None:
         """Close all heartbeat sockets."""

@@ -270,6 +270,17 @@ class AsyncCHIRPListener:
                     cb(CHIRPEvent.SERVICE_DISCONNECTED, svc)
                 break
 
+    def forget_host(self, host_id: UUID) -> None:
+        """Remove all discovered services for a host and fire SERVICE_DISCONNECTED
+        for each one. Equivalent of Manager::forgetDiscoveredServices(host_id) in
+        the C++ implementation. Called when heartbeat staleness indicates the host
+        is gone even though no DEPART was received over the network."""
+        removed = [s for s in self._discovered_services if s.host_id == host_id]
+        for svc in removed:
+            self._discovered_services.remove(svc)
+            for cb in self._callbacks.values():
+                cb(CHIRPEvent.SERVICE_DISCONNECTED, svc)
+
 
 class AsyncCHIRPManager(BaseSatelliteFrame):
     """Async equivalent of CHIRPManager.
@@ -328,6 +339,12 @@ class AsyncCHIRPManager(BaseSatelliteFrame):
     def get_discovered(self, service_id: CHIRPServiceIdentifier) -> list[DiscoveredService]:
         """Return discovered services matching service_id."""
         return self._listener.get_discovered(service_id)
+
+    def forget_host(self, host_id: UUID) -> None:
+        """Remove all discovered services for a host without an actual CHIRP DEPART.
+        Equivalent of Manager::forgetDiscoveredServices(host_id) in the C++
+        implementation."""
+        self._listener.forget_host(host_id)
 
     def request(self, service_id: CHIRPServiceIdentifier) -> None:
         """Send a CHIRP REQUEST for a specific service type."""

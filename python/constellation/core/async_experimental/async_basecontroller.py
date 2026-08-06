@@ -162,6 +162,14 @@ class AsyncBaseController(AsyncMonitoringListener, AsyncHeartbeatChecker):
     def _on_satellite_update(self, name: str, update_type: SatelliteUpdate) -> None:
         """Called on satellite connect/disconnect. Override in subclass."""
 
+    def _on_heartbeat_stale(self, uuid: UUID) -> None:
+        """Discard all CHIRP services for a stale host.
+
+        Matches Controller.cpp controller_loop which calls
+        forgetDiscoveredServices when heartbeat lives are exhausted.
+        """
+        self.forget_host(uuid)
+
     async def _setup_transmitter(self, uuid: UUID, address: str, port: int) -> None:
         """Connect to a satellite CSCP port on the event loop."""
         if uuid in self._transmitter_uuids:
