@@ -61,7 +61,13 @@ class AsyncBaseController(AsyncMonitoringListener, AsyncHeartbeatChecker):
         if event == CHIRPEvent.SERVICE_CONNECTED:
             task = asyncio.ensure_future(self._setup_transmitter(service.host_id, service.addresses[0], service.port))
             self._pending_setups[service.host_id] = task
-            task.add_done_callback(lambda _t, host_id=service.host_id: self._pending_setups.pop(host_id, None))
+
+            def _on_setup_done(t: asyncio.Task, host_id: UUID = service.host_id) -> None:
+                self._pending_setups.pop(host_id, None)
+                if not t.cancelled() and t.exception() is not None:
+                    self.log.exception("Setup failed for %s", host_id, exc_info=t.exception())
+
+            task.add_done_callback(_on_setup_done)
         elif event == CHIRPEvent.SERVICE_DISCONNECTED:
             pending = self._pending_setups.pop(service.host_id, None)
             if pending is not None and not pending.done():
@@ -228,11 +234,17 @@ class AsyncBaseController(AsyncMonitoringListener, AsyncHeartbeatChecker):
             sock.close()
             self._on_satellite_update(key, SatelliteUpdate.REMOVED)
 
-    def shutdown(self) -> None:
-        """Shut down all components."""
-        for task in list(self._pending_setups.values()):
-            if not task.done():
-                task.cancel()
+    async def shutdown(self) -> None:
+        """Shut down all components.
+
+        Awaits cancelled setup tasks so their socket cleanup runs
+        before ctx.term() blocks on unclosed sockets.
+        """
+        pending = [t for t in self._pending_setups.values() if not t.done()]
+        for task in pending:
+            task.cancel()
+        if pending:
+            await asyncio.gather(*pending, return_exceptions=True)
         for sock in self._transmitters.values():
             sock.close()
         self._hb_receiver.close()
