@@ -29,7 +29,7 @@ from constellation.core.network import get_interface_addresses
 
 # Spreads REQUEST replies so listeners do not all answer at once. Not mandated
 # by the CHIRP protocol, sized for a handful of satellites replying to a one time burst.
-REQUEST_REPLY_JITTER_RANGE = (0.0, 0.2)
+REQUEST_REPLY_JITTER_RANGE = (0.0, 0.1)
 
 
 class CHIRPEvent(Enum):
