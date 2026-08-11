@@ -11,14 +11,13 @@ belongs to higher layers such as AsyncCMDPListener.
 """
 
 import asyncio
-import logging
 from collections.abc import Callable
 from uuid import UUID
 
 import zmq
 import zmq.asyncio
 
-_log = logging.getLogger(__name__)
+from constellation.core.chirp import get_uuid
 
 
 class AsyncBasePool:
@@ -113,8 +112,6 @@ class AsyncBasePool:
                         self._callback(uuid, msg)
                 except zmq.ZMQError:
                     pass
-                except Exception:
-                    _log.exception("Unhandled error dispatching message from %s", uuid)
 
     def close(self) -> None:
         """Close all sockets and clear internal state."""
@@ -154,8 +151,6 @@ class AsyncSubscriberPool(AsyncBasePool):
             self._scribe_all(topic, zmq.SUBSCRIBE)
         else:
             if isinstance(host, str):
-                from constellation.core.chirp import get_uuid
-
                 host = get_uuid(host)
             self._scribe_one(host, topic, zmq.SUBSCRIBE)
 
@@ -165,8 +160,6 @@ class AsyncSubscriberPool(AsyncBasePool):
             self._scribe_all(topic, zmq.UNSUBSCRIBE)
         else:
             if isinstance(host, str):
-                from constellation.core.chirp import get_uuid
-
                 host = get_uuid(host)
             self._scribe_one(host, topic, zmq.UNSUBSCRIBE)
 

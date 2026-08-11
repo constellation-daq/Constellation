@@ -21,6 +21,7 @@ from constellation.core.controller import SatelliteUpdate
 from constellation.core.controller_configuration import ControllerConfiguration
 from constellation.core.logging import setup_cli_logging
 from constellation.core.message.cscp1 import CSCP1Message
+from constellation.core.protocol.cscp1 import TransitionCommand
 
 
 class AsyncBaseController(AsyncMonitoringListener, AsyncHeartbeatChecker):
@@ -41,8 +42,8 @@ class AsyncBaseController(AsyncMonitoringListener, AsyncHeartbeatChecker):
         self._transmitter_uuids: dict[UUID, str] = {}
         self._cscp_locks: dict[str, asyncio.Lock] = {}
         self._satellite_commands: dict[str, dict[str, str]] = {}
-        # In-flight _setup_transmitter tasks keyed by host_id, allowing
-        # SERVICE_DISCONNECTED to cancel mid-setup tasks safely.
+        # In-flight _setup_transmitter tasks keyed by host_id, cancelled
+        # on SERVICE_DISCONNECTED to prevent stale sockets.
         self._pending_setups: dict[UUID, asyncio.Task] = {}
 
         self.register_chirp_callback("basecontroller_control", self._on_control_service)
@@ -104,6 +105,23 @@ class AsyncBaseController(AsyncMonitoringListener, AsyncHeartbeatChecker):
             response_frames = await sock.recv_multipart()
         return CSCP1Message.disassemble(response_frames)
 
+    def _resolve_targets(self, satcls: str, sat: str) -> list[str]:
+        """Resolve command targets.
+
+        If both are empty, targets all connected satellites.
+        If only satcls is given, targets all satellites of that type.
+        If both are given, targets a single satellite.
+        """
+        if not satcls and not sat:
+            return list(self._transmitters.keys())
+        if satcls and not sat:
+            prefix = f"{satcls}."
+            return [k for k in self._transmitters if k.startswith(prefix)]
+        canonical_name = f"{satcls}.{sat}".strip(".")
+        if canonical_name in self._transmitters:
+            return [canonical_name]
+        return []
+
     async def command(
         self,
         cmd: str,
@@ -114,38 +132,57 @@ class AsyncBaseController(AsyncMonitoringListener, AsyncHeartbeatChecker):
     ) -> CSCP1Message:
         """Send a CSCP command on the event loop and return the raw response.
 
-        Callers should check verb_type (SUCCESS, INVALID, etc.) and inspect
-        payload structurally rather than pattern matching on verb_msg strings,
-        which are human readable and may change between versions.
+        Targets can be a single satellite, all satellites of a type, or
+        all connected satellites depending on which of sat and satcls are
+        provided. When targeting multiple satellites, returns the last
+        response.
 
         A per satellite lock serialises REQ/REP exchanges so concurrent
         commands to different satellites proceed in parallel. If a satellite
         fails to respond within timeout seconds, its socket is torn down
-        (a ZMQ REQ socket cannot be reused after an abandoned recv) and a
-        TimeoutError is raised.
-
-        Raises ValueError if both sat and satcls are empty.
-        Raises RuntimeError if no transmitter is connected for the target.
-        Raises TimeoutError if the satellite does not respond in time.
+        and a TimeoutError is raised.
         """
-        key = f"{satcls}.{sat}".strip(".")
-        if not key:
-            raise ValueError("satcls and sat must be provided (e.g. satcls='PyRandomTransmitter', sat='Sat1')")
-        sock = self._transmitters.get(key)
-        if sock is None:
-            raise RuntimeError(f"No transmitter for {key}")
-        lock = self._cscp_locks.setdefault(key, asyncio.Lock())
-        payload = self._preprocess_payload(payload, key, cmd)
-        try:
-            return await asyncio.wait_for(
-                self._cscp_request(sock, cmd, payload, lock),
-                timeout=timeout,
-            )
-        except TimeoutError:
-            self._teardown_transmitter(key)
-            raise
+        targets = self._resolve_targets(satcls, sat)
+        if not targets:
+            canonical_name = f"{satcls}.{sat}".strip(".")
+            raise RuntimeError(f"No transmitter for {canonical_name or 'any satellite'}")
 
-    def _preprocess_payload(self, payload: Any, key: str, cmd: str) -> Any:
+        is_transition = cmd in [t.name for t in TransitionCommand]
+
+        last_response: CSCP1Message | None = None
+        for canonical_name in targets:
+            sock = self._transmitters.get(canonical_name)
+            if sock is None:
+                continue
+            lock = self._cscp_locks.setdefault(canonical_name, asyncio.Lock())
+            processed = self._preprocess_payload(payload, canonical_name, cmd)
+
+            # Mark heartbeat state as outdated for transition commands
+            hb = self._hb_receiver._states.get(
+                next((u for u, n in self._transmitter_uuids.items() if n == canonical_name), None)
+            )
+            if is_transition and hb is not None:
+                hb.outdated = True
+
+            try:
+                last_response = await asyncio.wait_for(
+                    self._cscp_request(sock, cmd, processed, lock),
+                    timeout=timeout,
+                )
+            except TimeoutError:
+                if hb is not None:
+                    hb.outdated = False
+                self._cleanup_transmitter(canonical_name)
+                raise
+
+            # Reset outdated flag if the command was not accepted
+            if hb is not None and is_transition:
+                if last_response.verb_type != CSCP1Message.Type.SUCCESS:
+                    hb.outdated = False
+
+        return last_response  # type: ignore[return-value]
+
+    def _preprocess_payload(self, payload: Any, canonical_name: str, cmd: str) -> Any:
         """Pre-process payload for initialize and reconfigure commands.
 
         Accepts a plain dict, Configuration, or ControllerConfiguration
@@ -153,17 +190,17 @@ class AsyncBaseController(AsyncMonitoringListener, AsyncHeartbeatChecker):
         """
         if cmd in ("initialize", "reconfigure"):
             if isinstance(payload, ControllerConfiguration):
-                payload = payload.get_satellite_configuration(key)
-            elif payload is None or isinstance(payload, dict):
-                payload = Configuration(payload or {})
+                payload = payload.get_satellite_configuration(canonical_name)
+            elif isinstance(payload, dict):
+                payload = Configuration(payload)
             elif not isinstance(payload, Configuration):
                 raise RuntimeError("Payload needs to be a dictionary, configuration or controller configuration")
             return payload._dictionary
         return payload
 
-    def get_cached_commands(self, key: str) -> dict[str, str]:
-        """Return cached get_commands payload for a satellite, or {} if unknown."""
-        return self._satellite_commands.get(key, {})
+    def get_available_cscp_commands(self, canonical_name: str) -> dict[str, str]:
+        """Return advertised commands for a satellite, or {} if unknown."""
+        return self._satellite_commands.get(canonical_name, {})
 
     def _on_satellite_update(self, name: str, update_type: SatelliteUpdate) -> None:
         """Called on satellite connect/disconnect. Override in subclass."""
@@ -189,7 +226,7 @@ class AsyncBaseController(AsyncMonitoringListener, AsyncHeartbeatChecker):
                 timeout=5.0,
             )
         except asyncio.CancelledError:
-            # Cancelled by SERVICE_DISCONNECTED during setup; close and propagate.
+            # Cancelled via _pending_setups on SERVICE_DISCONNECTED
             sock.close()
             raise
         except Exception:
@@ -202,37 +239,26 @@ class AsyncBaseController(AsyncMonitoringListener, AsyncHeartbeatChecker):
         self._satellite_commands[canonical_name] = msg.payload if isinstance(msg.payload, dict) else {}
         self._on_satellite_update(canonical_name, SatelliteUpdate.ADDED)
 
-    def _cleanup_transmitter(self, uuid: UUID) -> None:
-        """Remove and close a CSCP socket on satellite departure."""
-        canonical_name = self._transmitter_uuids.pop(uuid, None)
-        if canonical_name is None:
-            return
+    def _cleanup_transmitter(self, satellite: UUID | str) -> None:
+        """Remove and close a CSCP socket by UUID or canonical name."""
+        if isinstance(satellite, UUID):
+            canonical_name = self._transmitter_uuids.pop(satellite, None)
+            if canonical_name is None:
+                return
+        else:
+            canonical_name = satellite
+            uuid = next(
+                (u for u, name in self._transmitter_uuids.items() if name == canonical_name),
+                None,
+            )
+            if uuid is not None:
+                self._transmitter_uuids.pop(uuid, None)
         sock = self._transmitters.pop(canonical_name, None)
         self._cscp_locks.pop(canonical_name, None)
         self._satellite_commands.pop(canonical_name, None)
         if sock is not None:
             sock.close()
             self._on_satellite_update(canonical_name, SatelliteUpdate.REMOVED)
-
-    def _teardown_transmitter(self, key: str) -> None:
-        """Tear down a transmitter by canonical name after a timeout.
-
-        A ZMQ REQ socket cannot be reused once a reply is abandoned
-        mid-flight, so we must close it entirely. The satellite will
-        need to be rediscovered via CHIRP to reconnect.
-        """
-        sock = self._transmitters.pop(key, None)
-        self._cscp_locks.pop(key, None)
-        self._satellite_commands.pop(key, None)
-        uuid = next(
-            (u for u, name in self._transmitter_uuids.items() if name == key),
-            None,
-        )
-        if uuid is not None:
-            self._transmitter_uuids.pop(uuid, None)
-        if sock is not None:
-            sock.close()
-            self._on_satellite_update(key, SatelliteUpdate.REMOVED)
 
     async def shutdown(self) -> None:
         """Shut down all components.

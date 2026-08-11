@@ -35,6 +35,7 @@ class HeartbeatState:
     lives: int = 3
     role: CHPRole = CHPRole.DYNAMIC
     status: str = ""
+    outdated: bool = False
 
     def refresh(self) -> None:
         self.last_refresh = time.monotonic()
@@ -85,18 +86,18 @@ class AsyncHeartbeatReceiver:
         )
         self._name_to_uuid[name] = uuid
 
-    def remove_satellite(self, uuid: UUID) -> None:
+    def remove_satellite(self, satellite: UUID | str) -> None:
         """Deregister a satellite and close its socket."""
+        if not isinstance(satellite, UUID):
+            uuid = self._name_to_uuid.get(satellite)
+            if not uuid:
+                return
+        else:
+            uuid = satellite
         self._pool.remove_socket(uuid)
         hb = self._states.pop(uuid, None)
         if hb is not None:
             self._name_to_uuid.pop(hb.name, None)
-
-    def remove_by_name(self, name: str) -> None:
-        """Remove a satellite from tracking by name if known."""
-        uuid = self._name_to_uuid.get(name)
-        if uuid is not None:
-            self.remove_satellite(uuid)
 
     def remove_on_departure(self, uuid: UUID) -> None:
         """Deregister a satellite on explicit CHIRP departure.
@@ -164,14 +165,14 @@ class AsyncHeartbeatReceiver:
 
         # Check for ERROR or SAFE state with TRIGGER_INTERRUPT flag
         call_interrupt = False
-        if hb.lives > 0 and state in (SatelliteState.ERROR, SatelliteState.SAFE):
-            hb.lives = 0
+        if state in (SatelliteState.ERROR, SatelliteState.SAFE):
             call_interrupt = self._on_heartbeat_interrupt is not None and bool(flags & CHPMessageFlags.TRIGGER_INTERRUPT)
 
         state_changed = state != hb.state
         if state_changed:
             hb.state = state
             hb.last_statechange = datetime.now()
+            hb.outdated = False
 
         if (state_changed or renamed) and self._on_state_change:
             self._on_state_change(name, old_state, hb.state)
@@ -182,10 +183,9 @@ class AsyncHeartbeatReceiver:
         if status:
             hb.status = status
 
-        # Replenish lives only for non-error states
-        if state not in (SatelliteState.ERROR, SatelliteState.SAFE):
-            if hb.lives != self.INIT_LIVES:
-                hb.lives = self.INIT_LIVES
+        # Replenish lives on heartbeat receipt regardless of state
+        if hb.lives != self.INIT_LIVES:
+            hb.lives = self.INIT_LIVES
 
         if call_interrupt:
             self._on_heartbeat_interrupt(f"{hb.name} reports state {state.name}")
@@ -265,9 +265,9 @@ class AsyncHeartbeatChecker(BaseSatelliteFrame):
         """Deregister a satellite from heartbeat tracking on explicit departure."""
         self._hb_receiver.remove_on_departure(uuid)
 
-    def forget_heartbeat_host(self, name: str) -> None:
+    def forget_heartbeat_host(self, satellite: str) -> None:
         """Remove a satellite from heartbeat tracking by name immediately."""
-        self._hb_receiver.remove_by_name(name)
+        self._hb_receiver.remove_satellite(satellite)
 
     @property
     def heartbeat_states(self) -> case_insensitive_dict[SatelliteState]:
