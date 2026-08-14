@@ -55,6 +55,7 @@ tools_files = files(
   'tools/__init__.py',
   'tools/discover_plugins.py',
   'tools/controller.py',
+  'tools/async_controller.py',
   'tools/monitor.py',
 )
 
@@ -92,6 +93,7 @@ core_async_experimental_files = files(
   'core/async_experimental/async_basecontroller.py',
   'core/async_experimental/async_chirp.py',
   'core/async_experimental/async_cmdplistener.py',
+  'core/async_experimental/async_controller.py',
   'core/async_experimental/async_heartbeat.py',
   'core/async_experimental/async_monitoringlistener.py',
   'core/async_experimental/async_pools.py',

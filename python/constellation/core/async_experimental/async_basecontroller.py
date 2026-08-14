@@ -6,6 +6,7 @@ Async base and scriptable controller framework classes.
 """
 
 import asyncio
+from datetime import UTC
 from typing import Any
 from uuid import UUID
 
@@ -183,19 +184,26 @@ class AsyncBaseController(AsyncMonitoringListener, AsyncHeartbeatChecker):
         return last_response  # type: ignore[return-value]
 
     def _preprocess_payload(self, payload: Any, canonical_name: str, cmd: str) -> Any:
-        """Pre-process payload for initialize and reconfigure commands.
+        """Pre-process payload for specific commands.
 
-        Accepts a plain dict, Configuration, or ControllerConfiguration
-        and returns a plain dict suitable for CSCP transmission.
+        Translates None, dict, Configuration and ControllerConfiguration into
+        the format expected by the CSCP protocol. Generates a run ID for start
+        if no payload is given.
         """
         if cmd in ("initialize", "reconfigure"):
-            if isinstance(payload, ControllerConfiguration):
+            if payload is None:
+                payload = Configuration({})
+            elif isinstance(payload, ControllerConfiguration):
                 payload = payload.get_satellite_configuration(canonical_name)
             elif isinstance(payload, dict):
                 payload = Configuration(payload)
             elif not isinstance(payload, Configuration):
                 raise RuntimeError("Payload needs to be a dictionary, configuration or controller configuration")
             return payload._dictionary
+        if cmd == "start" and payload is None:
+            from datetime import datetime
+
+            payload = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         return payload
 
     def get_available_cscp_commands(self, canonical_name: str) -> dict[str, str]:
