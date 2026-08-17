@@ -46,8 +46,8 @@ The following parameters are read and interpreted by this satellite. Parameters 
 | `file_path` | String | Path to the target log file | - |
 | `allow_overwriting` | Boolean | Flag to allow or deny overwriting of existing log files | `false` |
 | `global_recording_level` | String | Global log level to be recorded by this satellite | `WARNING` |
-| `subscribe_topics` | Section with individual log topics and the respective subscription log level. | Section | {`OP`: `INFO`} |
-| `ignore_topics` | Ignore log messages with certain topics | list of strings | - |
+| `subscribe_topics` | Section | Section with individual log topics and the respective subscription log level. | {`OP`: `INFO`} |
+| `ignore_topics` | List of strings | Ignore log messages with certain topics | - |
 | `flush_period` | Integer | Period in seconds after which log messages are regularly flushed to storage | `10` |
 | `rotate_max_files` | Integer | Maximum number of files to be user for rotating. Only used for `method = "ROTATE"` | `10` |
 | `rotate_filesize` | Integer | Maximum file size Mb after which the log is rotated. Only used for `method = "ROTATE"` | `100` |
