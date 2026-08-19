@@ -146,7 +146,7 @@ CRITICAL  Sputnik.One  Critical failure: Could not convert value of type `string
 
 When a satellite enters {bdg-secondary}`ERROR`, its satellite card turns red and the header bar reflects the mixed
 state. The satellite can be recovered by correcting the configuration file and clicking {bdg-primary}`Initialize`
-again — either on the individual satellite card, or globally via the control panel. Satellites already in
+again (either on the individual satellite card, or globally via the control panel). Satellites already in
 {bdg-secondary}`INIT` will be re-initialized with the corrected configuration as well.
 
 ```{tip}
@@ -234,7 +234,7 @@ and unpinning all metrics reverts to receiving all available metrics.
 ## Multiple Clients
 
 WebControl supports multiple simultaneous browser clients. All clients receive state updates, log entries, and
-metrics in real time. Commands sent from any client are executed on the same Constellation — there is no isolation
+metrics in real time. Commands sent from any client are executed on the same Constellation; there is no isolation
 between clients.
 
 Each client maintains its own log level filter, sender filter, and metric subscriptions independently.
@@ -249,13 +249,13 @@ section documents the message types for developers building alternative clients 
 | Message type          | Fields                            | Description                                 |
 | --------------------- | --------------------------------- | ------------------------------------------- |
 | `command`             | `satellite`, `command`, `payload` | Send a CSCP command to a satellite          |
-| `ping`                | —                                 | Heartbeat check; server replies with `pong` |
-| `list_configs`        | —                                 | Request available configuration files       |
+| `ping`                | (none)                                 | Heartbeat check; server replies with `pong` |
+| `list_configs`        | (none)                                 | Request available configuration files       |
 | `get_commands`        | `satellite`                       | Request advertised commands for a satellite |
 | `subscribe_logs`      | `min_level`, `topics`, `senders`  | Adjust log subscription                     |
-| `unsubscribe_logs`    | —                                 | Stop receiving logs                         |
+| `unsubscribe_logs`    | (none)                                 | Stop receiving logs                         |
 | `subscribe_metrics`   | `names`, `senders`                | Adjust metric subscription                  |
-| `unsubscribe_metrics` | —                                 | Stop receiving metrics                      |
+| `unsubscribe_metrics` | (none)                                 | Stop receiving metrics                      |
 
 ### Server to Client
 
@@ -268,10 +268,17 @@ section documents the message types for developers building alternative clients 
 | `commands`          | `satellite`, `commands`                                             | Advertised commands for a satellite                       |
 | `config_list`       | `files`                                                             | Available configuration files                             |
 | `config_list_error` | `message`                                                           | Error listing configuration files                         |
-| `pong`              | —                                                                   | Reply to `ping`                                           |
+| `pong`              | (none)                                                                   | Reply to `ping`                                           |
 
 ```{note}
 The `state` message is sent immediately upon connection, providing the client with the current state of all
 satellites. Subsequent `state` messages are sent whenever a satellite's state changes or a satellite is
 discovered or departs.
+```
+
+```{seealso}
+The full WebSocket protocol reference with payload schemas and subscription architecture is available in the
+[WebController repository](https://gitlab.desy.de/constellation/webcontroller/-/blob/main/docs/protocol.md).
+A developer guide for extending the frontend and backend is also available in the
+[same repository](https://gitlab.desy.de/constellation/webcontroller/-/blob/main/docs/developer_guide.md).
 ```

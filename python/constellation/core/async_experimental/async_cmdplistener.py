@@ -51,16 +51,16 @@ class AsyncCMDPListener:
         # Global subscriptions tracked as a set of topic strings
         self._subscribed_topics: set[str] = set()
 
-        # Per-host extra subscriptions: canonical_name -> set of topics
+        # Per-host extra subscriptions, keyed by canonical name
         self._extra_subscribed_topics: dict[str, set[str]] = {}
 
-        # Available topics from notifications: canonical_name -> {topic: description}
+        # Available topics from notifications, keyed by canonical name
         self._available_topics: dict[str, dict[str, str]] = {}
 
         # Map host_id (UUID) to canonical name for host_connected/disconnected
         self._host_names: dict[UUID, str] = {}
 
-    # -- Global topic management --
+    # Global topic management
 
     def subscribe_topic(self, topic: str) -> None:
         """Subscribe to a topic on all sockets."""
@@ -105,7 +105,7 @@ class AsyncCMDPListener:
         """Return the set of currently subscribed global topics."""
         return set(self._subscribed_topics)
 
-    # -- Per-satellite extra topic management --
+    # Per-satellite extra topic management
 
     def subscribe_extra_topic(self, host: str, topic: str) -> None:
         """Subscribe to an extra topic for a specific host."""
@@ -169,7 +169,7 @@ class AsyncCMDPListener:
                         self._pool.unsubscribe(topic, host_name)
             self._extra_subscribed_topics.clear()
 
-    # -- Available topic tracking --
+    # Available topic tracking
 
     def get_available_topics(self, sender: str | None = None) -> dict[str, str]:
         """Return available topics, optionally filtered by sender."""
@@ -192,7 +192,7 @@ class AsyncCMDPListener:
         """Check if a sender is known."""
         return sender in self._available_topics
 
-    # -- CHIRP integration (called by AsyncMonitoringListener) --
+    # CHIRP integration (called by AsyncMonitoringListener)
 
     def on_host_connected(self, uuid: UUID, canonical_name: str | None = None) -> None:
         """Subscribe a newly connected socket to all applicable topics.
@@ -227,7 +227,7 @@ class AsyncCMDPListener:
             del self._available_topics[name]
             self.sender_disconnected(name)
 
-    # -- Message handling (called from pool callback) --
+    # Message handling (called from pool callback)
 
     def handle_message(self, uuid: UUID, frames: list[bytes]) -> None:
         """Decode a raw CMDP multipart message and route it.
@@ -290,7 +290,7 @@ class AsyncCMDPListener:
         if new_topic:
             self.topics_changed(sender)
 
-    # -- Hooks for subclasses --
+    # Hooks for subclasses
 
     def topics_changed(self, sender: str) -> None:
         """Called when a sender's available topic list changes. Override in subclass."""
