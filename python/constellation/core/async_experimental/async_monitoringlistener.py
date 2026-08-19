@@ -85,14 +85,14 @@ class AsyncMonitoringListener(AsyncCHIRPManager):
         super()._add_com_task()
         self._com_task_factories.append(self._cmdp_pool.run)
 
-    # -- Raw message dispatch (pool callback -> CMDP listener) --
+    # Raw message dispatch (pool callback to CMDP listener)
 
     def _on_raw_cmdp_message(self, uuid: UUID, frames: list[bytes]) -> None:
         """Route raw multipart frames through the CMDP listener for
         subscription tracking and notification interception."""
         self._cmdp_listener.handle_message(uuid, frames)
 
-    # -- Decoded message dispatch (CMDP listener callback) --
+    # Decoded message dispatch (CMDP listener callback)
 
     def _on_cmdp_message(self, msg: CMDP1Message) -> None:
         """Decode and dispatch a regular (non-notification) CMDP message."""
@@ -111,7 +111,7 @@ class AsyncMonitoringListener(AsyncCHIRPManager):
         except MessageDecodingError as e:
             self.log.debug("Failed to decode CMDP message: %s", e)
 
-    # -- CHIRP integration --
+    # CHIRP integration
 
     def _on_monitoring_service(self, event: CHIRPEvent, service: DiscoveredService) -> None:
         """Handle MONITORING service connect/disconnect."""
@@ -124,7 +124,7 @@ class AsyncMonitoringListener(AsyncCHIRPManager):
             self._cmdp_listener.on_host_disconnected(service.host_id)
             self._cmdp_pool.remove_socket(service.host_id)
 
-    # -- Global log subscription API --
+    # Global log subscription API
 
     def set_global_log_level(self, level: str) -> None:
         """Subscribe to all log messages at the given level and above.
@@ -155,7 +155,7 @@ class AsyncMonitoringListener(AsyncCHIRPManager):
         all_levels = _generate_log_topics(log_topic, "TRACE", subscribe=True)
         self._cmdp_listener.multiscribe_topics(all_levels, [])
 
-    # -- Per-satellite log subscription API --
+    # Per-satellite log subscription API
 
     def subscribe_extra_log_topic(self, host: str, log_topic: str, level: str) -> None:
         """Subscribe to a log topic at the given level for a specific host."""
@@ -168,7 +168,7 @@ class AsyncMonitoringListener(AsyncCHIRPManager):
         all_levels = _generate_log_topics(log_topic, "TRACE", subscribe=True)
         self._cmdp_listener.multiscribe_extra_topics(host, all_levels, [])
 
-    # -- Global metric subscription API --
+    # Global metric subscription API
 
     def subscribe_metric(self, metric: str, host: str | None = None) -> None:
         """Subscribe to a metric topic, globally or for a specific host."""
@@ -194,7 +194,7 @@ class AsyncMonitoringListener(AsyncCHIRPManager):
             raw = self._cmdp_listener.get_extra_topic_subscriptions(host)
         return {t[5:] for t in raw if t.startswith("STAT/") and t != "STAT?"}
 
-    # -- Available topics and senders (delegated to CMDP listener) --
+    # Available topics and senders (delegated to CMDP listener)
 
     def get_available_topics(self, sender: str | None = None) -> dict[str, str]:
         """Return available CMDP topics, optionally filtered by sender."""
@@ -204,7 +204,7 @@ class AsyncMonitoringListener(AsyncCHIRPManager):
         """Return the set of known CMDP senders."""
         return self._cmdp_listener.get_available_senders()
 
-    # -- Backward-compatible set_topics passthrough --
+    # Backward-compatible set_topics passthrough
 
     def set_topics(self, topics: list[str]) -> None:
         """Replace all global subscriptions.
@@ -218,7 +218,7 @@ class AsyncMonitoringListener(AsyncCHIRPManager):
         to_sub = list(new_set - current)
         self._cmdp_listener.multiscribe_topics(to_unsub, to_sub)
 
-    # -- Callbacks for subclasses --
+    # Callbacks for subclasses
 
     def receive_log(self, record: logging.LogRecord) -> None:
         """Called when a log message arrives. Override in subclass."""
