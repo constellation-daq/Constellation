@@ -14,9 +14,6 @@ issue in the network communication:
 * The communication is **routed over the wrong network** interface. When starting Constellation nodes, the `-i`/`--interface` command line argument can be used to restrict communication to one or several network interfaces. Command line arguments are documented in the [Satellite section](../concepts/satellite.md#the-satellite-executable).
 :::
 
-:::{dropdown} Satellites on macOS cannot access the network
-:::
-
 ## Configuration
 
 :::{dropdown} MissionControl warns about satellites not found in configuration file
