@@ -21,7 +21,6 @@ from .commandmanager import cscp_requestable
 from .configuration import Configuration, InvalidValueError
 from .error import debug_log, handle_error
 from .heartbeatchecker import HeartbeatChecker
-from .message.cscp1 import CSCP1Message
 from .protocol.cscp1 import SatelliteState, is_valid_canonical_name
 
 
@@ -156,22 +155,11 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
             del self.fsm.state_callbacks[callback_id]
 
     @debug_log
-    @cscp_requestable()
-    def initialize(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
-        """Initiate 'initialize' state transition via a CSCP request.
-
-        Takes dictionary with configuration values as argument.
-
-        If the transition is not allowed, TransitionNotAllowed will be thrown by
-        the FSM.
-
-        """
-        if not isinstance(request.payload, dict):
-            # missing payload
-            raise TypeError("Payload must be a dictionary with configuration values")
-
+    @cscp_requestable(unpack_list=False)
+    def initialize(self, config_dict: dict) -> tuple[str, Any, dict[str, Any]]:
+        """Initiate 'initialize' state transition via a CSCP request."""
         # prepare configuration
-        config = Configuration(request.payload)
+        config = Configuration(config_dict)
 
         # Clear conditions
         self.conditions = defaultdict(list)
@@ -213,111 +201,62 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable()
-    def launch(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
-        """Initiate launch state transition via a CSCP request.
-
-        No payload argument.
-
-        If the transition is not allowed, TransitionNotAllowed will be thrown by
-        the FSM.
-
-        """
-        return self._transition("launch", request.payload, thread=False)
+    def launch(self) -> tuple[str, Any, dict[str, Any]]:
+        """Initiate launch state transition via a CSCP request."""
+        return self._transition("launch", None, thread=False)
 
     @debug_log
     @cscp_requestable()
-    def land(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
-        """Initiate landing state transition via a CSCP request.
-
-        No payload argument.
-
-        If the transition is not allowed, TransitionNotAllowed will be thrown by
-        the FSM.
-
-        """
-        return self._transition("land", request.payload, thread=False)
+    def land(self) -> tuple[str, Any, dict[str, Any]]:
+        """Initiate landing state transition via a CSCP request."""
+        return self._transition("land", None, thread=False)
 
     @debug_log
-    @cscp_requestable()
-    def start(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
-        """Initiate start state transition via a CSCP request.
-
-        Payload: run identifier [str].
-
-        If the transition is not allowed, TransitionNotAllowed will be thrown by
-        the FSM.
-
-        """
-        if not isinstance(request.payload, str):
-            # missing/wrong payload
-            raise TypeError("Payload must be a run identification string")
+    @cscp_requestable(unpack_list=False)
+    def start(self, run_identifier: str) -> tuple[str, Any, dict[str, Any]]:
+        """Initiate start state transition via a CSCP request."""
         # Check that the run identifier is valid:
-        if not re.match(r"^[\w-]+$", request.payload):
+        if not re.match(r"^[\w-]+$", run_identifier):
             raise ValueError("Run identifier contains invalid characters")
-        return self._transition("start", request.payload, thread=True)
+        return self._transition("start", run_identifier, thread=True)
 
     @debug_log
     @cscp_requestable()
-    def stop(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
-        """Initiate stop state transition via a CSCP request.
-
-        No payload argument.
-
-        If the transition is not allowed, TransitionNotAllowed will be thrown by
-        the FSM.
-
-        """
+    def stop(self) -> tuple[str, Any, dict[str, Any]]:
+        """Initiate stop state transition via a CSCP request."""
         # NOTE This transition must not be threaded as it is intended to stop
         # the acquisition thread (which does not stop on its own). If
         # thread=True then it would be added as another worker thread and
         # potentially never started.
-        return self._transition("stop", request.payload, thread=False)
+        return self._transition("stop", None, thread=False)
 
     @debug_log
-    def reconfigure(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
-        """Initiate reconfigure state transition via a CSCP request.
-
-        Takes dictionary with configuration values as argument.
-
-        If the transition is not allowed, TransitionNotAllowed will be thrown by
-        the FSM.
-
-        """
+    def reconfigure(self, config_dict: dict) -> tuple[str, Any, dict[str, Any]]:
+        """Initiate reconfigure state transition via a CSCP request."""
         if not hasattr(self, "do_reconfigure"):
             raise NotImplementedError("Reconfigure not supported: missing function 'do_reconfigure'")
-        if not isinstance(request.payload, dict):
-            # missing payload
-            raise TypeError("Payload must be a dictionary with configuration values")
 
-        partial_config = Configuration(request.payload)
+        partial_config = Configuration(config_dict)
 
         return self._transition("reconfigure", partial_config, thread=False)
 
     @debug_log
     @cscp_requestable()
-    def _interrupt(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
+    def _interrupt(self) -> tuple[str, Any, dict[str, Any]]:
         """Initiate interrupt state transition via a CSCP request.
 
-        No payload argument.
-
-        If the transition is not allowed, TransitionNotAllowed will be thrown by
-        the FSM.
-
+        This is intended for debugging purposes only and should not be called in normal operation.
         """
-        return self._transition("interrupt", request.payload, thread=False)
+        return self._transition("interrupt", None, thread=False)
 
     @debug_log
     @cscp_requestable()
-    def _failure(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
+    def _failure(self) -> tuple[str, Any, dict[str, Any]]:
         """Enter error state transition via a CSCP request.
 
-        No payload argument.
-
-        This is intended for debugging purposes only and should not be called in
-        normal operation.
-
+        This is intended for debugging purposes only and should not be called in normal operation.
         """
-        return self._transition("failure", request.payload, thread=False)
+        return self._transition("failure", None, thread=False)
 
     @handle_error
     def _satisfy_remote_conditions(self) -> None:
@@ -470,13 +409,8 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
                 self.fsm.status = res
 
     @cscp_requestable()
-    def get_state(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
-        """Return the current state of the Satellite.
-
-        No payload argument.
-
-        Payload of the response contains 'last_changed'
-        """
+    def get_state(self) -> tuple[str, Any, dict[str, Any]]:
+        """Return the current state of the Satellite."""
         payload = self.fsm.state.value
         meta = {
             "last_changed": self.fsm.last_changed,
@@ -485,10 +419,6 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         return self.fsm.state.name, payload, meta
 
     @cscp_requestable()
-    def get_status(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
-        """Get a string describing the current status of the Satellite.
-
-        No payload argument.
-
-        """
+    def get_status(self) -> tuple[str, Any, dict[str, Any]]:
+        """Get a string describing the current status of the Satellite."""
         return self.fsm.status, None, {}

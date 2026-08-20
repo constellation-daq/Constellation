@@ -8,7 +8,6 @@ from typing import Any
 
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.message.cdtp2 import DataRecord
-from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.receiver_satellite import ReceiverSatellite
 
 
@@ -33,7 +32,7 @@ class PyDevNullReceiver(ReceiverSatellite):
         self.log.status(f"Received {gigabyte_received:.2g} GB in {run_duration:.0f}s ({self.data_rate:.3g} Gbps)")
 
     @cscp_requestable()
-    def get_data_rate(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
+    def get_data_rate(self) -> tuple[str, Any, dict[str, Any]]:
         return f"{self.data_rate:.3g} Gbps", self.data_rate, {}
 
     def receive_bor(self, sender: str, user_tags: dict[str, Any], configuration: dict[str, Any]) -> None:

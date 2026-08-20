@@ -333,16 +333,12 @@ class CommandReceiver(BaseSatelliteFrame):
         self._cmds[method] = doc
 
     @cscp_requestable()
-    def get_commands(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
+    def get_commands(self) -> tuple[str, Any, dict[str, Any]]:
         """Return all commands supported by the Satellite.
 
-        No payload argument.
-
-        This will include all methods with the `@cscp_requestable()` decorator. The
-        doc string of the function will be used to derive the summary and
-        payload argument description for each command by using the first and the
-        second line of the doc string, respectively (not counting empty lines).
-
+        This will include all methods with the ``@cscp_requestable()`` decorator.
+        The doc string of the function will be used to derive the summary and payload argument description for each
+        command by using the first and the second line of the doc string, respectively (not counting empty lines).
         """
         public_cmds: dict[str, str] = {}
         for key in self._cmds:
@@ -357,16 +353,12 @@ class CommandReceiver(BaseSatelliteFrame):
         return f"{len(public_cmds)} commands known", public_cmds, {}
 
     @cscp_requestable()
-    def _get_commands(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
+    def _get_commands(self) -> tuple[str, Any, dict[str, Any]]:
         """Return all hidden commands supported by the Satellite.
 
-        No payload argument.
-
-        This will include all methods with the @cscp_requestable() decorator starting with an underscore. The
-        doc string of the function will be used to derive the summary and payload argument description for
-        each command by using the first and the second line of the doc string, respectively (not counting
-        empty lines).
-
+        This will include all methods with the ``@cscp_requestable()`` decorator starting with an underscore.
+        The doc string of the function will be used to derive the summary and payload argument description for each
+        command by using the first and the second line of the doc string, respectively (not counting empty lines).
         """
         hidden_cmds: dict[str, str] = {}
         for key in self._cmds:
@@ -381,10 +373,6 @@ class CommandReceiver(BaseSatelliteFrame):
         return f"{len(hidden_cmds)} commands known", hidden_cmds, {}
 
     @cscp_requestable()
-    def get_name(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
-        """Return the canonical name of the Satellite.
-
-        No payload argument.
-
-        """
+    def get_name(self) -> tuple[str, Any, dict[str, Any]]:
+        """Return the canonical name of the Satellite."""
         return self.name, None, {}

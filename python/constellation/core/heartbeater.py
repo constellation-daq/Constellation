@@ -13,7 +13,6 @@ import zmq
 from .chp import CHPMessageFlags, CHPRole, CHPTransmitter
 from .commandmanager import cscp_requestable
 from .fsm import SatelliteStateHandler
-from .message.cscp1 import CSCP1Message
 from .protocol.cscp1 import SatelliteState
 
 
@@ -135,9 +134,6 @@ class HeartbeatSender(SatelliteStateHandler):
         self._hb_tm.close()
 
     @cscp_requestable()
-    def get_role(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
-        """Return the current role of the Satellite.
-
-        No payload argument.
-        """
+    def get_role(self) -> tuple[str, Any, dict[str, Any]]:
+        """Return the current role of the Satellite."""
         return self._role.name, self._role.flags().value, {}

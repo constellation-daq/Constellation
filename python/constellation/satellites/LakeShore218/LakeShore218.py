@@ -14,7 +14,6 @@ import pyvisa.constants
 
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
-from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.protocol.cscp1 import SatelliteState, states_except
 from constellation.core.satellite import Satellite
 
@@ -69,12 +68,7 @@ class LakeShore218(Satellite):
         return None
 
     @cscp_requestable(states_except([SatelliteState.NEW, SatelliteState.initializing, SatelliteState.ERROR]))
-    def get_temp(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
-        channel = 0
-        try:
-            channel = int(request.payload[0])
-        except (TypeError, ValueError) as e:
-            raise Exception("Requires channel number as parameter") from e
+    def get_temp(self, channel: int) -> tuple[str, Any, dict[str, Any]]:
         if channel < 1 or channel > 8:
             raise Exception(f"Channel {channel} does not exist")
         temp = self._get_temp(channel)

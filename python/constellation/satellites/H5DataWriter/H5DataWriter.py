@@ -18,7 +18,6 @@ from constellation.core import __version__
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
 from constellation.core.message.cdtp2 import DataRecord
-from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.monitoring import schedule_metric
 from constellation.core.receiver_satellite import ReceiverSatellite
 
@@ -284,7 +283,6 @@ class H5DataWriter(ReceiverSatellite):
     @cscp_requestable()
     def get_concurrent_reading_status(
         self,
-        _request: CSCP1Message,
     ) -> tuple[str, Any, dict[str, Any]]:
         """Get if concurrent reading is enabled"""
         if self.swmr_mode:
@@ -296,7 +294,6 @@ class H5DataWriter(ReceiverSatellite):
     @cscp_requestable()
     def get_current_filename(
         self,
-        _request: CSCP1Message,
     ) -> tuple[str, Any, dict[str, Any]]:
         """Get the name of the currently open HDF5 file."""
         try:
