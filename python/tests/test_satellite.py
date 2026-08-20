@@ -116,6 +116,11 @@ def test_satellite_std_commands(mock_socket_sender, mock_satellite):
     assert isinstance(req, CSCP1Message)
     assert req.verb_type == CSCP1Message.Type.SUCCESS
     assert req.verb_msg == __version__
+    # get_cnstln_version
+    req = sender.request_get_response("get_cnstln_version")
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
+    assert req.verb_msg == __version__
     # get_commands
     req = sender.request_get_response("get_commands")
     assert isinstance(req, CSCP1Message)

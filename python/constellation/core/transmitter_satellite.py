@@ -101,8 +101,9 @@ class TransmitterSatellite(Satellite):
 
         # Run metadata
         self._run_metadata = {
-            "version": __version__,
-            "version_full": f"Constellation v{__version__} ({__version_code_name__})",
+            "version": self._satellite_version,
+            "cnstln_version": __version__,
+            "cnstln_codename": f"{__version_code_name__}",
             "run_id": self.run_identifier,
             "time_start": datetime.now(UTC),
             "license": self._data_license,
