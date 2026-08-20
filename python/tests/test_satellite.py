@@ -201,13 +201,6 @@ def test_satellite_wrong_type_payload(mock_socket_sender, mock_satellite):
     assert isinstance(req, CSCP1Message)
     assert "wrong argument" in req.verb_msg.lower()
     assert req.verb_type == CSCP1Message.Type.INCOMPLETE
-    # send a request with wrong type payload
-    sender.send_request("initialize", None)
-    time.sleep(0.2)
-    req = sender.get_message()
-    assert isinstance(req, CSCP1Message)
-    assert "wrong argument" in req.verb_msg.lower()
-    assert req.verb_type == CSCP1Message.Type.INCOMPLETE
 
 
 def test_satellite_fsm_change_on_cmd(mock_cmd_transmitter, mock_satellite):

@@ -27,16 +27,20 @@ def mock_cmdreceiver(mock_zmq_context, mock_chirp_transmitter):
 
     class MockCommandReceiver(CommandReceiver):
         @cscp_requestable()
-        def get_state(self, msg):
+        def get_state(self):
             return "state", "good", None
 
         @cscp_requestable(states_except([SatelliteState.ERROR]))
-        def fcnallowed(self, msg):
+        def fcnallowed(self):
             return "allowed", "allowed passed", None
 
         @cscp_requestable()
-        def fcnnotallowed(self, msg):
+        def fcnnotallowed(self):
             return None
+
+        @cscp_requestable()
+        def compute(self, a: int, b: float, c: str, d: bool):
+            return "computed", (a, b, c, d), {}
 
     cr = MockCommandReceiver("mock_satellite", cmd_port=CMD_PORT, interface=[get_loopback_interface_name()])
     cr._add_com_thread()
@@ -136,10 +140,45 @@ def test_cmd_unique_commands(mock_cmdreceiver):
 
     class MockOtherCommandReceiver(CommandReceiver):
         @cscp_requestable()
-        def get_unique_value(self, msg):
+        def get_unique_value(self):
             return 42, None, None
 
     cr = MockOtherCommandReceiver("mock_other_satellite", cmd_port=22222, interface=[get_loopback_interface_name()])
     msg, cmds, _meta = cr.get_commands()
     # get_state not part of MockOtherCommandReceiver but of MockCommandReceiver
     assert "get_state" not in cmds
+
+
+def test_cmd_multiple_parameters(mock_cmdreceiver, mock_cmd_transmitter):
+    """Test that a command with multiple parameters works."""
+
+    # Verify the command is listed with correct signature
+    req = mock_cmd_transmitter.request_get_response("get_commands")
+    assert isinstance(req, CSCP1Message)
+    assert "compute" in req.payload
+    assert "Arguments: a: int, b: float, c: str, d: bool" in req.payload["compute"]
+
+    # Send command with four arguments as a list
+    mock_cmd_transmitter.send_request("compute", [42, 3.14, "hello", True])
+    time.sleep(0.1)
+    req = mock_cmd_transmitter.get_message()
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
+    assert req.verb_msg == "computed"
+    assert req.payload == [42, 3.14, "hello", True]
+
+    # Wrong type should fail
+    mock_cmd_transmitter.send_request("compute", ["wrong", 3.14, "hello", True])
+    time.sleep(0.1)
+    req = mock_cmd_transmitter.get_message()
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_msg == "Wrong argument: Parameter 'a' must be int, got str"
+    assert req.verb_type == CSCP1Message.Type.INCOMPLETE
+
+    # Wrong count should fail
+    mock_cmd_transmitter.send_request("compute", [42, 3.14])
+    time.sleep(0.1)
+    req = mock_cmd_transmitter.get_message()
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_msg == "Wrong argument: Expected 4 payload elements, got 2"
+    assert req.verb_type == CSCP1Message.Type.INCOMPLETE
