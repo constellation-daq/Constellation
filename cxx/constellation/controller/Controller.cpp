@@ -355,6 +355,13 @@ bool Controller::isInState(CSCP::State state) const {
         connections_.cbegin(), connections_.cend(), [state](const auto& conn) { return conn.second.state == state; });
 }
 
+bool Controller::anyInState(CSCP::State state) const {
+    const std::scoped_lock connection_lock {connection_mutex_};
+
+    return std::ranges::any_of(
+        connections_.cbegin(), connections_.cend(), [state](const auto& conn) { return conn.second.state == state; });
+}
+
 bool Controller::hasAnyErrorState() const {
     const std::scoped_lock connection_lock {connection_mutex_};
 
