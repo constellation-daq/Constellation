@@ -55,7 +55,7 @@ for example when using the [scriptable controller](../concepts/controller.md#scr
 hierarchy using the dot notation known from configuration files in the TOML format will lead to errors:
 
 ```python
-constellation.MySatellite.One.reconfigure({'devices.ADC.registers.threshold': 123})
+constellation.MySatellite.One.reconfigure({"devices.ADC.registers.threshold": 123})
 ```
 
 The issue is that the enclosing quotes mark the entire key as single string, and it is parsed and transmitted as such. In
@@ -63,7 +63,7 @@ order to reproduce the nested section structure of the configuration, the parame
 using this full structure. For the above example, this means writing:
 
 ```python
-constellation.MySatellite.One.reconfigure({'devices': {'ADC': {'registers': {'threshold': 123}}}})
+constellation.MySatellite.One.reconfigure({"devices": {"ADC": {"registers": {"threshold": 123}}}})
 ```
 
 More information on section syntax can be found in the concepts section on [Configuration Files](../concepts/configuration_files.md#sections).
