@@ -202,6 +202,14 @@ namespace constellation::controller {
         bool isInState(protocol::CSCP::State state) const;
 
         /**
+         * @brief Helper to check if any of the connected satellites are in a given state
+         *
+         * @param state State to be checked for
+         * @return True if any of the connected satellites are in the given state, false otherwise
+         */
+        bool anyInState(protocol::CSCP::State state) const;
+
+        /**
          * @brief Helper to check if any of the connected satellites report an error or safe state
          * @return True if any satellite is in ERROR or SAFE state, false otherwise
          */

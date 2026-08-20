@@ -63,6 +63,8 @@ TEST_CASE("Controller without connections", "[controller]") {
     // The controller is in state NEW
     REQUIRE(controller.isInState(CSCP::State::NEW));
     REQUIRE_FALSE(controller.isInState(CSCP::State::ORBIT));
+    REQUIRE_FALSE(controller.anyInState(CSCP::State::NEW));
+    REQUIRE_FALSE(controller.anyInState(CSCP::State::ORBIT));
 
     // Stop controller
     controller.stop();
@@ -106,6 +108,7 @@ TEST_CASE("Satellite connecting", "[controller]") {
     }
     REQUIRE(controller.getConnections().contains("Dummy.sat1"));
     REQUIRE(controller.isInState(CSCP::State::NEW));
+    REQUIRE(controller.anyInState(CSCP::State::NEW));
 
     // Stop controller
     controller.stop();
