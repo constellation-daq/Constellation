@@ -215,11 +215,22 @@ class CommandReceiver(BaseSatelliteFrame):
         - allowed_states (`list[SatelliteState]`): list of states in which the command is allowed
 
         """
+        call = getattr(self, method)
         if not doc:
-            call = getattr(self, method)
             doc = str(call.__doc__)
-            if allowed_states is not None:
-                setattr(call, "allowed_states", allowed_states)  # noqa: B010
+
+        # Wrap method in order to set attributes
+        @wraps(call)
+        def wrapper(*args, **kwargs):
+            return call(*args, **kwargs)
+
+        if allowed_states is not None:
+            setattr(wrapper, "allowed_states", allowed_states)  # noqa: B010
+
+        # Replace method with wrapper
+        setattr(self, method, wrapper)
+
+        # Add method to commands
         self._cmds[method] = doc
 
     @cscp_requestable()
