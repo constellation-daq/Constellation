@@ -164,22 +164,22 @@ class CommandReceiver(BaseSatelliteFrame):
             except (AttributeError, NotImplementedError) as e:
                 self.log_cscp.error("Command failed with %s: %s", e, req)
                 self._cmd_tm.send_reply(
-                    f"WrongImplementation: {repr(e)}",
+                    f"WrongImplementation: {e}",
                     CSCP1Message.Type.NOTIMPLEMENTED,
-                    repr(e),
+                    str(e),
                 )
                 continue
             except TransitionNotAllowed as e:
                 self.log_cscp.warning("Transition `%s` not allowed: %s", command, e)
-                self._cmd_tm.send_reply(f"Transition not allowed: {e}", CSCP1Message.Type.INVALID, repr(e))
+                self._cmd_tm.send_reply(f"Transition not allowed: {e}", CSCP1Message.Type.INVALID, str(e))
                 continue
             except (TypeError, ValueError) as e:
-                self.log_cscp.error("Command `%s` received wrong argument: %s", command, repr(e))
-                self._cmd_tm.send_reply(f"Wrong argument: {repr(e)}", CSCP1Message.Type.INCOMPLETE, repr(e))
+                self.log_cscp.error("Command `%s` received wrong argument: %s", command, str(e))
+                self._cmd_tm.send_reply(f"Wrong argument: {e}", CSCP1Message.Type.INCOMPLETE, str(e))
                 continue
             except Exception as e:
-                self.log_cscp.error("Command `%s` failed: %s", command, repr(e))
-                self._cmd_tm.send_reply(f"Exception: {repr(e)}", CSCP1Message.Type.INVALID, repr(e))
+                self.log_cscp.error("Command `%s` failed: %s", command, str(e))
+                self._cmd_tm.send_reply(f"Exception: {e}", CSCP1Message.Type.INVALID, str(e))
                 continue
             # check the response; empty string means 'missing data/incomplete'
             if res is None:
