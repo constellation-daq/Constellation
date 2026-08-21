@@ -577,7 +577,7 @@ class Satellite(
 class SatelliteArgumentParser(ConstellationArgumentParser):
     """Customized Argument parser providing common Satellite options."""
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, version: str | None = None, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.network.add_argument(
             "--cmd-port",
@@ -606,3 +606,5 @@ class SatelliteArgumentParser(ConstellationArgumentParser):
             "Constellation Heartbeat Protocol. "
             "A random port will be selected if none is specified.",
         )
+        if version is not None and hasattr(self.version_action, "version"):
+            self.version_action.version = f"Satellite {version}, " + self.version_action.version  # type: ignore
