@@ -23,7 +23,8 @@ SatelliteSputnik -n One -g edda
 
 ```{note}
 When a satellite is started this way, it runs in the foreground until it is terminated. This means that any other satellites
-or commands need to be a run in a new terminal.
+or commands need to be a run in a new terminal. Several solutions to starting satellites on remote hosts can be found in the
+corresponding [How-To Guide](../howtos/remote_satellites.md).
 ```
 
 A detailed description of all available command line arguments can be found in the [Satellite](../concepts/satellite.md#the-satellite-executable) section.
