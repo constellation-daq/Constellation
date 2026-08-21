@@ -35,6 +35,7 @@ int constellation::exec::satellite_main(std::span<const char*> args,
         // Get parser and setup
         auto parser =
             SatelliteParser(std::string(program),
+                            satellite_type.has_value() ? std::optional(satellite_type.value().version) : std::nullopt,
                             satellite_type.has_value() ? std::optional(satellite_type.value().type_name) : std::nullopt);
         parser.setup();
 

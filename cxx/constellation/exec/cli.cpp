@@ -70,20 +70,24 @@ BaseParser::BaseParser(std::string program)
     : argparse::ArgumentParser(std::move(program), CNSTLN_VERSION_FULL, argparse::default_arguments::help) {
     // Provide own version printout
     add_argument("-v", "--version")
-        .action([](const auto& /*unused*/) {
-            const auto vcs_version = std::string(CNSTLN_VERSION_VCS);
-            std::cout << "Constellation " << CNSTLN_VERSION_FULL << "\n"                       //
-                      << (!vcs_version.empty() ? "\tGit version:\t" + vcs_version + "\n" : "") //
-                      << "\tBuild type:\t" << CNSTLN_BUILD_TYPE << "\n"                        //
-                      << "\tLTO enabled:\t" << CNSTLN_LTO_ENABLED << "\n"                      //
-                      << "\tMem allocator:\t" << CNSTLN_MALLOC << "\n"                         //
-                      << std::flush;
+        .action([&](const auto& /*unused*/) {
+            std::cout << version() << std::flush;
             std::exit(0); // NOLINT(concurrency-mt-unsafe)
         })
         .default_value(false)
         .help("shows version information and exits")
         .implicit_value(true)
         .nargs(0);
+}
+
+std::string BaseParser::version() const {
+    const auto vcs_version = std::string(CNSTLN_VERSION_VCS);
+    std::string version_str = "Constellation " + std::string(CNSTLN_VERSION_FULL) + "\n";
+    version_str += (!vcs_version.empty() ? "\tGit version:\t" + vcs_version + "\n" : "");
+    version_str += "\tBuild type:\t" + std::string(CNSTLN_BUILD_TYPE) + "\n";
+    version_str += "\tLTO enabled:\t" + std::string(CNSTLN_LTO_ENABLED) + "\n";
+    version_str += "\tMem allocator:\t" + std::string(CNSTLN_MALLOC) + "\n";
+    return version_str;
 }
 
 void BaseParser::setup() {
@@ -134,8 +138,8 @@ std::string BaseParser::help() const {
     return argparse::ArgumentParser::help().str();
 }
 
-SatelliteParser::SatelliteParser(std::string program, std::optional<std::string> type)
-    : BaseParser(std::move(program)), type_(std::move(type)) {}
+SatelliteParser::SatelliteParser(std::string program, std::optional<std::string> version, std::optional<std::string> type)
+    : BaseParser(std::move(program)), version_(std::move(version)), type_(std::move(type)) {}
 
 void SatelliteParser::setup() {
     // If not a predefined type, require that the satellite type is specified
@@ -173,6 +177,15 @@ SatelliteParser::SatelliteOptions SatelliteParser::parse(std::span<const char*> 
     auto name = get("name");
 
     return {std::move(base_options), std::move(group), std::move(type), std::move(name)};
+}
+
+std::string SatelliteParser::version() const {
+    std::string version_str;
+    if(version_.has_value()) {
+        version_str += "Satellite " + version_.value() + '\n';
+    }
+    version_str += BaseParser::version();
+    return version_str;
 }
 
 GUIParser::GUIParser(std::string program) : BaseParser(std::move(program)) {}

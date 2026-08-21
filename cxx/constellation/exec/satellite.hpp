@@ -18,17 +18,23 @@
 #include <vector>
 
 #include "constellation/build.hpp"
+#include "constellation/build_vcs.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/networking/asio_helpers.hpp"
 
 namespace constellation::exec {
 
     struct SatelliteType {
-        SatelliteType(std::string _type_name, std::filesystem::path _dso_path = {})
-            : type_name(std::move(_type_name)), dso_path(std::move(_dso_path)) {}
+        SatelliteType(std::string _type_name,
+                      std::string _version = CNSTLN_VERSION_VCS,
+                      std::filesystem::path _dso_path = {})
+            : type_name(std::move(_type_name)), version(std::move(_version)), dso_path(std::move(_dso_path)) {}
 
         /** Name of satellite type */
         std::string type_name;
+
+        /** Version of the satellite */
+        std::string version;
 
         /** Path to the Dynamic Shared Object (DSO) that contains the satellite */
         std::filesystem::path dso_path;
