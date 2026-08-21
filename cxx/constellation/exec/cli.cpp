@@ -182,7 +182,7 @@ SatelliteParser::SatelliteOptions SatelliteParser::parse(std::span<const char*> 
 std::string SatelliteParser::version() const {
     std::string version_str;
     if(version_.has_value()) {
-        version_str += "Satellite " + version_.value() + '\n';
+        version_str += "Satellite" + (type_.has_value() ? type_.value() : "") + " " + version_.value() + '\n';
     }
     version_str += BaseParser::version();
     return version_str;
