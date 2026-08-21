@@ -283,18 +283,16 @@ class EtrocWaveform(Satellite):
         return "Finished acquisition"
 
     @cscp_requestable
-    def get_config_register(self, request: CSCP1Message) -> tuple[str, Any, dict]:
-        reg = request.payload
+    def get_config_register(self, reg: int) -> tuple[str, Any, dict]:
         return "FPGA is Ready", format(cmd_interpret.read_config_reg(self.connection_socket, reg), '016b'), {}
 
     @cscp_requestable
-    def get_status_register(self, request: CSCP1Message) -> tuple[str, Any, dict]:
-        reg = request.payload
+    def get_status_register(self, reg: int) -> tuple[str, Any, dict]:
         return "FPGA is Ready", format(cmd_interpret.read_status_reg(self.connection_socket, reg), '016b'), {}
 
     @cscp_requestable
-    def set_data_phase_delay(self, request: CSCP1Message) -> tuple[str, Any, dict]:
-        data_delay = max(0, min(request.payload, 63)) # 6 bits max
+    def set_data_phase_delay(self, delay: int) -> tuple[str, Any, dict]:
+        data_delay = max(0, min(delay, 63)) # 6 bits max
 
         # Clear bits 7-12 (6 bits), then set them to data_delay
         mask = ~(0x3F << 7)
@@ -304,8 +302,8 @@ class EtrocWaveform(Satellite):
         return "FPGA Reg 13 Set, Data Delay Set", f"0x{cmd_interpret.read_config_reg(self.connection_socket, 13):04x}", {}
 
     @cscp_requestable
-    def set_data_phase_channel_delay(self, request: CSCP1Message) -> tuple[str, Any, dict]:
-        data_delay = max(0, min(request.payload[0], 39)) # Original code clamped to 39
+    def set_data_phase_channel_delay(self, delay: int) -> tuple[str, Any, dict]:
+        data_delay = max(0, min(delay[0], 39)) # Original code clamped to 39
         channel = max(0, min(request.payload[1], 3))
 
         shift = 0 if channel in (0, 2) else 8
@@ -321,8 +319,8 @@ class EtrocWaveform(Satellite):
             return "FPGA Reg 6 Set, Data Delay Set", f"0x{cmd_interpret.read_config_reg(self.connection_socket, 6):04x}", {}
 
     @cscp_requestable
-    def set_fc_phase_delay(self, request: CSCP1Message) -> tuple[str, Any, dict]:
-        fc_delay = max(0, min(request.payload, 63))
+    def set_fc_phase_delay(self, delay: int) -> tuple[str, Any, dict]:
+        fc_delay = max(0, min(delay, 63))
 
         # Clear bits 10-15 (6 bits) and set to fc_delay
         mask = ~(0x3F << 10)
@@ -332,9 +330,9 @@ class EtrocWaveform(Satellite):
         return "FPGA Reg 7 Set, FC Phase Delay Set", f"0x{cmd_interpret.read_config_reg(self.connection_socket, 7):04x}", {}
 
     @cscp_requestable
-    def set_fc_phase_channel_delay(self, request: CSCP1Message) -> tuple[str, Any, dict]:
-        fc_delay = max(0, min(request.payload[0], 31))
-        channel = max(0, min(request.payload[1], 3))
+    def set_fc_phase_channel_delay(self, delay: int, channel: int) -> tuple[str, Any, dict]:
+        fc_delay = max(0, min(delay, 31))
+        channel = max(0, min(channel, 3))
 
         # 1. Set the 4-bit delay in fc_delays (Reg 4)
         shift_fc = 4 * channel
@@ -354,8 +352,8 @@ class EtrocWaveform(Satellite):
         return "FPGA Reg 4 and 5 Set, FC Phase Delay Set", [f"0x{cmd_interpret.read_config_reg(self.connection_socket, 4):04x}", f"0x{cmd_interpret.read_config_reg(self.connection_socket, 5):04x}"], {}
 
     @cscp_requestable
-    def set_fc_bit_delay(self, request: CSCP1Message) -> tuple[str, Any, dict]:
-        bit_delay = max(0, min(request.payload, 15)) # Assuming 4 bits max based on original logic
+    def set_fc_bit_delay(self, delay: int) -> tuple[str, Any, dict]:
+        bit_delay = max(0, min(delay, 15)) # Assuming 4 bits max based on original logic
 
         # Clear bits 10-13 (4 bits) and set to bit_delay
         mask = ~(0xF << 10)
@@ -365,8 +363,8 @@ class EtrocWaveform(Satellite):
         return "FPGA Reg 14 Set, FC Bit Delay Set", f"0x{cmd_interpret.read_config_reg(self.connection_socket, 14):04x}", {}
 
     @cscp_requestable
-    def set_ledpage(self, request: CSCP1Message) -> tuple[str, Any, dict]:
-        ledpage = max(0, min(request.payload, 5))
+    def set_ledpage(self, page: int) -> tuple[str, Any, dict]:
+        ledpage = max(0, min(page, 5))
 
         # Clear bits 2-4 (3 bits) and set to ledpage
         mask = ~(0x7 << 2)
@@ -376,14 +374,14 @@ class EtrocWaveform(Satellite):
         return "FPGA Reg 13 Set, Led Page Set", format(cmd_interpret.read_config_reg(self.connection_socket, 13), '016b'), {}
 
     @cscp_requestable
-    def set_active_channel(self, request: CSCP1Message) -> tuple[str, Any, dict]:
-        self.active_channel = request.payload
+    def set_active_channel(self, channel: int) -> tuple[str, Any, dict]:
+        self.active_channel = channel
         cmd_interpret.write_config_reg_decoded(self.connection_socket, "active_channel", self.active_channel)
         return "FPGA Reg 15 Set, active_channel Set", format(cmd_interpret.read_config_reg(self.connection_socket, 15), '016b'), {}
 
     @cscp_requestable
-    def set_fast_command_memo(self, request: CSCP1Message) -> tuple[str, Any, dict]:
-        self.fast_command_memo = request.payload
+    def set_fast_command_memo(self, fast_command: str) -> tuple[str, Any, dict]:
+        self.fast_command_memo = fast_command
         self.configure_memo_FC()
         return "Fast Command Configured", self.fast_command_memo, {}
 
