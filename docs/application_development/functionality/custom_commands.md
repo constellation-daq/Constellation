@@ -85,8 +85,11 @@ In Python, commands are registered by placing the `@cscp_requestable()` decorato
 The method needs to have a specific signature:
 
 ```python
-def COMMAND(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
+def COMMAND(self, ...) -> tuple[str, Any, dict[str, Any]]:
 ```
+
+Any required input has to be declared as positional arguments of the function signature after the `self` parameter. The
+received data is automatically unpacked and assigned to the positional parameters.
 
 The expected return values are:
 
@@ -94,16 +97,12 @@ The expected return values are:
 - payload (any)
 - map (dictionary) (e.g. for meta information)
 
-Adding a custom command thus also requires `from constellation.core.message.cscp1 import CSCP1Message`.
-
 In this example, the command `get_channel_reading(channel: int)` is added to a satellite:
 
 ```python
 @cscp_requestable()
-def get_channel_reading(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
+def get_channel_reading(self, channel: int) -> tuple[str, Any, dict[str, Any]]:
     """Read the value of the channel given by the first supplied argument."""
-    paramList = request.payload
-    channel = paramList[0]
     value = _device.read(channel)
     return str(value / 10), None, {}
 ```
@@ -165,22 +164,8 @@ be able to be converted to and from these. A detailed information of available t
 documentation.
 ```
 
-::::{tab-set}
-:::{tab-item} C++
-:sync: cxx
-
 Arguments do not have to be specifically denominated when registering the command. The
 command registry instead takes this information directly from the function declaration of the command to be called.
-
-:::
-:::{tab-item} Python
-:sync: python
-
-It should be noted that the parameters are given to the command as a list which is the `payload` of the `CSCP1Message` in the
-custom command. Individual arguments need to be accessed via their list index.
-
-:::
-::::
 
 ```{important}
 It is discouraged to implement commands that change the configuration of the instrument or device since these changes take
@@ -215,7 +200,7 @@ In Python, it is possible to specify a list of allowed states in the first argum
 
 ```python
 @cscp_requestable([SatelliteState.ORBIT, SatelliteState.RUN])
-def COMMAND(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
+def COMMAND(self, ...) -> tuple[str, Any, dict[str, Any]]:
 ```
 
  The `states_except([])` helper function allows to create a set of all states *except* the ones provided as argument. An example is shown below, limiting the usage of the `get_channel_reading` command to all states except {bdg-secondary}`NEW`, {bdg-secondary}`initializing`, {bdg-secondary}`reconfiguring` and {bdg-secondary}`ERROR`:
@@ -231,10 +216,8 @@ def COMMAND(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         ]
     )
 )
-def get_channel_reading(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
+def get_channel_reading(self, channel: int) -> tuple[str, Any, dict[str, Any]]:
     """Read the value of the channel given by the first supplied argument."""
-    paramList = request.payload
-    channel = paramList[0]
     value = _device.read(channel)
     return str(value / 10), None, {}
 ```
