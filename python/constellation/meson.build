@@ -95,6 +95,7 @@ core_async_experimental_files = files(
   'core/async_experimental/async_cmdplistener.py',
   'core/async_experimental/async_controller.py',
   'core/async_experimental/async_heartbeat.py',
+  'core/async_experimental/async_heartbeatsender.py',
   'core/async_experimental/async_monitoringlistener.py',
   'core/async_experimental/async_pools.py',
 )
