@@ -10,7 +10,6 @@ from typing import Any
 
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
-from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.monitoring import schedule_metric
 from constellation.core.protocol.cscp1 import SatelliteState, states_except
 from constellation.core.satellite import Satellite
@@ -172,14 +171,14 @@ class Keithley(Satellite):
     @cscp_requestable(
         states_except([SatelliteState.NEW, SatelliteState.initializing, SatelliteState.reconfiguring, SatelliteState.ERROR])
     )
-    def identify(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
+    def identify(self) -> tuple[str, Any, dict[str, Any]]:
         """Identify device (includes serial number)"""
         return self.device.identify(), None, {}
 
     @cscp_requestable(
         states_except([SatelliteState.NEW, SatelliteState.initializing, SatelliteState.reconfiguring, SatelliteState.ERROR])
     )
-    def in_compliance(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
+    def in_compliance(self) -> tuple[str, Any, dict[str, Any]]:
         """Check if current is in compliance"""
         in_compliance = self.device.in_compliance()
         is_str = "is" if in_compliance else "is not"
@@ -188,7 +187,7 @@ class Keithley(Satellite):
     @cscp_requestable(
         states_except([SatelliteState.NEW, SatelliteState.initializing, SatelliteState.reconfiguring, SatelliteState.ERROR])
     )
-    def read_output(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
+    def read_output(self) -> tuple[str, Any, dict[str, Any]]:
         """Read voltage and current output"""
         voltage, current, timestamp = self.device.read_output()
         return f"Output: {voltage}V, {current}A", {"voltage": voltage, "current": current, "timestamp": timestamp}, {}

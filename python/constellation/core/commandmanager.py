@@ -6,6 +6,7 @@ This module provides classes for managing CSCP requests/replies within
 Constellation Satellites.
 """
 
+import inspect
 import threading
 import time
 from collections.abc import Callable
@@ -26,6 +27,7 @@ P = ParamSpec("P")
 
 def cscp_requestable(
     allowed_states: list[SatelliteState] | None = None,
+    unpack_list: bool = True,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """Register a function as a supported command for CSCP.
 
@@ -40,6 +42,7 @@ def cscp_requestable(
 
         # mark function as cscp command
         setattr(wrapper, "cscp_command", True)  # noqa: B010
+        setattr(wrapper, "unpack_list", unpack_list)  # noqa: B010
         if allowed_states is not None:
             setattr(wrapper, "allowed_states", allowed_states)  # noqa: B010
 
@@ -64,13 +67,93 @@ def get_cscp_commands(cls: Any) -> dict[str, str]:
     return res
 
 
+def _get_signature(func: Callable[..., Any]) -> list[tuple[str, str]]:
+    """Extract parameter names and type annotations from a command function.
+
+    Returns a list of ``(parameter_name, annotation_string)`` tuples for each parameter after ``self``.
+    Simple annotations (``bool``, ``int``,  ``float``, ``str``) are cleaned up to their short form.
+    Complex typing objects are forwarded as-is via ``str()``.
+    """
+    # Unwrap through decorators to get the original function signature.
+    # Bound methods lose the __wrapped__ information that @functools.wraps
+    # sets, so we need to extract the underlying function first.
+    unwrapped = inspect.unwrap(func)
+    # For bound methods, unwrap returns the underlying function, but when
+    # inspecting an unbound function we need to skip 'self'.
+    signature = inspect.signature(unwrapped)
+    parameters: list[tuple[str, str]] = []
+    # Check if the first parameter looks like 'self'
+    param_iter = iter(signature.parameters.values())
+    first_param = next(param_iter, None)
+    if first_param is not None and first_param.name == "self":
+        # We're inspecting an unbound function, skip self
+        pass
+    else:
+        # Re-include the first param since it's not self
+        param_iter = iter(signature.parameters.values())
+
+    for parameter in param_iter:
+        if parameter.annotation is inspect.Parameter.empty:
+            parameters.append((parameter.name, ""))
+        else:
+            ann = str(parameter.annotation)
+            # Strip the <class '...'> wrapper for simple built-in types
+            if ann.startswith("<class '") and ann.endswith("'>"):
+                ann = ann[len("<class '") : -len("'>")]
+            parameters.append((parameter.name, ann))
+    return parameters
+
+
+def _format_signature(parameters: list[tuple[str, str]]) -> str:
+    """Format a signature list into a human-readable string."""
+    if not parameters:
+        return "No arguments."
+    parts = ", ".join(f"{name}: {ann}" if ann else name for name, ann in parameters)
+    return f"Arguments: {parts}."
+
+
+def _validate_payload_type(name: str, annotation: str, value: Any) -> None:
+    """Validate a payload value against a simple type annotation.
+
+    Checks ``bool``, ``str``, ``int``, and ``float``. More complex
+    annotations (unions, generics, ``dict``, etc.) are ignored.
+    """
+    if annotation == "bool":
+        if not isinstance(value, bool):
+            raise TypeError(f"Parameter '{name}' must be bool, got {type(value).__name__}")
+    elif annotation == "int":
+        if not isinstance(value, int):
+            raise TypeError(f"Parameter '{name}' must be int, got {type(value).__name__}")
+    elif annotation == "float":
+        if not isinstance(value, (int, float)):
+            raise TypeError(f"Parameter '{name}' must be float, got {type(value).__name__}")
+    elif annotation == "str":
+        if not isinstance(value, str):
+            raise TypeError(f"Parameter '{name}' must be str, got {type(value).__name__}")
+
+
+def _extract_payload_args(payload: Any, sig: list[tuple[str, str]], unpack_list: bool) -> list[Any]:
+    """Extract positional arguments from the CSCP payload based on the signature."""
+    if not unpack_list:
+        _validate_payload_type(*sig[0], payload)
+        return [payload]
+    if not isinstance(payload, list):
+        raise TypeError(f"Payload must be a list with {len(sig)} elements, got {type(payload).__name__}")
+    if len(payload) != len(sig):
+        raise TypeError(f"Expected {len(sig)} payload elements, got {len(payload)}")
+    # Validate each argument
+    for (name, annotation), value in zip(sig, payload, strict=True):
+        _validate_payload_type(name, annotation, value)
+    return payload
+
+
 class CommandReceiver(BaseSatelliteFrame):
     """Class for handling incoming CSCP requests.
 
     Commands will call specific methods of the inheriting class which should
     have the following signature:
 
-    `def COMMAND(self, request: CSCP1Message) -> (str, any, dict):`
+        `def COMMAND(self, ...) -> tuple[str, Any, dict[str, Any]]:`
 
     The expected return values are:
     - reply message (string)
@@ -80,6 +163,10 @@ class CommandReceiver(BaseSatelliteFrame):
     Inheriting classes need to decorate such command methods with
     `@cscp_requestable()` to make them callable through CSCP requests.
 
+    The payload of the incoming CSCP request is automatically unpacked and
+    forwarded as individual positional arguments to the command method.
+    Command methods should declare their expected payload arguments as
+    positional parameters after ``self``.
     """
 
     def __init__(self, name: str, cmd_port: int, **kwds: Any):
@@ -151,10 +238,17 @@ class CommandReceiver(BaseSatelliteFrame):
                     self.log_cscp.warning("Command not allowed in %s state: %s", state.name, req)
                     self._cmd_tm.send_reply(f"Command not allowed in {state.name} state", CSCP1Message.Type.INVALID)
                     continue
+            unpack_list = getattr(command_cb, "unpack_list")  # noqa: B009
             # perform the actual callback
             try:
-                self.log_cscp.debug("Calling command %s with argument %s", command, req)
-                rv = command_cb(req)
+                sig = _get_signature(command_cb)
+                if sig:
+                    self.log_cscp.debug("Calling command %s with payload %s", command, req.payload)
+                    call_args = _extract_payload_args(req.payload, sig, unpack_list)
+                    rv = command_cb(*call_args)
+                else:
+                    self.log_cscp.debug("Calling command %s with no arguments", command)
+                    rv = command_cb()
                 if rv is None:
                     # command not allowed since None returned
                     self.log_cscp.warning("Command not allowed: %s", req)
@@ -164,22 +258,22 @@ class CommandReceiver(BaseSatelliteFrame):
             except (AttributeError, NotImplementedError) as e:
                 self.log_cscp.error("Command failed with %s: %s", e, req)
                 self._cmd_tm.send_reply(
-                    f"WrongImplementation: {repr(e)}",
+                    f"WrongImplementation: {e}",
                     CSCP1Message.Type.NOTIMPLEMENTED,
-                    repr(e),
+                    str(e),
                 )
                 continue
             except TransitionNotAllowed as e:
                 self.log_cscp.warning("Transition `%s` not allowed: %s", command, e)
-                self._cmd_tm.send_reply(f"Transition not allowed: {e}", CSCP1Message.Type.INVALID, repr(e))
+                self._cmd_tm.send_reply(f"Transition not allowed: {e}", CSCP1Message.Type.INVALID, str(e))
                 continue
             except (TypeError, ValueError) as e:
-                self.log_cscp.error("Command `%s` received wrong argument: %s", command, repr(e))
-                self._cmd_tm.send_reply(f"Wrong argument: {repr(e)}", CSCP1Message.Type.INCOMPLETE, repr(e))
+                self.log_cscp.error("Command `%s` received wrong argument: %s", command, str(e))
+                self._cmd_tm.send_reply(f"Wrong argument: {e}", CSCP1Message.Type.INCOMPLETE, str(e))
                 continue
             except Exception as e:
-                self.log_cscp.error("Command `%s` failed: %s", command, repr(e))
-                self._cmd_tm.send_reply(f"Exception: {repr(e)}", CSCP1Message.Type.INVALID, repr(e))
+                self.log_cscp.error("Command `%s` failed: %s", command, str(e))
+                self._cmd_tm.send_reply(f"Exception: {e}", CSCP1Message.Type.INVALID, str(e))
                 continue
             # check the response; empty string means 'missing data/incomplete'
             if res is None:
@@ -198,7 +292,11 @@ class CommandReceiver(BaseSatelliteFrame):
         self._cmd_tm.close()
 
     def add_cscp_command(
-        self, method: str, doc: str | None = None, allowed_states: list[SatelliteState] | None = None
+        self,
+        method: str,
+        doc: str | None = None,
+        allowed_states: list[SatelliteState] | None = None,
+        unpack_list: bool = True,
     ) -> None:
         """Add a method to CSCP.
 
@@ -215,54 +313,66 @@ class CommandReceiver(BaseSatelliteFrame):
         - allowed_states (`list[SatelliteState]`): list of states in which the command is allowed
 
         """
+        call = getattr(self, method)
         if not doc:
-            call = getattr(self, method)
             doc = str(call.__doc__)
-            if allowed_states is not None:
-                setattr(call, "allowed_states", allowed_states)  # noqa: B010
+
+        # Wrap method in order to set attributes
+        @wraps(call)
+        def wrapper(*args, **kwargs):
+            return call(*args, **kwargs)
+
+        if allowed_states is not None:
+            setattr(wrapper, "allowed_states", allowed_states)  # noqa: B010
+        setattr(wrapper, "unpack_list", unpack_list)  # noqa: B010
+
+        # Replace method with wrapper
+        setattr(self, method, wrapper)
+
+        # Add method to commands
         self._cmds[method] = doc
 
     @cscp_requestable()
-    def get_commands(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
+    def get_commands(self) -> tuple[str, Any, dict[str, Any]]:
         """Return all commands supported by the Satellite.
 
-        No payload argument.
-
-        This will include all methods with the `@cscp_requestable()` decorator. The
-        doc string of the function will be used to derive the summary and
-        payload argument description for each command by using the first and the
-        second line of the doc string, respectively (not counting empty lines).
-
+        This will include all methods with the ``@cscp_requestable()`` decorator.
+        The doc string of the function will be used to derive the summary and payload argument description for each
+        command by using the first and the second line of the doc string, respectively (not counting empty lines).
         """
-        public_cmds = {}
-        for key, value in self._cmds.items():
+        public_cmds: dict[str, str] = {}
+        for key in self._cmds:
             if not key.startswith("_"):
-                public_cmds[key] = value
+                cmd_func = getattr(self, key)
+                sig = _get_signature(cmd_func)
+                description = self._cmds[key] or ""
+                if description:
+                    description += "\n"
+                description += _format_signature(sig)
+                public_cmds[key] = description
         return f"{len(public_cmds)} commands known", public_cmds, {}
 
     @cscp_requestable()
-    def _get_commands(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
+    def _get_commands(self) -> tuple[str, Any, dict[str, Any]]:
         """Return all hidden commands supported by the Satellite.
 
-        No payload argument.
-
-        This will include all methods with the @cscp_requestable() decorator starting with an underscore. The
-        doc string of the function will be used to derive the summary and payload argument description for
-        each command by using the first and the second line of the doc string, respectively (not counting
-        empty lines).
-
+        This will include all methods with the ``@cscp_requestable()`` decorator starting with an underscore.
+        The doc string of the function will be used to derive the summary and payload argument description for each
+        command by using the first and the second line of the doc string, respectively (not counting empty lines).
         """
-        hidden_cmds = {}
-        for key, value in self._cmds.items():
+        hidden_cmds: dict[str, str] = {}
+        for key in self._cmds:
             if key.startswith("_"):
-                hidden_cmds[key] = value
+                cmd_func = getattr(self, key)
+                sig = _get_signature(cmd_func)
+                description = self._cmds[key] or ""
+                if description:
+                    description += "\n"
+                description += _format_signature(sig)
+                hidden_cmds[key] = description
         return f"{len(hidden_cmds)} commands known", hidden_cmds, {}
 
     @cscp_requestable()
-    def get_name(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
-        """Return the canonical name of the Satellite.
-
-        No payload argument.
-
-        """
+    def get_name(self) -> tuple[str, Any, dict[str, Any]]:
+        """Return the canonical name of the Satellite."""
         return self.name, None, {}

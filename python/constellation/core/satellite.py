@@ -24,7 +24,6 @@ from .configuration import Configuration, ConfigurationGroup
 from .error import debug_log, handle_error
 from .heartbeatchecker import HeartbeatChecker
 from .heartbeater import HeartbeatSender
-from .message.cscp1 import CSCP1Message
 from .monitoring import MonitoringSender
 from .protocol.cscp1 import SatelliteState
 
@@ -80,7 +79,7 @@ class Satellite(
         # Check whether the Satellite has a reconfigure state implemented.
         # If so, add the command to the list of available commands.
         if hasattr(self, "do_reconfigure"):
-            self.add_cscp_command("reconfigure")
+            self.add_cscp_command("reconfigure", allowed_states=[SatelliteState.ORBIT], unpack_list=False)
 
         # Register metric for announcing new run ids
         self.register_metric("RUN_ID", "", "Current run identifier. Updated when changed.")
@@ -519,42 +518,24 @@ class Satellite(
     # -------------------------- #
 
     @cscp_requestable()
-    def get_version(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
-        """Get Constellation version.
-
-        No payload argument.
-
-        Additional version information may be included in the meta map (final
-        return value).
-
-        """
+    def get_version(self) -> tuple[str, Any, dict[str, Any]]:
+        """Get Constellation version."""
         return __version__, None, {}
 
     @cscp_requestable()
-    def get_run_id(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
-        """Get current/last known run identifier.
-
-        No payload argument.
-
-        """
+    def get_run_id(self) -> tuple[str, Any, dict[str, Any]]:
+        """Get current/last known run identifier."""
         return self.run_identifier, None, {}
 
     @cscp_requestable()
-    def get_config(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
-        """Get current satellite configuration.
-
-        No payload argument.
-
-        """
+    def get_config(self) -> tuple[str, Any, dict[str, Any]]:
+        """Get current satellite configuration."""
         cfg_dict = self._config._dictionary
         return "Dictionary attached in payload", cfg_dict, {}
 
     @cscp_requestable([SatelliteState.NEW, SatelliteState.INIT, SatelliteState.SAFE, SatelliteState.ERROR])
-    def shutdown(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
-        """Queue the Satellite's reentry.
-
-        No payload argument.
-        """
+    def shutdown(self) -> tuple[str, Any, dict[str, Any]]:
+        """Queue the Satellite's reentry."""
         self.log_satellite.status("Satellite on reentry course for self-destruction")
 
         def transition_wrapper(self, target: str):

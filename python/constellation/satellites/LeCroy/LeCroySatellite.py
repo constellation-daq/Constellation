@@ -15,7 +15,6 @@ import numpy as np
 
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
-from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.monitoring import schedule_metric
 from constellation.core.protocol.cscp1 import SatelliteState
 from constellation.core.transmitter_satellite import TransmitterSatellite
@@ -110,7 +109,7 @@ class LeCroySatellite(TransmitterSatellite):
         return "Stopped acquisition"
 
     @cscp_requestable([SatelliteState.RUN])
-    def get_num_triggers(self, request: CSCP1Message) -> tuple[str, int, dict[str, Any]]:
+    def get_num_triggers(self) -> tuple[str, int, dict[str, Any]]:
         return f"Number of triggers: {self._num_triggers_acquired}", self._num_triggers_acquired, {}
 
     @schedule_metric("", 10, [SatelliteState.RUN])
