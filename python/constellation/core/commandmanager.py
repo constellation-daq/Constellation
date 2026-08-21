@@ -153,7 +153,7 @@ class CommandReceiver(BaseSatelliteFrame):
     Commands will call specific methods of the inheriting class which should
     have the following signature:
 
-        def COMMAND(self, ...) -> tuple[str, Any, dict[str, Any]]:
+        `def COMMAND(self, ...) -> tuple[str, Any, dict[str, Any]]:`
 
     The expected return values are:
     - reply message (string)
