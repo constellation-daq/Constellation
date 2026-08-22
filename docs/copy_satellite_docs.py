@@ -287,7 +287,9 @@ def convert_satellite_readme_gitlab(name: str, project: Project, out_path: pathl
         category, language, parent_classes = extract_front_matter(markdown)
 
         # Convert markdown
-        markdown = convert_satellite_readme(markdown, language, parent_classes, {"Website": f"[{website}]({website})"})
+        markdown = convert_satellite_readme(
+            markdown, language, parent_classes, {"Website": f"[{website}]({website})", "Version": f"{tags[0].name}"}
+        )
 
         # Write Markdown
         (out_path / slugify(name, lowercase=False)).with_suffix(".md").write_text(markdown)
