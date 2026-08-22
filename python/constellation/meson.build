@@ -55,6 +55,7 @@ tools_files = files(
   'tools/__init__.py',
   'tools/discover_plugins.py',
   'tools/controller.py',
+  'tools/async_controller.py',
   'tools/monitor.py',
 )
 
@@ -86,3 +87,18 @@ version_code_name_file = configure_file(
 py.install_sources(version_code_name_file,
   subdir: 'constellation/core',
 )
+
+core_async_experimental_files = files(
+  'core/async_experimental/__init__.py',
+  'core/async_experimental/async_basecontroller.py',
+  'core/async_experimental/async_chirp.py',
+  'core/async_experimental/async_cmdplistener.py',
+  'core/async_experimental/async_controller.py',
+  'core/async_experimental/async_heartbeat.py',
+  'core/async_experimental/async_heartbeatsender.py',
+  'core/async_experimental/async_monitoringlistener.py',
+  'core/async_experimental/async_pools.py',
+)
+
+py.install_sources(core_async_experimental_files,
+  subdir: 'constellation/core/async_experimental')
