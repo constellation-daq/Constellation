@@ -38,7 +38,8 @@ objects.
 | Command | payload | verb reply | payload reply | metadata reply
 | ------- | ------- | ---------- | ------------- | --------------
 | `get_name` | - | Canonical name of the Satellite | - | -
-| `get_version` | - | Constellation version identifier string | - | -
+| `get_version` | - | Satellite version identifier string | - | -
+| `get_cnstln_version` | - | Constellation version identifier string | - | -
 | `get_commands` | - | Acknowledgment | List of commands as MsgPack map/dictionary with command names as keys and descriptions as values | -
 | `get_state` | - | Current state as string | Current state encoded as MsgPack integer | `last_changed` contains the time when the state last changed as MsgPack time point
 | `get_role` | - | Current role as string | Flags of the role encoded as MsgPack integer | -
