@@ -157,6 +157,15 @@ private slots:
     void on_viewLog_activated(const QModelIndex& i);
 
 private:
+    /**
+     * @brief Apply new width to subscriptions pane of the main splitter
+     * @details This is will only change the splitter width if not manually adjusted
+     *
+     * @param width Desired width in pixels for the subscriptions pane
+     */
+    void apply_subscription_width(int width);
+
+private:
     /** Subscription pool listening to new log messages */
     QLogListener log_listener_;
     QSubscriptionList* subscription_list_widget_;
@@ -175,4 +184,7 @@ private:
 
     /** UI Settings */
     QSettings gui_settings_;
+
+    /** Flag indicating the splitter has manually been resized */
+    bool splitter_user_adjusted_ {false};
 };

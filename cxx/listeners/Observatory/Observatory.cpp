@@ -22,9 +22,11 @@
 #include <QModelIndex>
 #include <QPainter>
 #include <QPalette>
+#include <QSplitter>
 #include <QStatusBar>
 #include <QStyledItemDelegate>
 #include <QStyleOptionViewItem>
+#include <QTimer>
 #include <QTreeWidgetItem>
 
 #include "constellation/build.hpp"
@@ -118,6 +120,13 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
 
     setWindowTitle("Constellation Observatory " CNSTLN_VERSION_FULL);
 
+    // Set up pane splitter between the log view and the subscriptions
+    mainSplitter->setChildrenCollapsible(false);
+    mainSplitter->setStretchFactor(0, 1);
+    mainSplitter->setStretchFactor(1, 0);
+    connect(mainSplitter, &QSplitter::splitterMoved, this, [&](int, int) { splitter_user_adjusted_ = true; });
+    connect(subscription_list_widget_, &QSubscriptionList::idealWidthChanged, this, &Observatory::apply_subscription_width);
+
     // Connect signals:
     connect(&log_listener_, &QLogListener::senderConnected, this, [&](const QString& sender) {
         // Only add if not listed yet
@@ -171,6 +180,14 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
         showMaximized();
     }
 
+    // Restore subscription splitter width if manually changed
+    if(gui_settings_.contains("window/splitter")) {
+        mainSplitter->restoreState(gui_settings_.value("window/splitter").toByteArray());
+        splitter_user_adjusted_ = true;
+    } else {
+        QTimer::singleShot(0, this, [this]() { apply_subscription_width(subscription_list_widget_->idealWidth()); });
+    }
+
     // Load last filter settings:
     if(gui_settings_.contains("filters/level")) {
         const auto qlevel = gui_settings_.value("filters/level").toString();
@@ -205,6 +222,13 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     statusBar()->showMessage("Startup Complete", 2000);
 }
 
+void Observatory::apply_subscription_width(int width) {
+    if(splitter_user_adjusted_) {
+        return;
+    }
+    mainSplitter->setSizes({mainSplitter->width() - width, width});
+}
+
 void Observatory::closeEvent(QCloseEvent* event) {
     // Stop the log receiver
     log_listener_.stopPool();
@@ -216,6 +240,11 @@ void Observatory::closeEvent(QCloseEvent* event) {
     if(!isMaximized()) {
         gui_settings_.setValue("window/pos", pos());
         gui_settings_.setValue("window/size", size());
+    }
+
+    // Store splitter if changed manually
+    if(splitter_user_adjusted_) {
+        gui_settings_.setValue("window/splitter", mainSplitter->saveState());
     }
 
     // Store filter settings
