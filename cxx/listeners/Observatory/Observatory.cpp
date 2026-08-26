@@ -120,10 +120,7 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
 
     setWindowTitle("Constellation Observatory " CNSTLN_VERSION_FULL);
 
-    // Set up pane splitter between the log view and the subscriptions
-    mainSplitter->setChildrenCollapsible(false);
-    mainSplitter->setStretchFactor(0, 1);
-    mainSplitter->setStretchFactor(1, 0);
+    // Connect resizable splitter to resize events
     connect(mainSplitter, &QSplitter::splitterMoved, this, [&](int, int) { splitter_user_adjusted_ = true; });
     connect(subscription_list_widget_, &QSubscriptionList::idealWidthChanged, this, &Observatory::apply_subscription_width);
 
@@ -180,13 +177,19 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
         showMaximized();
     }
 
-    // Restore subscription splitter width if manually changed
+    // Restore the subscription splitter width if the user has previously adjusted it manually
     if(gui_settings_.contains("window/splitter")) {
         mainSplitter->restoreState(gui_settings_.value("window/splitter").toByteArray());
         splitter_user_adjusted_ = true;
     } else {
         QTimer::singleShot(0, this, [this]() { apply_subscription_width(subscription_list_widget_->idealWidth()); });
     }
+
+    // Set splitter properties after restoring its state
+    mainSplitter->setChildrenCollapsible(false);
+    mainSplitter->setStretchFactor(0, 1);
+    mainSplitter->setStretchFactor(1, 0);
+    mainSplitter->setHandleWidth(14);
 
     // Load last filter settings:
     if(gui_settings_.contains("filters/level")) {
