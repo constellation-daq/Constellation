@@ -83,6 +83,7 @@ docs = [
     "PyYAML",
     "python-gitlab",
     "python-slugify",
+    "PyGithub",
 ]
 # Feature components
 cli = ["ipython", "traitlets", "pygments"]
