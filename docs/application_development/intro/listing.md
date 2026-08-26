@@ -32,12 +32,23 @@ To add a satellite to the library, a README file that complies with the conventi
 ```json
 {
   "name": "MyInstrument",
+  "type": "website",
   "readme": "https://gitlab.example.com/myinstrument/-/raw/main/source/README.md",
   "website": "https://example.com/myinstrument"
 },
+{
+  "name": "MyOtherInstrument",
+  "type": "gitlab",
+  "website": "https://gitlab.example.com/myproject/myinstrument"
+},
 ```
 
-The README key needs to point to the raw Markdown-formatted file, not to a rendered HTML representation. In particular, for
-GitHub this means using URLs pointing to `https://raw.githubusercontent.com/` instead of `https://github.com` and for GitLab
-to use the link containing `/raw/` instead of `/blob/`. This URL can be found by clicking the "Open raw" button at the top
-of the respective page.
+The `type` parameter defines how the satellite information is interpreted. The following values are supported:
+
+* `gitlab` or `github`: The satellite information points to a public GitLab or GitHub repository. In this case, the `website`
+  parameter should point to the URL of the repository and the `readme` parameter should provide the *relative path* of the
+  README file within the repository. If no `readme` parameter is provided, it defaults to `README.md` in the root directory
+  of the repository. The information and README from the latest available tag will be used.
+* `website`: The satellite information is hosted on a website with no version information. Here, the `website` parameter
+  should point to the description of the satellite or project, while the `readme` parameter needs to point to the raw
+  Markdown-formatted file, not to a rendered HTML representation.
