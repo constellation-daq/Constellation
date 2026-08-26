@@ -48,7 +48,9 @@ The `type` parameter defines how the satellite information is interpreted. The f
 * `gitlab` or `github`: The satellite information points to a public GitLab or GitHub repository. In this case, the `website`
   parameter should point to the URL of the repository and the `readme` parameter should provide the *relative path* of the
   README file within the repository. If no `readme` parameter is provided, it defaults to `README.md` in the root directory
-  of the repository. The information and README from the latest available tag will be used.
+  of the repository. The information and README from the latest available tag will be used. **Only tagged version will be
+  published**, so a repository without a tag will not be included in the satellite library, and every significant change
+  requires a new tag in the satellite repository.
 * `website`: The satellite information is hosted on a website with no version information. Here, the `website` parameter
   should point to the description of the satellite or project, while the `readme` parameter needs to point to the raw
   Markdown-formatted file, not to a rendered HTML representation.
