@@ -104,6 +104,7 @@ QSenderSubscriptions::QSenderSubscriptions(QString name,
     // Only the host name should elide, fix reset button and level selector
     auto reset_policy = reset_button_->sizePolicy();
     reset_policy.setHorizontalPolicy(QSizePolicy::Fixed);
+    reset_policy.setRetainSizeWhenHidden(true);
     reset_button_->setSizePolicy(reset_policy);
 
     auto level_policy = sender_level_->sizePolicy();
@@ -268,7 +269,7 @@ void QSenderSubscriptions::setTopics(const QStringList& topics) {
 int QSenderSubscriptions::preferredWidth() const {
     // Do not use expand_button_->sizeHint() since that is the current size with elided label, recalculate instead
     const QFontMetrics fontmetric(expand_button_->font());
-    const int name_width = fontmetric.horizontalAdvance(name_) + collapse_button_width;
+    const auto name_width = fontmetric.horizontalAdvance(name_) + collapse_button_width;
 
     return name_width + reset_button_->sizeHint().width() + sender_level_->sizeHint().width() + main_layout_->spacing() * 2;
 }
@@ -284,9 +285,9 @@ void QSenderSubscriptions::update_height(bool expand) {
     animation_->setStartValue(animation_->currentValue());
 
     if(expand) {
-        const int rows = topics_->rowCount();
-        const int item_height = topics_view_->verticalHeader()->sectionSize(0);
-        const int expandedHeight = rows * item_height;
+        const auto rows = topics_->rowCount();
+        const auto item_height = topics_view_->verticalHeader()->sectionSize(0);
+        const auto expandedHeight = rows * item_height;
         topics_view_->setMinimumHeight(expandedHeight);
 
         topics_view_->setVisible(true);
@@ -313,5 +314,5 @@ void QSenderSubscriptions::update_reset_state() {
     }
 
     // Set button state
-    reset_button_->setEnabled(is_dirty);
+    reset_button_->setVisible(is_dirty);
 }
