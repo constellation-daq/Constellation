@@ -13,12 +13,20 @@
 #include <memory>
 #include <string>
 
+#include <QScrollBar>
+
 #include "constellation/core/log/Level.hpp"
 
 #include "QLogListener.hpp"
 #include "QSenderSubscriptions.hpp"
 
 using namespace constellation::log;
+
+namespace {
+    // Upper and lower bounds for calculated content width
+    constexpr int min_content_width = 220;
+    constexpr int max_content_width = 480;
+} // namespace
 
 // Qt takes care of cleanup since parent widgets are always specified:
 // NOLINTBEGIN(cppcoreguidelines-owning-memory)
@@ -38,12 +46,13 @@ QSubscriptionList::QSubscriptionList(QWidget* parent)
     scroll_area_->setFrameShape(QFrame::NoFrame);
     layout_->addWidget(scroll_area_);
 
-    // FIXME deduce this width from parent widget - somehow that always returns 100px?
-    scroll_widget_->setFixedWidth(266);
     scroll_area_->setWidget(scroll_widget_);
 
     scroll_layout_->setContentsMargins(6, 6, 6, 6);
     scroll_layout_->setSpacing(6);
+
+    // Calculate baseline width before adding senders
+    update_ideal_width();
 }
 
 // NOLINTEND(cppcoreguidelines-owning-memory)
@@ -68,6 +77,9 @@ void QSubscriptionList::addHost(const QString& host, QLogListener& log_listener,
 
     // Re-build layout
     rebuild_layout();
+
+    // Recalculate width including new host name
+    update_ideal_width();
 }
 
 void QSubscriptionList::removeHost(const QString& host) {
@@ -85,6 +97,9 @@ void QSubscriptionList::removeHost(const QString& host) {
 
     // Re-build layout
     rebuild_layout();
+
+    // Recalculate width without removed host name
+    update_ideal_width();
 }
 
 void QSubscriptionList::setTopics(const QString& host, const QStringList& topics) {
@@ -92,6 +107,10 @@ void QSubscriptionList::setTopics(const QString& host, const QStringList& topics
     if(item != items_.end()) {
         (*item)->setTopics(topics);
     }
+}
+
+int QSubscriptionList::idealWidth() const {
+    return ideal_width_;
 }
 
 void QSubscriptionList::notify_item_expanded(QSenderSubscriptions* item, bool expanded) {
@@ -122,4 +141,25 @@ void QSubscriptionList::rebuild_layout() {
 
     // Add stretch at the end
     scroll_layout_->addStretch();
+}
+
+void QSubscriptionList::update_ideal_width() {
+    int content_width = 0;
+    int floor_width = 0;
+    for(const auto& item : items_) {
+        content_width = std::max(content_width, item->preferredWidth());
+        floor_width = std::max(floor_width, item->minimumRowWidth());
+    }
+
+    // Account for the scroll area margins and vertical scrollbar
+    const auto margins = scroll_layout_->contentsMargins();
+    const int scrollbar_width = scroll_area_->verticalScrollBar()->sizeHint().width();
+    content_width += margins.left() + margins.right() + scrollbar_width;
+    floor_width += margins.left() + margins.right() + scrollbar_width;
+
+    // Enforce minimum size to always show level selector fully
+    scroll_widget_->setMinimumWidth(std::max(floor_width, min_content_width));
+
+    ideal_width_ = std::clamp(content_width, min_content_width, max_content_width);
+    emit idealWidthChanged(ideal_width_);
 }

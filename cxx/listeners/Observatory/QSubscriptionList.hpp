@@ -61,6 +61,21 @@ public:
      */
     void setTopics(const QString& host, const QStringList& topics);
 
+    /**
+     * @brief Get panel width required to show all senders in full without elision
+     *
+     * @return Ideal content width in pixels
+     */
+    int idealWidth() const;
+
+signals:
+    /**
+     * @brief Signal emitted whenever the suggested width for displaying all sender names without elision changes
+     *
+     * @param width New ideal width in pixels
+     */
+    void idealWidthChanged(int width);
+
 private:
     /**
      * @brief Helper to collapse other list sections when a new one was opened
@@ -75,6 +90,11 @@ private:
      */
     void rebuild_layout();
 
+    /**
+     * @brief Helper to recompute the ideal width of the content and notify listeners
+     */
+    void update_ideal_width();
+
 private:
     QVBoxLayout* layout_;
     QScrollArea* scroll_area_;
@@ -84,4 +104,7 @@ private:
     // List of host subscription entries
     std::vector<std::shared_ptr<QSenderSubscriptions>> items_;
     QSenderSubscriptions* expanded_item_ {nullptr};
+
+    // Current ideal content width which does not elide sender names
+    int ideal_width_ {0};
 };
