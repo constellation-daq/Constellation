@@ -45,7 +45,7 @@ QCollapseButton::QCollapseButton(const QString& text, QWidget* parent) : QCollap
 QSize QCollapseButton::minimumSizeHint() const {
     const QFontMetrics fm(font());
     const int text_floor = fm.horizontalAdvance(QStringLiteral("..."));
-    return QSize(text_floor + icon_width, QToolButton::sizeHint().height());
+    return {text_floor + icon_width, QToolButton::sizeHint().height()};
 }
 
 void QCollapseButton::resizeEvent(QResizeEvent* event) {

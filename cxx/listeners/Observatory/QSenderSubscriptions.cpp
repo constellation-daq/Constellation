@@ -271,13 +271,14 @@ int QSenderSubscriptions::preferredWidth() const {
     const QFontMetrics fontmetric(expand_button_->font());
     const auto name_width = fontmetric.horizontalAdvance(name_) + collapse_button_width;
 
-    return name_width + reset_button_->sizeHint().width() + sender_level_->sizeHint().width() + main_layout_->spacing() * 2;
+    return name_width + reset_button_->sizeHint().width() + sender_level_->sizeHint().width() +
+           (main_layout_->spacing() * 2);
 }
 
 int QSenderSubscriptions::minimumRowWidth() const {
     // Minimum width is same as preferred but without the sender name
     return collapse_button_width + reset_button_->sizeHint().width() + sender_level_->sizeHint().width() +
-           main_layout_->spacing() * 2;
+           (main_layout_->spacing() * 2);
 }
 
 void QSenderSubscriptions::update_height(bool expand) {
