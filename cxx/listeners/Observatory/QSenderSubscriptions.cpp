@@ -12,6 +12,7 @@
 #include <functional>
 #include <utility>
 
+#include <QFontMetrics>
 #include <QHeaderView>
 #include <QListWidget>
 #include <QPaintEvent>
@@ -27,6 +28,14 @@ using namespace constellation::gui;
 using namespace constellation::log;
 using namespace constellation::utils;
 
+namespace {
+    // Text used by QLogLevelComboBox to indicate "no override, use global subscription level"
+    constexpr auto neutral_level = "- global -";
+
+    // Approximate with of collapse button including spacing
+    constexpr int collapse_button_width = 40;
+} // namespace
+
 ComboBoxItemDelegate::ComboBoxItemDelegate(QObject* parent) : QStyledItemDelegate(parent) {}
 
 QWidget* ComboBoxItemDelegate::createEditor(QWidget* parent,
@@ -37,7 +46,7 @@ QWidget* ComboBoxItemDelegate::createEditor(QWidget* parent,
     // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
     auto* box = new QLogLevelComboBox(parent);
     box->setDescending(false);
-    box->addNeutralElement("- global -");
+    box->addNeutralElement(neutral_level);
 
     // Directly commit data to model when new item is selected - otherwise data is only committed when the editor loses focus
     connect(box, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this, box](int /* index */) {
@@ -89,6 +98,23 @@ QSenderSubscriptions::QSenderSubscriptions(QString name,
       topics_view_(new QTableView(this)), topics_(new QStandardItemModel(this)), container_(new QWidget(this)),
       main_layout_(new QGridLayout(this)) {
 
+    // Show the full canonical name on hover
+    expand_button_->setToolTip(name_);
+
+    // Only the host name should elide, fix reset button and level selector
+    auto reset_policy = reset_button_->sizePolicy();
+    reset_policy.setHorizontalPolicy(QSizePolicy::Fixed);
+    reset_button_->setSizePolicy(reset_policy);
+
+    auto level_policy = sender_level_->sizePolicy();
+    level_policy.setHorizontalPolicy(QSizePolicy::Fixed);
+    sender_level_->setSizePolicy(level_policy);
+
+    // Set resize policy to "preferred" for collapse button with sender name label
+    auto expand_policy = expand_button_->sizePolicy();
+    expand_policy.setHorizontalPolicy(QSizePolicy::Preferred);
+    expand_button_->setSizePolicy(expand_policy);
+
     reset_button_->setIcon(QIcon(":action/reset"));
     reset_button_->setStyleSheet("QToolButton { border-style: outset; border-width: 0px; }");
 
@@ -116,7 +142,7 @@ QSenderSubscriptions::QSenderSubscriptions(QString name,
 
     // Sender log level
     sender_level_->setDescending(false);
-    sender_level_->addNeutralElement("- global -");
+    sender_level_->addNeutralElement(neutral_level);
 
     // Container for animation
     auto* listLayout = new QVBoxLayout(container_);
@@ -150,11 +176,12 @@ QSenderSubscriptions::QSenderSubscriptions(QString name,
         sender_level_->setNeutral();
         for(int row = 0; row < topics_->rowCount(); ++row) {
             const auto index = topics_->index(row, 1); // Column 1 holds QComboBox
-            topics_->setData(index, topics_->headerData(1, Qt::Horizontal, Qt::DisplayRole), Qt::EditRole);
+            topics_->setData(index, QString(neutral_level), Qt::EditRole);
             // Close and reopen the editor to force an update
             topics_view_->closePersistentEditor(index);
             topics_view_->openPersistentEditor(index);
         }
+        update_reset_state();
     });
 
     // Connect the sender level to subscription:
@@ -166,6 +193,7 @@ QSenderSubscriptions::QSenderSubscriptions(QString name,
         } else {
             unsub_callback_(name_.toStdString(), type);
         }
+        update_reset_state();
     });
 
     // Connect item change to subscription:
@@ -177,7 +205,11 @@ QSenderSubscriptions::QSenderSubscriptions(QString name,
         } else {
             unsub_callback_(name_.toStdString(), topic);
         }
+        update_reset_state();
     });
+
+    // Set initial reset button state
+    update_reset_state();
 }
 
 // NOLINTEND(cppcoreguidelines-owning-memory)
@@ -228,6 +260,23 @@ void QSenderSubscriptions::setTopics(const QStringList& topics) {
     if(expand_button_->isChecked()) {
         update_height(true);
     }
+
+    // Removing a topic row may change reset button state
+    update_reset_state();
+}
+
+int QSenderSubscriptions::preferredWidth() const {
+    // Do not use expand_button_->sizeHint() since that is the current size with elided label, recalculate instead
+    const QFontMetrics fontmetric(expand_button_->font());
+    const int name_width = fontmetric.horizontalAdvance(name_) + collapse_button_width;
+
+    return name_width + reset_button_->sizeHint().width() + sender_level_->sizeHint().width() + main_layout_->spacing() * 2;
+}
+
+int QSenderSubscriptions::minimumRowWidth() const {
+    // Minimum width is same as preferred but without the sender name
+    return collapse_button_width + reset_button_->sizeHint().width() + sender_level_->sizeHint().width() +
+           main_layout_->spacing() * 2;
 }
 
 void QSenderSubscriptions::update_height(bool expand) {
@@ -247,4 +296,22 @@ void QSenderSubscriptions::update_height(bool expand) {
     }
 
     animation_->start();
+}
+
+void QSenderSubscriptions::update_reset_state() {
+    bool is_dirty = sender_level_->currentText() != neutral_level;
+
+    if(!is_dirty) {
+        for(int row = 0; row < topics_->rowCount(); ++row) {
+            const auto text = topics_->item(row, 1)->text();
+            // New rows might have empty text before persistent editor sets value - treat as neutral
+            if(!text.isEmpty() && text != neutral_level) {
+                is_dirty = true;
+                break;
+            }
+        }
+    }
+
+    // Set button state
+    reset_button_->setEnabled(is_dirty);
 }

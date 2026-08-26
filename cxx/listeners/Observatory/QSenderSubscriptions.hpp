@@ -97,6 +97,22 @@ public:
      */
     void setTopics(const QStringList& topics);
 
+    /**
+     * @brief Get preferred width which allows to display the entire host name
+     * @details This calculates the width directly from collapse button, label, reset button, level selector and margins
+     *
+     * @return Preferred width in pixels
+     */
+    int preferredWidth() const;
+
+    /**
+     * @brief Get the minimum width
+     * @details Same as preferredWidth() but without the host name label
+     *
+     * @return Minimum width in pixels
+     */
+    int minimumRowWidth() const;
+
 signals:
     /**
      * @brief Signal emitted when the topic list was expanded or collapsed
@@ -113,6 +129,11 @@ private:
      * @param expand Boolean selecting whether to expand or collapse the topic list
      */
     void update_height(bool expand);
+
+    /**
+     * @brief Helper to set reset button state depending on whether any subscription currently differs from global setting
+     */
+    void update_reset_state();
 
 private:
     // Name of the host
