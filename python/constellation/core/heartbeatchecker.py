@@ -298,8 +298,9 @@ class HeartbeatChecker(BaseSatelliteFrame):
                                     self.log_chp.info(f"{hb.name} unresponsive causing interrupt callback to be called")
                                     hb.failed.set()
                                     self._heartbeat_interrupt(msg)
-                                    # update state
-                                    hb.state = SatelliteState.DEAD
+
+                            # Update state
+                            hb.state = SatelliteState.DEAD
 
                         else:
                             # refresh, try again later
