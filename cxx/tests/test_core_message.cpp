@@ -408,7 +408,8 @@ TEST_CASE("CDTP2 Invalid Data Records", "[core][core::message]") {
     zmq_mpm.addmem(sbuf.data(), sbuf.size());
     REQUIRE_THROWS_MATCHES(CDTP2Message::disassemble(zmq_mpm),
                            MessageDecodingError,
-                           Message("Error decoding CDTP2 message: Error unpacking data: data records are not in an array"));
+                           Message("Error decoding CDTP2 message: Type error for "
+                                   "std::vector<constellation::message::CDTP2Message::DataRecord>: std::bad_cast"));
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
