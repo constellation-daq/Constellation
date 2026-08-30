@@ -201,6 +201,7 @@ void FSM::requestInterrupt(std::string_view reason) {
     // Wait until we are in a steady state
     while(!is_steady(state_.load())) {
         LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
+        std::this_thread::sleep_for(10ms);
     }
 
     const auto msg = "Interrupting satellite operation: " + std::string(reason);
@@ -214,6 +215,7 @@ void FSM::requestInterrupt(std::string_view reason) {
         // We could be in interrupting, so wait for steady state
         while(!is_steady(state_.load())) {
             LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
+            std::this_thread::sleep_for(10ms);
         }
     } else {
         LOG(logger_, DEBUG) << "Interrupt in current state not allowed";
@@ -226,6 +228,7 @@ void FSM::requestFailure(std::string_view reason) {
     // Wait until we are in a steady state
     while(!is_steady(state_.load())) {
         LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
+        std::this_thread::sleep_for(10ms);
     }
 
     const auto msg = "Failure during satellite operation: " + std::string(reason);
