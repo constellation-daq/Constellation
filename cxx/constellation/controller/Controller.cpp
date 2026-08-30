@@ -539,8 +539,11 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(CSCP1Message& cmd) 
 
     const std::scoped_lock connection_lock {connection_mutex_};
     for(auto& [name, sat] : connections_) {
+        // Copy iterator variable to pass to future
+        auto* s = &sat;
+
         // Start command sending and store future:
-        futures.emplace(name, std::async(std::launch::async, [&]() { return send_receive(sat, cmd, true); }));
+        futures.emplace(name, std::async(std::launch::async, [this, s, &cmd]() { return send_receive(*s, cmd, true); }));
     }
 
     for(auto& [sat, future] : futures) {
@@ -581,13 +584,17 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& 
             continue;
         }
 
+        // Copy iterator variables for future:
+        const auto sname = name;
+        auto* s = &sat;
+
         // Start command sending and store future:
-        futures.emplace(name, std::async(std::launch::async, [&]() {
+        futures.emplace(name, std::async(std::launch::async, [this, s, sname, &verb, &payloads]() {
                             // Prepare message:
-                            auto send_msg = (payloads.contains(name)
-                                                 ? build_message(verb, payloads.at(name))
+                            auto send_msg = (payloads.contains(sname)
+                                                 ? build_message(verb, payloads.at(sname))
                                                  : CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, verb}));
-                            return send_receive(sat, send_msg);
+                            return send_receive(*s, send_msg);
                         }));
     }
 

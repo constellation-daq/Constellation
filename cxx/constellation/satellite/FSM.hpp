@@ -370,7 +370,7 @@ namespace constellation::satellite {
 
         mutable std::mutex status_mutex_;
         std::string status_;
-        std::atomic<bool> status_emitted_;
+        std::atomic<bool> status_emitted_ {false};
 
         BaseSatellite* satellite_;
         log::Logger logger_;
