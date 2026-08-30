@@ -239,13 +239,17 @@ void QController::propagate_update(UpdateType type, std::size_t position, std::s
 }
 
 Dictionary QController::getQCommands(const QModelIndex& index) {
-    const std::scoped_lock lock {connection_mutex_};
+    std::unique_lock<std::mutex> lock {connection_mutex_};
 
     // Select connection by index:
     auto it = connections_.begin();
     std::advance(it, index.row());
+    const auto name = it->first;
 
-    return it->second.commands;
+    // Unlock so the controller can grab it
+    lock.unlock();
+
+    return getConnectionCommands(name);
 }
 
 std::string QController::getQName(const QModelIndex& index) const {
