@@ -76,7 +76,10 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
     stopPool();
 
     // Reset potentially existing sink
-    sink_.reset();
+    if(sink_ != nullptr) {
+        sink_.reset();
+        spdlog::drop(getCanonicalName());
+    }
 
     method_ = config.get<LogMethod>("method");
     allow_overwriting_ = config.get<bool>("allow_overwriting", false);
@@ -200,6 +203,12 @@ void FlightRecorderSatellite::starting(std::string_view run_identifier) {
     // For method RUN set a new log file
     if(method_ == LogMethod::RUN) {
         try {
+            // Drop existing logger:
+            if(sink_ != nullptr) {
+                sink_.reset();
+                spdlog::drop(getCanonicalName());
+            }
+
             // Append run identifier to the end of the file name while keeping the extension
             const auto path =
                 validate_file_path(path_.parent_path() /
