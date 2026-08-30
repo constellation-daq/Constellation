@@ -288,6 +288,13 @@ class HeartbeatChecker(BaseSatelliteFrame):
                             msg = f"No signs of life detected anymore from {hb.name}"
                             self.log_chp.warning(msg)
 
+                            # Update state and invoke state change callback
+                            old_state = hb.state
+                            hb.state = SatelliteState.DEAD
+                            if old_state != SatelliteState.DEAD:
+                                hb.last_statechange = datetime.now(UTC)
+                                self._on_state_change(hb.name, old_state, SatelliteState.DEAD)
+
                             # Check if the run needs to be marked as degraded
                             if hb.role.role_requires(CHPMessageFlags.MARK_DEGRADED):
                                 self._mark_degraded(msg)
@@ -298,9 +305,6 @@ class HeartbeatChecker(BaseSatelliteFrame):
                                     self.log_chp.info(f"{hb.name} unresponsive causing interrupt callback to be called")
                                     hb.failed.set()
                                     self._heartbeat_interrupt(msg)
-
-                            # Update state
-                            hb.state = SatelliteState.DEAD
 
                         else:
                             # refresh, try again later
