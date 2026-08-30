@@ -139,7 +139,7 @@ namespace constellation::heartbeat {
         /** Maximum heartbeat interval */
         std::atomic<std::chrono::milliseconds> default_interval_;
         /** Current number of subscribers */
-        std::atomic_size_t subscribers_;
+        std::atomic_size_t subscribers_ {0};
         /** Current heartbeat interval */
         std::atomic<std::chrono::milliseconds> interval_;
         /** Default message flags, defined e.g. by the role of the sender */
