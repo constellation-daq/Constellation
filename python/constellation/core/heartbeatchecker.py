@@ -280,7 +280,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
             # regularly check for stale connections and missed heartbeats
             if (time.monotonic() - last_check) > 0.3:
                 for hb in self._remote_heartbeat_states.values():
-                    if hb.lives > 0 and hb.seconds_since_refresh > (hb.interval / 1000) * 1.5 and not hb.failed.is_set():
+                    if hb.lives > 0 and hb.seconds_since_refresh > (hb.interval / 1000) * 1.5:
                         # no message after 150% of the interval, subtract life
                         hb.lives -= 1
                         self.log_chp.debug("Missed heartbeat from %s, reduced lives to %d", hb.name, hb.lives)
