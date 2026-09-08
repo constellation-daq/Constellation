@@ -93,26 +93,43 @@ void HeartbeatManager::setRole(CHP::Role role) {
 void HeartbeatManager::host_disconnected(const chirp::DiscoveredService& service) {
 
     LOG(logger_, DEBUG) << "Processing orderly departure of remote " << service.to_uri();
-    const std::scoped_lock lock {mutex_};
+    std::unique_lock lock {mutex_};
+
+    std::optional<std::string> call_degradation;
+    std::optional<std::string> call_interrupt;
 
     // Remove the remote
     auto remote_it =
         std::ranges::find_if(remotes_, [&service](const auto& remote) { return MD5Hash(remote.first) == service.host_id; });
-    if(remote_it != remotes_.end()) {
-        // Check if the run needs to be marked as degraded
-        if(degradation_callback_ && role_requires(remote_it->second.role, CHP::MessageFlags::MARK_DEGRADED)) {
-            degradation_callback_(remote_it->first + " departed illicitly");
-        }
+    if(remote_it == remotes_.end()) {
+        return;
+    }
 
-        // Check if per its role, this remote is allowed to depart:
-        if(interrupt_callback_ && role_requires(remote_it->second.role, CHP::MessageFlags::DENY_DEPARTURE)) {
-            LOG(logger_, DEBUG) << remote_it->first << " departed with " << "DENY_DEPARTURE"_quote
-                                << " flag, requesting interrupt";
-            interrupt_callback_(remote_it->first + " departed illicitly");
-        } else {
-            LOG(INFO) << remote_it->first << " departed orderly";
-        }
-        remotes_.erase(remote_it);
+    // Check if the run needs to be marked as degraded
+    if(degradation_callback_ && role_requires(remote_it->second.role, CHP::MessageFlags::MARK_DEGRADED)) {
+        call_degradation = remote_it->first + " departed illicitly";
+    }
+
+    // Check if per its role, this remote is allowed to depart:
+    if(interrupt_callback_ && role_requires(remote_it->second.role, CHP::MessageFlags::DENY_DEPARTURE)) {
+        LOG(logger_, DEBUG) << remote_it->first << " departed with " << "DENY_DEPARTURE"_quote
+                            << " flag, requesting interrupt";
+        call_interrupt = remote_it->first + " departed illicitly";
+    } else {
+        LOG(logger_, INFO) << remote_it->first << " departed orderly";
+    }
+    remotes_.erase(remote_it);
+
+    // Unlock
+    lock.unlock();
+
+    // Trigger callbacks:
+    if(call_degradation.has_value()) {
+        degradation_callback_(call_degradation.value());
+    }
+
+    if(call_interrupt.has_value()) {
+        interrupt_callback_(call_interrupt.value());
     }
 }
 
@@ -186,6 +203,9 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
         // Wait until condition variable is notified or timeout is reached
         cv_.wait_until(lock, wakeup);
 
+        std::optional<std::string> call_degradation;
+        std::optional<std::string> call_interrupt;
+
         // Calculate the next wake-up by checking when the next heartbeat times out, but time out after 3s anyway:
         wakeup = std::chrono::steady_clock::now() + 3s;
         for(auto& [key, remote] : remotes_) {
@@ -204,13 +224,13 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
 
                     // Check if the run needs to be marked as degraded
                     if(degradation_callback_ && role_requires(remote.role, CHP::MessageFlags::MARK_DEGRADED)) {
-                        degradation_callback_(msg);
+                        call_degradation = msg;
                     }
 
                     // Only trigger interrupt if the role demands it
                     if(interrupt_callback_ && role_requires(remote.role, CHP::MessageFlags::TRIGGER_INTERRUPT)) {
                         // This parrot is dead, it is no more
-                        interrupt_callback_(msg);
+                        call_interrupt = msg;
                     }
                 }
             }
@@ -222,6 +242,18 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
             }
             LOG(logger_, TRACE) << "Updated heartbeat wakeup timer to "
                                 << std::chrono::duration_cast<std::chrono::milliseconds>(wakeup - now);
+        }
+
+        // Unlock the mutex for callbacks:
+        lock.unlock();
+
+        // Trigger callbacks:
+        if(call_degradation.has_value()) {
+            degradation_callback_(call_degradation.value());
+        }
+
+        if(call_interrupt.has_value()) {
+            interrupt_callback_(call_interrupt.value());
         }
     }
 }
