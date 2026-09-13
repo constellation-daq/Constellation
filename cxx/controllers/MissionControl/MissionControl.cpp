@@ -375,13 +375,24 @@ void MissionControl::on_btnGenConf_clicked() {
         LOG(logger_, WARNING) << error.what();
     }
 
-    const QString filename = QFileDialog::getSaveFileName(this,
-                                                          tr("Save File"),
-                                                          QFileInfo(txtConfigFileName->text()).path(),
-                                                          "TOML File (*.toml);;YAML (*.yaml);;All Files (*.*)");
+    QString selectedFilter;
+    QString filename = QFileDialog::getSaveFileName(this,
+                                                    tr("Save File"),
+                                                    QFileInfo(txtConfigFileName->text()).path(),
+                                                    "TOML File (*.toml);;YAML (*.yaml);;All Files (*.*)",
+                                                    &selectedFilter);
 
     if(filename.isNull()) {
         return;
+    }
+
+    // Append file extension if missing
+    if(QFileInfo(filename).suffix().isEmpty()) {
+        if(selectedFilter.startsWith("YAML")) {
+            filename += ".yaml";
+        } else {
+            filename += ".toml";
+        }
     }
 
     // Store to file:
