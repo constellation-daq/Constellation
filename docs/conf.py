@@ -6,8 +6,10 @@ import json
 import os
 import pathlib
 import sys
+from urllib.parse import urlparse
 
 import copy_satellite_docs
+import github
 import gitlab
 import latex_helpers
 import sphinx
@@ -220,7 +222,9 @@ else:
     for glproject in gitlab_satellites:
         glproject = gl.projects.get(glproject.id)
         name = glproject.name
-        satellite_category = copy_satellite_docs.convert_satellite_readme_gitlab(name, glproject, docsdir / "satellites")
+        satellite_category = copy_satellite_docs.convert_satellite_readme_gitlab(
+            name, "README.md", glproject, docsdir / "satellites"
+        )
         if satellite_category:
             satellites.setdefault(satellite_category, []).append(f"{name} 📦 <{slugify(name, lowercase=False)}>")
 
@@ -229,12 +233,34 @@ else:
     with ext_satellites_json.open() as ext_satellites_json_file:
         ext_satellites = json.load(ext_satellites_json_file)["external_satellites"]
         for satellite_json in ext_satellites:
+            source = satellite_json["type"] if "type" in satellite_json else "website"
             name = satellite_json["name"]
-            readme = satellite_json["readme"]
             website = satellite_json["website"]
-            satellite_category = copy_satellite_docs.convert_satellite_readme_ext(
-                name, readme, website, docsdir / "satellites"
-            )
+            readme = satellite_json["readme"] if "readme" in satellite_json else "README.md"
+
+            if source == "gitlab":
+                parsed = urlparse(website)
+                gl = gitlab.Gitlab(f"{parsed.scheme}://{parsed.netloc}")
+                project_path = parsed.path.strip("/")
+                glproject = gl.projects.get(project_path)
+                satellite_category = copy_satellite_docs.convert_satellite_readme_gitlab(
+                    name, readme, glproject, docsdir / "satellites"
+                )
+            elif source == "github":
+                parsed = urlparse(website)
+                parts = parsed.path.strip("/").split("/")
+                owner, repo_name = parts[:2]
+
+                gh = github.Github()
+                repo = gh.get_repo(f"{owner}/{repo_name}")
+                satellite_category = copy_satellite_docs.convert_satellite_readme_github(
+                    name, readme, repo, docsdir / "satellites"
+                )
+            else:
+                satellite_category = copy_satellite_docs.convert_satellite_readme_ext(
+                    name, readme, website, docsdir / "satellites"
+                )
+
             if satellite_category:
                 satellites.setdefault(satellite_category, []).append(f"{name} 🌐 <{slugify(name, lowercase=False)}>")
 
