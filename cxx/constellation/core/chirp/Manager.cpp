@@ -300,6 +300,9 @@ void Manager::handle_incoming_message(message::CHIRPMessage chirp_msg, const asi
                 discovered_services_lock.unlock();
                 call_discover_callbacks(discovered_service, ServiceStatus::DISCOVERED);
             }
+        } else if(chirp_msg.getPort() == 0) {
+            LOG(logger_, WARNING) << quote(discovered_service.host_id.to_string()) << " offers service "
+                                  << quote(chirp_msg.getServiceIdentifier()) << " with port 0, ignoring";
         } else {
             discovered_services_.insert(discovered_service);
 

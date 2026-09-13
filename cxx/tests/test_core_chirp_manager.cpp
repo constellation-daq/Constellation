@@ -366,4 +366,18 @@ TEST_CASE("Detect incorrect CHIRP message in CHIRP manager", "[chirp][chirp::man
     // If everything worked, the corresponding lines should be marked as executed in coverage
 }
 
+TEST_CASE("Detect CHIRP OFFER message with port 0", "[chirp][chirp::manager]") {
+    MulticastSocket sender {get_loopback_if(), asio::ip::address_v4(MULTICAST_ADDRESS), PORT};
+    Manager manager {"group1", "sat1", get_loopback_if()};
+    manager.start();
+
+    const auto asm_msg = CHIRPMessage(OFFER, "group1", "sat2", CONTROL, 0).assemble();
+    sender.sendMessage(asm_msg);
+
+    // Wait a bit ensure we received the message
+    std::this_thread::sleep_for(100ms);
+
+    REQUIRE(manager.getDiscoveredServices().empty());
+}
+
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
