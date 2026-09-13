@@ -275,7 +275,7 @@ void FSM::call_state_callbacks(bool only_with_status) {
     std::vector<std::future<void>> futures {};
     futures.reserve(state_callbacks_.size());
     for(const auto& [id, callback] : state_callbacks_) {
-        futures.emplace_back(std::async(std::launch::async, [&]() {
+        futures.emplace_back(std::async(std::launch::async, [this, id, callback, status]() {
             try {
                 callback(state_.load(), status);
             } catch(...) {

@@ -408,7 +408,7 @@ namespace constellation::controller {
         /** Heartbeat receiver module */
         constellation::heartbeat::HeartbeatRecv heartbeat_receiver_;
 
-        std::atomic_size_t connection_count_;
+        std::atomic_size_t connection_count_ {0};
 
         std::chrono::milliseconds cmd_timeout_ {1500};
 
