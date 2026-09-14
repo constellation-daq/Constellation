@@ -182,3 +182,11 @@ def test_cmd_multiple_parameters(mock_cmdreceiver, mock_cmd_transmitter):
     assert isinstance(req, CSCP1Message)
     assert req.verb_msg == "Wrong argument: Expected 4 payload elements, got 2"
     assert req.verb_type == CSCP1Message.Type.INCOMPLETE
+
+    # Calling command with arguments that takes none should fail
+    mock_cmd_transmitter.send_request("get_state", [True, False])
+    time.sleep(0.1)
+    req = mock_cmd_transmitter.get_message()
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_msg == "Wrong argument: Expected no arguments, got 2"
+    assert req.verb_type == CSCP1Message.Type.INCOMPLETE

@@ -327,13 +327,11 @@ def test_satellite_fsm_transition_walk(mock_cmd_transmitter, mock_satellite):
     sender = mock_cmd_transmitter
     satellite, _ctx = mock_satellite
     for cmd, state in transitions:
+        payload = None
         if cmd == "initialize":
             payload = {"mock_cfg_key": "mock config string"}
         elif cmd == "start":
             payload = "5001"
-        else:
-            # send a dict, why not?
-            payload = {"mock key": "mock argument string"}
         sender.send_request(cmd, payload)
         time.sleep(0.2)
         req = sender.get_message()
@@ -368,13 +366,11 @@ def test_satellite_fsm_transition_safe_walk(mock_cmd_transmitter, mock_satellite
     sender = mock_cmd_transmitter
     satellite, _ctx = mock_satellite
     for cmd, state in transitions:
+        payload = None
         if cmd == "initialize":
             payload = {"mock_cfg_key": "mock config string"}
         elif cmd == "start":
             payload = "5001"
-        else:
-            # send a dict, why not?
-            payload = {"mock key": "mock argument string"}
         sender.send_request(cmd, payload)
         time.sleep(0.2)
         req = sender.get_message()
@@ -408,13 +404,11 @@ def test_satellite_fsm_timestamp(mock_cmd_transmitter, mock_satellite):
     assert satellite.fsm.last_changed
     last_changed = satellite.fsm.last_changed
     for cmd, state in transitions:
+        payload = None
         if cmd == "initialize":
             payload = {"mock_cfg_key": "mock config string"}
         elif cmd == "start":
             payload = "5001"
-        else:
-            # send a dict, why not?
-            payload = {"mock key": "mock argument string"}
         sender.send_request(cmd, payload)
         time.sleep(0.2)
         req = sender.get_message()
@@ -453,14 +447,12 @@ def test_satellite_run_id_cmd(mock_cmd_transmitter, mock_satellite):
     assert satellite.run_identifier == run_id
 
     for cmd, state in transitions.items():
+        payload = None
         if cmd == "initialize":
             payload = {"mock_cfg_key": "mock config string"}
         elif cmd == "start":
             payload = "5001"
             run_id = "5001"
-        else:
-            # send a dict, why not?
-            payload = {"mock key": "mock argument string"}
         req = sender.request_get_response(cmd, payload)
         assert isinstance(req, CSCP1Message)
         assert "transitioning" in str(req.verb_msg).lower()
@@ -483,13 +475,11 @@ def test_satellite_run_fail(mock_cmd_transmitter, mock_fail_satellite):
     sender = mock_cmd_transmitter
     satellite, _ctx = mock_fail_satellite
     for cmd, state in transitions.items():
+        payload = None
         if cmd == "initialize":
             payload = {"mock_cfg_key": "mock config string"}
         elif cmd == "start":
             payload = "5001"
-        else:
-            # send a dict, why not?
-            payload = {"mock key": "mock argument string"}
         sender.send_request(cmd, payload)
         time.sleep(0.2)
         req = sender.get_message()

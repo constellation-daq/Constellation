@@ -248,6 +248,10 @@ class CommandReceiver(BaseSatelliteFrame):
                     rv = command_cb(*call_args)
                 else:
                     self.log_cscp.debug("Calling command %s with no arguments", command)
+                    if req.payload:
+                        raise TypeError(
+                            f"Expected no arguments, got {len(req.payload) if isinstance(req.payload, list) else 1}"
+                        )
                     rv = command_cb()
                 if rv is None:
                     # command not allowed since None returned

@@ -59,13 +59,11 @@ def test_mariner_fsm_transition(mock_cmd_transmitter, mariner_satellite):
     }
     sender = mock_cmd_transmitter
     for cmd, state in transitions.items():
+        payload = None
         if cmd == "initialize":
             payload = {"voltage": 1000, "current": 3, "sample_period": 1}
         elif cmd == "start":
             payload = "5001"
-        else:
-            # send a dict, why not?
-            payload = {"mock key": "mock argument string"}
         sender.send_request(cmd, payload)
         time.sleep(0.2)
         req = sender.get_message()
