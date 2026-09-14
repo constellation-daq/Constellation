@@ -88,6 +88,7 @@ glossary
 ```{toctree}
 :caption: 📖 How-To Guides
 
+howtos/remote_satellites.md
 howtos/transition_order
 howtos/setup_influxdb_grafana
 howtos/setup_mattermost_logger
