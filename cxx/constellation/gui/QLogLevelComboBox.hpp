@@ -49,6 +49,7 @@ namespace constellation::gui {
         void addNeutralElement(std::string neutral);
 
         void setCurrentLevel(constellation::log::Level level);
+        void setNeutral();
 
     private:
         void paintEvent(QPaintEvent* event) override;

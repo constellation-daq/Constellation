@@ -20,6 +20,7 @@
 #include <QStandardItemModel>
 #include <QStringList>
 #include <QTableView>
+#include <QToolButton>
 #include <QWidget>
 
 #include "constellation/core/log/Level.hpp"
@@ -96,6 +97,22 @@ public:
      */
     void setTopics(const QStringList& topics);
 
+    /**
+     * @brief Get preferred width which allows to display the entire host name
+     * @details This calculates the width directly from collapse button, label, reset button, level selector and margins
+     *
+     * @return Preferred width in pixels
+     */
+    int preferredWidth() const;
+
+    /**
+     * @brief Get the minimum width
+     * @details Same as preferredWidth() but without the host name label
+     *
+     * @return Minimum width in pixels
+     */
+    int minimumRowWidth() const;
+
 signals:
     /**
      * @brief Signal emitted when the topic list was expanded or collapsed
@@ -113,6 +130,11 @@ private:
      */
     void update_height(bool expand);
 
+    /**
+     * @brief Helper to set reset button state depending on whether any subscription currently differs from global setting
+     */
+    void update_reset_state();
+
 private:
     // Name of the host
     QString name_;
@@ -129,6 +151,7 @@ private:
 
     // UI elements
     constellation::gui::QCollapseButton* expand_button_;
+    QToolButton* reset_button_;
     QTableView* topics_view_;
     QStandardItemModel* topics_;
     QWidget* container_;
