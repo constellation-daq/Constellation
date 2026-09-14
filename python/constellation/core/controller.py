@@ -533,25 +533,26 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
         ct = CommandTransmitter(self.name, socket)
         self.log.debug("Connecting to %s, address %s on port %s...", service.host_uuid, service.address, service.port)
         try:
-            # get list of commands
-            msg = ct.request_get_response("get_commands")
-            hidden_cmds = {}
-
-            try:
-                # also register hidden commands:
-                hidden_cmds = ct.request_get_response("_get_commands").payload
-            except RuntimeError:
-                pass
-
-            # extract canonical name
-            sat_type, sat_name = msg.sender.split(".", maxsplit=1)
+            # get canonical name
+            msg = ct.request_get_response("get_name")
+            sat_type, sat_name = msg.verb_msg.split(".", maxsplit=1)
             canonical_name = f"{sat_type}.{sat_name}"
 
             # add satellite heartbeat
             self._add_satellite_heartbeat(canonical_name, service.host_uuid, ct)
 
+            # get list of commands
+            cmds = ct.request_get_response("get_commands").payload
+            hidden_cmds = {}
+
+            # also register hidden commands
+            try:
+                hidden_cmds = ct.request_get_response("_get_commands").payload
+            except RuntimeError:
+                pass
+
             # add satellite to constellation
-            sat = self._constellation._add_satellite(sat_name, sat_type, msg.payload, hidden_cmds)
+            sat = self._constellation._add_satellite(sat_name, sat_type, cmds, hidden_cmds)
             if sat._uuid != str(service.host_uuid):
                 self.log.warning("UUIDs do not match: expected %s but received %s", sat._uuid, str(service.host_uuid))
             uuid = str(service.host_uuid)
