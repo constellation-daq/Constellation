@@ -6,6 +6,7 @@ This module provides network helper routines.
 """
 
 import argparse
+import os
 import socket
 
 import psutil
@@ -57,9 +58,10 @@ def get_interface_names() -> list[str]:
         if not (if_stats.isup and get_addr(if_name) is not None):
             continue
         # Ensure that the interface is multicast capable (except for loopback)
-        if_flags = if_stats.flags.split(",")
-        if "multicast" not in if_flags and "loopback" not in if_flags:
-            continue
+        if os.name != "nt":
+            if_flags = if_stats.flags.split(",")
+            if "multicast" not in if_flags and "loopback" not in if_flags:
+                continue
         interface_names.append(if_name)
     return interface_names
 
