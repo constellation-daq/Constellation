@@ -48,7 +48,9 @@ class ConstellationArgumentParser(ArgumentParser):
             type=str.upper,
             help="The maximum level of log messages to print to the console.",
         )
-        self.add_argument("--version", action="version", version=f"Constellation v{__version__} ({__version_code_name__})")
+        self.version_action = self.add_argument(
+            "--version", action="version", version=f"Constellation v{__version__} ({__version_code_name__})"
+        )
         # add a constellation argument group
         self.constellation = self.add_argument_group("Constellation")
         self.constellation.add_argument(

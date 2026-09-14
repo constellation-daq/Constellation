@@ -5,12 +5,14 @@
 Copy Satellite READMEs to documentation and convert them for MyST consumption
 """
 
+import base64
 import pathlib
 import re
 import urllib.request
 
 import sphinx.util.logging
 import yaml
+from github.Repository import Repository
 from gitlab.v4.objects.projects import Project
 from slugify import slugify
 
@@ -265,7 +267,7 @@ def convert_satellite_readme_ext(name: str, readme_url: str, website: str, out_p
     return None
 
 
-def convert_satellite_readme_gitlab(name: str, project: Project, out_path: pathlib.Path) -> str | None:
+def convert_satellite_readme_gitlab(name: str, readme: str, project: Project, out_path: pathlib.Path) -> str | None:
     """
     Converts and copies a satellite README from a GitLab project. The output is written to `<out_path>/<satellite_type>.md`.
     Returns the category (if satellite readme can be converted, else None).
@@ -277,17 +279,56 @@ def convert_satellite_readme_gitlab(name: str, project: Project, out_path: pathl
         # Check if this project has a tag, if not, skip
         tags = project.tags.list(order_by="updated", sort="desc")
         if not tags:
-            logger.verbose(f"Skipping {name} because repository does not provide any tag")
+            logger.info(f"Skipping {name} because repository does not provide any tag")
             return None
 
         # Download README for the latest tag:
-        markdown = project.files.raw(file_path="README.md", ref=tags[0].name).decode()
+        markdown = project.files.raw(file_path=readme, ref=tags[0].name).decode()
 
         # Extract category, language and parent classes
         category, language, parent_classes = extract_front_matter(markdown)
 
         # Convert markdown
-        markdown = convert_satellite_readme(markdown, language, parent_classes, {"Website": f"[{website}]({website})"})
+        markdown = convert_satellite_readme(
+            markdown, language, parent_classes, {"Website": f"[{website}]({website})", "Version": f"{tags[0].name}"}
+        )
+
+        # Write Markdown
+        (out_path / slugify(name, lowercase=False)).with_suffix(".md").write_text(markdown)
+
+        # Return category
+        return category
+
+    except Exception as e:
+        logger.warning(f"Failed to convert external satellite README for {name}: {str(e)}")
+    return None
+
+
+def convert_satellite_readme_github(name: str, readme: str, repository: Repository, out_path: pathlib.Path) -> str | None:
+    """
+    Converts and copies a satellite README from a GitHub project. The output is written to `<out_path>/<satellite_type>.md`.
+    Returns the category (if satellite readme can be converted, else None).
+    """
+    # Run everything in try-except in case no internet connection or other error
+    try:
+        website = repository.html_url
+
+        # Check if this project has a tag, if not, skip
+        tag = next(iter(repository.get_tags()), None)
+        if not tag:
+            logger.info(f"Skipping {name} because repository does not provide any tag")
+            return None
+
+        # Download README for the latest tag:
+        markdown = base64.b64decode(repository.get_contents(path=readme, ref=tag.name).content).decode()
+
+        # Extract category, language and parent classes
+        category, language, parent_classes = extract_front_matter(markdown)
+
+        # Convert markdown
+        markdown = convert_satellite_readme(
+            markdown, language, parent_classes, {"Website": f"[{website}]({website})", "Version": f"{tag.name}"}
+        )
 
         # Write Markdown
         (out_path / slugify(name, lowercase=False)).with_suffix(".md").write_text(markdown)

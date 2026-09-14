@@ -38,7 +38,7 @@ namespace constellation::satellite {
 
     class CNSTLN_API BaseSatellite {
     protected:
-        BaseSatellite(std::string_view type, std::string_view name);
+        BaseSatellite(std::string_view type, std::string_view name, std::string_view version);
 
     public:
         /**
@@ -73,6 +73,11 @@ namespace constellation::satellite {
          * @brief Return the satellite name
          */
         constexpr std::string_view getSatelliteName() const { return satellite_name_; }
+
+        /**
+         * @brief Return the satellite version
+         */
+        constexpr std::string_view getSatelliteVersion() const { return satellite_version_; }
 
         /**
          * @brief Return the canonical name of the satellite
@@ -275,6 +280,7 @@ namespace constellation::satellite {
 
         std::string satellite_type_;
         std::string satellite_name_;
+        std::string satellite_version_;
         FSM fsm_;
 
         std::jthread cscp_thread_;

@@ -2,32 +2,35 @@
   "external_satellites": [
     {
       "name": "Adenium",
-      "readme": "https://gitlab.desy.de/beam-telescopes/adenium/-/raw/main/source/constellation/README.md",
+      "type": "gitlab",
+      "readme": "source/constellation/README.md",
       "website": "https://gitlab.desy.de/beam-telescopes/adenium"
     },
     {
       "name": "CMS Pixel / pxar",
-      "readme": "https://raw.githubusercontent.com/simonspa/pxar/refs/heads/cnstln-testbeam-extend/constellation/README.md",
+      "type": "github",
+      "readme": "constellation/README.md",
       "website": "https://github.com/simonspa/pxar/tree/cnstln-testbeam-extend"
     },
     {
       "name": "AIDA-2020 TLU / aidatlu",
-      "readme": "https://raw.githubusercontent.com/SiLab-Bonn/aidatlu/refs/heads/main/aidatlu/constellation/README.md",
+      "type": "github",
+      "readme": "aidatlu/constellation/README.md",
       "website": "https://github.com/SiLab-Bonn/aidatlu"
     },
     {
       "name": "MaxiGaugeTPG366",
-      "readme": "https://gitlab.desy.de/madmax/hamburg/maxigaugetpg366-satellite/-/raw/main/README.md",
+      "type": "gitlab",
       "website": "https://gitlab.desy.de/madmax/hamburg/maxigaugetpg366-satellite"
     },
     {
       "name": "AMIModel1700LLI",
-      "readme": "https://gitlab.desy.de/madmax/hamburg/amimodel1700lli-satellite/-/raw/main/README.md",
+      "type": "gitlab",
       "website": "https://gitlab.desy.de/madmax/hamburg/amimodel1700lli-satellite"
     },
     {
       "name": "TTi QL355TP",
-      "readme": "https://raw.githubusercontent.com/jedi-demo/TTi-QL355TP-satellite/refs/heads/main/README.md",
+      "type": "github",
       "website": "https://github.com/jedi-demo/TTi-QL355TP-satellite"
     }
   ]

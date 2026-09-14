@@ -11,6 +11,7 @@
 #include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "constellation/build.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/exec/cli.hpp"
 #include "constellation/exec/exceptions.hpp"
@@ -84,10 +85,10 @@ TEST_CASE("Satellite parser (no default type)", "[exec]") {
 }
 
 TEST_CASE("Satellite parser (with default type)", "[exec]") {
-    auto parser = SatelliteParser("SatelliteTest", {"Test"});
+    auto parser = SatelliteParser("SatelliteTest", CNSTLN_VERSION, {"Test"});
     parser.setup();
 
-    REQUIRE_FALSE(ContainsSubstring("-t, --type").match(parser.help()));
+    REQUIRE_THAT(parser.help(), !ContainsSubstring("-t, --type"));
 
     std::vector<const char*> args {"SatelliteTest", "-l", "INFO", "-g", "edda", "-n", "s1"};
     const auto options = parser.parse(args);

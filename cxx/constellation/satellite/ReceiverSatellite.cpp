@@ -60,8 +60,8 @@ using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 
-ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view name)
-    : Satellite(type, name),
+ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view name, std::string_view version)
+    : Satellite(type, name, version),
       BasePool("DATA", [this](CDTP2Message&& message) { this->handle_cdtp_message(std::move(message)); }) {
 
     register_metric("OUTPUT_FILE", "", "Current output file path. Updated when changed.");

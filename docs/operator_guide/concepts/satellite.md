@@ -66,23 +66,24 @@ be found in the [appendix of the developer guide](../../protocols/cscp.md).
 Commands consist of a command name and an optional payload. The following commands represent the minimal set of procedures a
 satellite needs to implement:
 
-| Command        | Description
-| -------------- | -----------
-| `get_name`     | Returns the canonical name of the queried satellite
-| `get_version`  | Returns the Constellation version identifier the satellite has been built with
-| `get_commands` | Provides a full list of the available commands for the queried satellite
-| `get_state`    | Returns the current [state](#the-finite-state-machine) of the satellite
-| `get_role`     | Returns the current [role](./autonomy.md#satellite-autonomy--roles) of the satellite
-| `get_status`   | Returns the current [status message](#state-and-status) of the satellite
-| `get_config`   | Returns the applied configuration
-| `get_run_id`   | Returns the current or last run identifier
-| `initialize`   | Requests FSM transition "initialize". Only valid when in {bdg-secondary}`INIT` or {bdg-secondary}`NEW` states.
-| `launch`       | Requests FSM transition "launch". Only valid when in {bdg-secondary}`INIT` state.
-| `land`         | Requests FSM transition "land". Only valid when in {bdg-secondary}`ORBIT` state.
-| `reconfigure`  | Requests FSM transition "reconfigure". Only valid when in {bdg-secondary}`ORBIT` state.
-| `start`        | Requests FSM transition "start". Only valid when in {bdg-secondary}`ORBIT` state.
-| `stop`         | Requests FSM transition "stop". Only valid when in {bdg-secondary}`RUN` state.
-| `shutdown`     | Shuts down the satellite application. This command can only be called from the {bdg-secondary}`NEW`, {bdg-secondary}`INIT`, {bdg-secondary}`SAFE` and {bdg-secondary}`ERROR` states.
+| Command              | Description
+| -------------------- | -----------
+| `get_name`           | Returns the canonical name of the queried satellite
+| `get_version`        | Returns the version of the satellite
+| `get_cnstln_version` | Returns the Constellation version identifier the satellite has been built with
+| `get_commands`       | Provides a full list of the available commands for the queried satellite
+| `get_state`          | Returns the current [state](#the-finite-state-machine) of the satellite
+| `get_role`           | Returns the current [role](./autonomy.md#satellite-autonomy--roles) of the satellite
+| `get_status`         | Returns the current [status message](#state-and-status) of the satellite
+| `get_config`         | Returns the applied configuration
+| `get_run_id`         | Returns the current or last run identifier
+| `initialize`         | Requests FSM transition "initialize". Only valid when in {bdg-secondary}`INIT` or {bdg-secondary}`NEW` states.
+| `launch`             | Requests FSM transition "launch". Only valid when in {bdg-secondary}`INIT` state.
+| `land`               | Requests FSM transition "land". Only valid when in {bdg-secondary}`ORBIT` state.
+| `reconfigure`        | Requests FSM transition "reconfigure". Only valid when in {bdg-secondary}`ORBIT` state.
+| `start`              | Requests FSM transition "start". Only valid when in {bdg-secondary}`ORBIT` state.
+| `stop`               | Requests FSM transition "stop". Only valid when in {bdg-secondary}`RUN` state.
+| `shutdown`           | Shuts down the satellite application. This command can only be called from the {bdg-secondary}`NEW`, {bdg-secondary}`INIT`, {bdg-secondary}`SAFE` and {bdg-secondary}`ERROR` states.
 
 Satellite implementations are allowed to amend this list with custom commands.
 

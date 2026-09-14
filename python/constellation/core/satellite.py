@@ -37,6 +37,10 @@ class Satellite(
 ):
     """Base class for a Constellation Satellite."""
 
+    def __init_subclass__(cls, version=None, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls._satellite_version = version if version is not None else __version__
+
     def __init__(
         self,
         name: str,
@@ -55,6 +59,10 @@ class Satellite(
             mon_port=mon_port,
             interface=interface,
         )
+
+        # Set satellite version in case Satellite was not subclassed
+        if not hasattr(self, "_satellite_version"):
+            self._satellite_version = __version__
 
         self.log_satellite = self.get_logger("CTRL")
 
@@ -519,6 +527,11 @@ class Satellite(
 
     @cscp_requestable()
     def get_version(self) -> tuple[str, Any, dict[str, Any]]:
+        """Get Satellite version."""
+        return self._satellite_version, None, {}
+
+    @cscp_requestable()
+    def get_cnstln_version(self) -> tuple[str, Any, dict[str, Any]]:
         """Get Constellation version."""
         return __version__, None, {}
 
@@ -564,7 +577,7 @@ class Satellite(
 class SatelliteArgumentParser(ConstellationArgumentParser):
     """Customized Argument parser providing common Satellite options."""
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args: Any, version: str | None = None, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.network.add_argument(
             "--cmd-port",
@@ -593,3 +606,5 @@ class SatelliteArgumentParser(ConstellationArgumentParser):
             "Constellation Heartbeat Protocol. "
             "A random port will be selected if none is specified.",
         )
+        if version is not None and hasattr(self.version_action, "version"):
+            self.version_action.version = f"Satellite {version}, " + self.version_action.version  # type: ignore

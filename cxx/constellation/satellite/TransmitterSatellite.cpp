@@ -49,8 +49,8 @@ using namespace std::string_literals;
 
 constexpr unsigned ATOMIC_QUEUE_DEFAULT_SIZE = 32768;
 
-TransmitterSatellite::TransmitterSatellite(std::string_view type, std::string_view name)
-    : Satellite(type, name), cdtp_push_socket_(*global_zmq_context(), zmq::socket_type::push),
+TransmitterSatellite::TransmitterSatellite(std::string_view type, std::string_view name, std::string_view version)
+    : Satellite(type, name, version), cdtp_push_socket_(*global_zmq_context(), zmq::socket_type::push),
       cdtp_port_(bind_ephemeral_port(cdtp_push_socket_)), cdtp_logger_("DATA"), data_queue_size_(ATOMIC_QUEUE_DEFAULT_SIZE),
       data_record_queue_(data_queue_size_) {
 
@@ -199,8 +199,9 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     seq_ = 0;
     run_metadata_ = {};
     mark_run_tainted_ = false;
-    set_run_metadata_tag("version", CNSTLN_VERSION);
-    set_run_metadata_tag("version_full", "Constellation " CNSTLN_VERSION_FULL);
+    set_run_metadata_tag("version", getSatelliteVersion());
+    set_run_metadata_tag("cnstln_version", CNSTLN_VERSION);
+    set_run_metadata_tag("cnstln_codename", CNSTLN_VERSION_CODE_NAME);
     set_run_metadata_tag("run_id", run_identifier);
     set_run_metadata_tag("time_start", std::chrono::system_clock::now());
     set_run_metadata_tag("license", data_license_);
