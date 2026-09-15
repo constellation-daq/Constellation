@@ -139,10 +139,7 @@ CDTP2Message CDTP2Message::disassemble(zmq::multipart_t& frames) {
         auto data_records = msgpack_unpack_to<std::vector<DataRecord>>(to_char_ptr(frame.data()), frame.size(), offset);
 
         // Create message to append data records
-        auto message = CDTP2Message(sender, type, data_records.size());
-        for(auto& data_record : data_records) {
-            message.addDataRecord(std::move(data_record));
-        }
+        auto message = CDTP2Message(sender, type, std::move(data_records));
 
         return message;
     } catch(const MsgpackUnpackError& e) {

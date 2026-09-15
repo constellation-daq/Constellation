@@ -136,6 +136,16 @@ namespace constellation::message {
         }
 
         /**
+         * @brief Construct a CDTP2 message
+         *
+         * @param sender Name of the sender
+         * @param type CDTP message type
+         * @param data_records Data records for this message
+         */
+        CDTP2Message(std::string sender, Type type, std::vector<DataRecord>&& data_records)
+            : data_records_(std::move(data_records)), sender_(std::move(sender)), type_(type) {}
+
+        /**
          * @brief Get the name of the sender
          *
          * @return Name of the sender
