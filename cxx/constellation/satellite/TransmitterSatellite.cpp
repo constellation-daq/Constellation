@@ -425,8 +425,8 @@ void TransmitterSatellite::send_data(CDTP2Message& message, std::size_t current_
         throw SendTimeoutError("data message", data_msg_timeout_);
     }
 
-    // Clear blocks
-    message.clearBlocks();
+    // Clear records
+    message.clearRecords();
 }
 
 void TransmitterSatellite::send_failure(const std::string& reason) {
