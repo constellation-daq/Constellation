@@ -90,6 +90,8 @@ void EudaqNativeWriterSatellite::starting(std::string_view run_identifier) {
         sequence = (pos != std::string::npos ? std::stoi(std::string(run_identifier).substr(pos + 1)) : 0);
     } catch(std::invalid_argument&) {
         LOG(DEBUG) << "Could not determine run sequence from run identifier, assuming 0";
+    } catch(std::out_of_range&) {
+        LOG(DEBUG) << "Run sequence obtained from run identifier is out of range, assuming 0";
     }
 
     // Open target file

@@ -408,7 +408,30 @@ TEST_CASE("CDTP2 Invalid Data Records", "[core][core::message]") {
     zmq_mpm.addmem(sbuf.data(), sbuf.size());
     REQUIRE_THROWS_MATCHES(CDTP2Message::disassemble(zmq_mpm),
                            MessageDecodingError,
-                           Message("Error decoding CDTP2 message: Error unpacking data: data records are not in an array"));
+                           Message("Error decoding CDTP2 message: Type error for "
+                                   "std::vector<constellation::message::CDTP2Message::DataRecord>: std::bad_cast"));
+
+    msgpack::sbuffer sbuf_rec {};
+    msgpack_pack(sbuf_rec, get_protocol_identifier(Protocol::CDTP2));
+    msgpack_pack(sbuf_rec, "sender");
+    msgpack_pack(sbuf_rec, std::to_underlying(CDTP2Message::Type::DATA));
+    msgpack_pack(sbuf_rec, std::vector<std::string> {"not a data record"});
+    zmq::multipart_t zmq_mpm_rec {};
+    zmq_mpm_rec.addmem(sbuf_rec.data(), sbuf_rec.size());
+    REQUIRE_THROWS_MATCHES(CDTP2Message::disassemble(zmq_mpm_rec),
+                           MessageDecodingError,
+                           Message("Error decoding CDTP2 message: Error unpacking data: data record is not an array"));
+
+    msgpack::sbuffer sbuf_seq {};
+    msgpack_pack(sbuf_seq, get_protocol_identifier(Protocol::CDTP2));
+    msgpack_pack(sbuf_seq, "sender");
+    msgpack_pack(sbuf_seq, std::to_underlying(CDTP2Message::Type::DATA));
+    msgpack_pack(sbuf_seq, std::vector<std::vector<std::string>> {{"1", "2", "3", "4"}});
+    zmq::multipart_t zmq_mpm_seq {};
+    zmq_mpm_seq.addmem(sbuf_seq.data(), sbuf_seq.size());
+    REQUIRE_THROWS_MATCHES(CDTP2Message::disassemble(zmq_mpm_seq),
+                           MessageDecodingError,
+                           Message("Error decoding CDTP2 message: Error unpacking data: data record array has wrong size"));
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

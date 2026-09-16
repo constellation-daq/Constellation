@@ -129,11 +129,21 @@ namespace constellation::message {
          *
          * @param sender Name of the sender
          * @param type CDTP message type
-         * @param blocks Optional number of blocks to reserve
+         * @param records Optional number of data records to reserve
          */
-        CDTP2Message(std::string sender, Type type, std::size_t blocks = 1) : sender_(std::move(sender)), type_(type) {
-            data_records_.reserve(blocks);
+        CDTP2Message(std::string sender, Type type, std::size_t records = 1) : sender_(std::move(sender)), type_(type) {
+            data_records_.reserve(records);
         }
+
+        /**
+         * @brief Construct a CDTP2 message
+         *
+         * @param sender Name of the sender
+         * @param type CDTP message type
+         * @param data_records Data records for this message
+         */
+        CDTP2Message(std::string sender, Type type, std::vector<DataRecord>&& data_records)
+            : data_records_(std::move(data_records)), sender_(std::move(sender)), type_(type) {}
 
         /**
          * @brief Get the name of the sender
@@ -173,7 +183,7 @@ namespace constellation::message {
         /**
          * @brief Clear data records attached to message
          */
-        void clearBlocks() { data_records_.clear(); }
+        void clearRecords() { data_records_.clear(); }
 
         /**
          * @brief Assemble full message for ZeroMQ

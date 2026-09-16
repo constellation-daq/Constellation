@@ -136,18 +136,10 @@ CDTP2Message CDTP2Message::disassemble(zmq::multipart_t& frames) {
         const auto type = msgpack_unpack_to_enum<Type>(to_char_ptr(frame.data()), frame.size(), offset);
 
         // Unpack data records
-        const auto msgpack_object = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
-        if(msgpack_object->type != msgpack::type::ARRAY) [[unlikely]] {
-            throw MsgpackUnpackError("Error unpacking data", "data records are not in an array");
-        }
-        const auto msgpack_data_records_raw = msgpack_object->via.array; // NOLINT(cppcoreguidelines-pro-type-union-access)
-        const auto msgpack_data_records = std::span(msgpack_data_records_raw.ptr, msgpack_data_records_raw.size);
+        auto data_records = msgpack_unpack_to<std::vector<DataRecord>>(to_char_ptr(frame.data()), frame.size(), offset);
 
         // Create message to append data records
-        auto message = CDTP2Message(sender, type, msgpack_data_records.size());
-        for(const auto& msgpack_data_record : msgpack_data_records) {
-            message.addDataRecord(msgpack_data_record.as<DataRecord>());
-        }
+        auto message = CDTP2Message(sender, type, std::move(data_records));
 
         return message;
     } catch(const MsgpackUnpackError& e) {

@@ -150,7 +150,7 @@ namespace constellation::config {
         requires array_constructible<R>
     Array& Array::operator=(const R& other) {
         Array array {other};
-        this->swap(other);
+        this->swap(array);
         return *this;
     }
 
