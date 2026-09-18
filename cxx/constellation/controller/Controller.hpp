@@ -74,8 +74,7 @@ namespace constellation::controller {
             /** State and last response */
             protocol::CSCP::State state {protocol::CSCP::State::NEW};
             message::CSCP1Message::Type last_cmd_type {};
-            std::string last_message {};    // NOLINT(readability-redundant-member-init)
-            config::Dictionary commands {}; // NOLINT(readability-redundant-member-init)
+            std::string last_message {}; // NOLINT(readability-redundant-member-init)
 
             /** Heartbeat status */
             protocol::CHP::Role role {protocol::CHP::Role::DYNAMIC};
@@ -262,7 +261,7 @@ namespace constellation::controller {
          * @param satellite_name Canonical name of the satellite
          * @return Dictionary of commands and their description that the satellite in question provides
          */
-        config::Dictionary getConnectionCommands(std::string_view satellite_name) const;
+        config::Dictionary getConnectionCommands(std::string_view satellite_name);
 
         /**
          * @brief Get total number of currently active connected satellites
