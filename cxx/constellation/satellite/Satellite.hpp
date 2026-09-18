@@ -150,7 +150,7 @@ namespace constellation::satellite {
          *
          * @param enable If online reconfiguration support should be enabled
          */
-        constexpr void support_reconfigure(bool enable = true) { support_reconfigure_ = enable; }
+        void support_reconfigure(bool enable = true) { support_reconfigure_ = enable; }
 
         /**
          * @brief Submit a new status message

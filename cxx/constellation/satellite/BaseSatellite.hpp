@@ -89,7 +89,7 @@ namespace constellation::satellite {
         /**
          * @brief Returns if online configuration is supported
          */
-        [[nodiscard]] constexpr bool supportsReconfigure() const { return support_reconfigure_; }
+        [[nodiscard]] bool supportsReconfigure() const { return support_reconfigure_.load(); }
 
         /**
          * @brief Return current state of the satellite
@@ -286,7 +286,7 @@ namespace constellation::satellite {
         std::jthread cscp_thread_;
         std::atomic_bool terminated_ {false};
 
-        bool support_reconfigure_ {false};
+        std::atomic_bool support_reconfigure_ {false};
         config::Configuration config_;
         std::string run_identifier_;
         std::atomic<bool> run_degraded_ {false};
