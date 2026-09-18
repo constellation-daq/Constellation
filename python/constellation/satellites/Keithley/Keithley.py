@@ -122,21 +122,21 @@ class Keithley(Satellite):
             self.device.release()
         super().reentry()
 
-    def _set_ovp(self):
+    def _set_ovp(self) -> None:
         self.log.info(f"Setting OVP to {self.ovp}V")
         self.device.set_ovp(self.ovp)
         device_ovp = self.device.get_ovp()
         if device_ovp != self.ovp:
             raise ValueError(f"OVP set to {self.ovp}V but {device_ovp}V was applied (check manual for supported values)")
 
-    def _set_compliance(self):
+    def _set_compliance(self) -> None:
         self.log.info(f"Setting compliance to {self.compliance}A")
         self.device.set_compliance(self.compliance)
         device_compliance = self.device.get_compliance()
         if device_compliance != self.compliance:
             raise ValueError(f"Compliance set to {self.compliance}A but {device_compliance}A was applied")
 
-    def _ramp(self, voltage_target: float):
+    def _ramp(self, voltage_target: float) -> None:
         voltage_current = self.device.get_voltage()
         ramp_up = voltage_target > voltage_current
 

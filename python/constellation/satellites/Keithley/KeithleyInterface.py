@@ -23,7 +23,7 @@ class KeithleyInterface(metaclass=ABCMeta):
         terminator: str,
         flow_control: bool,
         timeout: float = 1000,
-    ):
+    ) -> None:
         self._rm = pyvisa.ResourceManager()
         visa_address = f"ASRL{port}::INSTR"
         self._serial: pyvisa.resources.SerialInstrument = self._rm.open_resource(  # type: ignore
@@ -41,7 +41,7 @@ class KeithleyInterface(metaclass=ABCMeta):
 
     # Serial helper functions
 
-    def _write(self, command: str):
+    def _write(self, command: str) -> None:
         """
         Write command to serial port
         """
@@ -58,7 +58,7 @@ class KeithleyInterface(metaclass=ABCMeta):
     # Device functions
 
     @abstractmethod
-    def reset(self):
+    def reset(self) -> None:
         """
         Resets device settings
         """
@@ -72,7 +72,7 @@ class KeithleyInterface(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def enable_output(self, enable: bool):
+    def enable_output(self, enable: bool) -> None:
         """
         Enable or disable output
         """
@@ -93,7 +93,7 @@ class KeithleyInterface(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def set_terminal(self, terminal: str):
+    def set_terminal(self, terminal: str) -> None:
         """
         Terminal for which to control output
         """
@@ -107,7 +107,7 @@ class KeithleyInterface(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def set_voltage(self, voltage: float):
+    def set_voltage(self, voltage: float) -> None:
         """
         Set output voltage
         """
@@ -121,7 +121,7 @@ class KeithleyInterface(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def set_ovp(self, voltage: float):
+    def set_ovp(self, voltage: float) -> None:
         """
         Set over-voltage protection voltage
         """
@@ -135,7 +135,7 @@ class KeithleyInterface(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def set_compliance(self, current: float):
+    def set_compliance(self, current: float) -> None:
         """
         Set current compliance
         """
@@ -165,14 +165,14 @@ class KeithleyInterface(metaclass=ABCMeta):
     # Device helper functions
 
     @abstractmethod
-    def initialize(self):
+    def initialize(self) -> None:
         """
         Resets device and initializes appropriate settings
         """
         pass
 
     @abstractmethod
-    def release(self):
+    def release(self) -> None:
         """
         Release device from remote mode
         """

@@ -23,7 +23,7 @@ class Keithley2410(KeithleyInterface):
     def __init__(
         self,
         port: str,
-    ):
+    ) -> None:
         super().__init__(
             port=port,
             baud=19200,
@@ -37,13 +37,13 @@ class Keithley2410(KeithleyInterface):
 
     # Device functions
 
-    def reset(self):
+    def reset(self) -> None:
         self._write("*RST")
 
     def identify(self) -> str:
         return self._query("*IDN?")
 
-    def enable_output(self, enable: bool):
+    def enable_output(self, enable: bool) -> None:
         with self._output_lock:
             on_off = "ON" if enable else "OFF"
             self._write(f":OUTP {on_off}")
@@ -55,7 +55,7 @@ class Keithley2410(KeithleyInterface):
     def get_terminals(self) -> list[str]:
         return ["front", "rear"]
 
-    def set_terminal(self, terminal: str):
+    def set_terminal(self, terminal: str) -> None:
         if terminal.lower() not in ["front", "rear"]:
             raise ValueError("Only front and rear terminal supported")
         self._write(f":ROUT:TERM {terminal[:4].upper()}")
@@ -66,7 +66,7 @@ class Keithley2410(KeithleyInterface):
             terminal += "t"
         return terminal
 
-    def set_voltage(self, voltage: float):
+    def set_voltage(self, voltage: float) -> None:
         self._write(f":SOUR:VOLT:LEV {voltage}")
 
     def get_voltage(self) -> float:
@@ -78,7 +78,7 @@ class Keithley2410(KeithleyInterface):
     def get_ovp(self) -> float:
         return float(self._query(":SOUR:VOLT:PROT:LEV?"))
 
-    def set_compliance(self, current: float):
+    def set_compliance(self, current: float) -> None:
         self._write(f":SENS:CURR:PROT:LEV {current}")
 
     def get_compliance(self) -> float:
@@ -101,7 +101,7 @@ class Keithley2410(KeithleyInterface):
 
     # Device helper functions
 
-    def initialize(self):
+    def initialize(self) -> None:
         self.reset()
         # Set data format to ascii (comma-separated)
         self._write(":FORM:DATA ASC")
@@ -112,5 +112,5 @@ class Keithley2410(KeithleyInterface):
         # Set trigger to take one reading
         self._write(":TRIG:COUN 1")
 
-    def release(self):
+    def release(self) -> None:
         self._write(":SYST:LOC")
