@@ -180,8 +180,7 @@ class BaseSatelliteFrame:
         self._stop_com_threads()
 
     def terminate(self) -> None:
-        """Order destroy the satellite *and* terminate the ZMQ context."""
-        self.reentry()
+        """Terminate the satellite."""
         self.log.debug("Terminating ZMQ context.")
         self.context.term()
 

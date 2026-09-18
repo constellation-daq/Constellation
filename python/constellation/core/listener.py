@@ -149,4 +149,5 @@ class StandaloneListener(MonitoringListener):
                 self.log.warning("Caught KeyboardInterrupt, shutting down.")
                 break
 
+        self.reentry()
         self.terminate()
