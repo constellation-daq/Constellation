@@ -109,6 +109,7 @@ def transmitter_satellite():
     time.sleep(0.2)
     yield s
     # teardown
+    s.reentry()
     s.terminate()
 
 
@@ -153,6 +154,7 @@ def receiver_satellite():
     time.sleep(0.2)
     yield s
     # teardown
+    s.reentry()
     s.terminate()
 
 

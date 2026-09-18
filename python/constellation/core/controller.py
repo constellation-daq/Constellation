@@ -693,12 +693,19 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
                 # nothing to process
                 pass
 
+        self.reentry()
+
+    def terminate(self) -> None:
+        # Stop task handler
+        if getattr(self, "_task_handler_event", None):
+            self._task_handler_event.set()
+            self._task_handler_thread.join(timeout=1)
+
+        super().terminate()
+
     def reentry(self) -> None:
         """Stop the controller."""
         self.log.debug("Stopping controller")
-
-        if getattr(self, "_task_handler_event", None):
-            self._task_handler_event.set()
 
         super().reentry()
 
@@ -709,9 +716,6 @@ class BaseController(MonitoringSender, CHIRPManager, HeartbeatChecker):
             # ignore errors; this avoids spurious error messages if e.g. the
             # initialization of the class fails
             pass
-
-        if getattr(self, "_task_handler_event", None):
-            self._task_handler_thread.join(timeout=1)
 
     def _repr_pretty_(self, p: Any, _cycle: bool) -> None:
         nsat = len(self.constellation.satellites)

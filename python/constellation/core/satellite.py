@@ -137,37 +137,37 @@ class Satellite(
         """
         while self._com_thread_evt and not self._com_thread_evt.is_set():
             try:
-                # Work around queue shutdown only being available in Python 3.13 or newer
+                # blocking call but with timeout to prevent deadlocks
+                task = self.task_queue.get(block=True, timeout=0.5)
+                callback = task[0]
+                args = task[1]
+                try:
+                    self.log_satellite.trace(f"Executing {callback}")
+                    callback(*args)
+                except Exception as e:
+                    # TODO consider whether to go into error state if anything goes wrong here
+                    self.log_satellite.exception(
+                        "Caught exception handling task '%s' with args '%s': %s",
+                        callback,
+                        args,
+                        repr(e),
+                    )
+            except Empty:
+                # Check for queue shutdown
                 if getattr(self.task_queue, "_shutdown", False):
                     break
 
-                try:
-                    # blocking call but with timeout to prevent deadlocks
-                    task = self.task_queue.get(block=True, timeout=0.5)
-                    callback = task[0]
-                    args = task[1]
-                    try:
-                        self.log_satellite.trace(f"Executing {callback}")
-                        callback(*args)
-                    except Exception as e:
-                        # TODO consider whether to go into error state if anything goes wrong here
-                        self.log_satellite.exception(
-                            "Caught exception handling task '%s' with args '%s': %s",
-                            callback,
-                            args,
-                            repr(e),
-                        )
-                except Empty:
-                    # nothing to process
-                    time.sleep(0.01)
+                # nothing to process
+                time.sleep(0.01)
 
             except KeyboardInterrupt:
                 # break line before logging to avoid broken line due to ctrl+c
                 print()
                 self.log_satellite.warning("Satellite caught KeyboardInterrupt, shutting down.")
+                break
 
-                # shut down satellite
-                self.shutdown()
+        # Call reentry function satellite
+        self.reentry()
 
     @handle_error
     @debug_log

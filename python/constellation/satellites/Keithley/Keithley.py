@@ -52,6 +52,7 @@ class Keithley(Satellite):
         self.device.initialize()
         identify = self.device.identify()
         if not identify:
+            del self.device
             raise ConnectionError("No connection to Keithley")
         self.log.info("Device: %s", identify)
 
@@ -107,34 +108,35 @@ class Keithley(Satellite):
         return f"Keithley at {self.device.get_voltage()}V"
 
     def fail_gracefully(self) -> None:
-        # Try to ramp down
-        self.log.info("Attempting to ramp down after failure")
-        try:
-            self._ramp(0.0)
-            self.device.enable_output(False)
-        except Exception:
-            self.log.warning("Failed to ramp down")
+        if hasattr(self, "device"):
+            # Try to ramp down
+            self.log.info("Attempting to ramp down after failure")
+            try:
+                self._ramp(0.0)
+                self.device.enable_output(False)
+            except Exception:
+                self.log.warning("Failed to ramp down")
 
     def reentry(self) -> None:
         if hasattr(self, "device"):
             self.device.release()
         super().reentry()
 
-    def _set_ovp(self):
+    def _set_ovp(self) -> None:
         self.log.info(f"Setting OVP to {self.ovp}V")
         self.device.set_ovp(self.ovp)
         device_ovp = self.device.get_ovp()
         if device_ovp != self.ovp:
             raise ValueError(f"OVP set to {self.ovp}V but {device_ovp}V was applied (check manual for supported values)")
 
-    def _set_compliance(self):
+    def _set_compliance(self) -> None:
         self.log.info(f"Setting compliance to {self.compliance}A")
         self.device.set_compliance(self.compliance)
         device_compliance = self.device.get_compliance()
         if device_compliance != self.compliance:
             raise ValueError(f"Compliance set to {self.compliance}A but {device_compliance}A was applied")
 
-    def _ramp(self, voltage_target: float):
+    def _ramp(self, voltage_target: float) -> None:
         voltage_current = self.device.get_voltage()
         ramp_up = voltage_target > voltage_current
 
