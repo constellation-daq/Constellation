@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <functional>
 #include <map>
+#include <mutex>
 #include <set>
 #include <string>
 #include <string_view>
@@ -119,6 +120,7 @@ namespace constellation::satellite {
     private:
         // Map of registered commands
         utils::string_hash_map<Command> commands_;
+        mutable std::mutex commands_mutex_;
     };
 
 } // namespace constellation::satellite

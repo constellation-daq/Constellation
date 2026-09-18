@@ -10,6 +10,7 @@
 #include "CommandRegistry.hpp"
 
 #include <map>
+#include <mutex>
 #include <string>
 
 #include "constellation/core/config/value_types.hpp"
@@ -24,6 +25,8 @@ using namespace constellation::utils;
 
 config::Composite CommandRegistry::call(State state, const std::string& name, const config::CompositeList& args) {
     const auto name_lc = transform(name, ::tolower);
+
+    const std::scoped_lock commands_lock {commands_mutex_};
     const auto cmd = commands_.find(name_lc);
 
     // Check if this is a known command at all
@@ -50,6 +53,7 @@ std::map<std::string, std::string> CommandRegistry::describeCommands() const {
     std::map<std::string, std::string> cmds {};
 
     // Add all commands to the map
+    const std::scoped_lock commands_lock {commands_mutex_};
     for(const auto& cmd : commands_) {
         auto description = cmd.second.description;
 

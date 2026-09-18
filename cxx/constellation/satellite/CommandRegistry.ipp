@@ -11,6 +11,7 @@
 
 #include "CommandRegistry.hpp" // NOLINT(misc-header-include-cycle)
 
+#include <mutex>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -67,6 +68,7 @@ namespace constellation::satellite {
         const auto nargs = function_traits::argument_size::value;
         auto call = Call(Wrapper(function_type(std::move(function))));
 
+        const std::scoped_lock commands_lock {commands_mutex_};
         const auto [it, success] =
             commands_.emplace(name_lc, Command(std::move(call), nargs, std::move(description), std::move(allowed_states)));
 
