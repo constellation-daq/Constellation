@@ -9,6 +9,7 @@ import atexit
 import logging
 import socket
 import threading
+import traceback
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from queue import Queue
 from typing import Any, cast
@@ -28,7 +29,8 @@ def destroy_satellites() -> None:
         try:
             sat.terminate()
         except Exception:
-            pass
+            print(f"Exception during shutdown from {sat.name}!")
+            print(traceback.format_exc())
     SATELLITE_LIST.clear()
 
 
