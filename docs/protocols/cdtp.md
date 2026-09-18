@@ -1,6 +1,6 @@
 # Constellation Data Transmission Protocol
 
-* Status: draft
+* Status: stable
 * Editor: The Constellation authors
 
 The Constellation Data Transmission Protocol (CDTP) defines how data is transmitted from one sending host to one receiving host.

@@ -1,6 +1,6 @@
 # Constellation Satellite Control Protocol
 
-* Status: draft
+* Status: stable
 * Editor: The Constellation authors
 
 The Constellation Satellite Control Protocol (CSCP) defines how satellite hosts receive and respond to commands and command payload.

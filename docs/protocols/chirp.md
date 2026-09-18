@@ -1,6 +1,6 @@
 # Constellation Host Identification and Reconnaissance Protocol
 
-* Status: draft
+* Status: stable
 * Editor: The Constellation authors
 
 The Constellation Host Identification and Reconnaissance Protocol (CHIRP) defines how different hosts announce their services and connect to each other on the network.
