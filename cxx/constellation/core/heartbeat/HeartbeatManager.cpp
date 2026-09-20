@@ -73,9 +73,9 @@ std::optional<CSCP::State> HeartbeatManager::getRemoteState(std::string_view rem
     const auto remote_it = std::ranges::find_if(
         remotes_, [remote](const auto& r) { return transform(r.first, ::tolower) == transform(remote, ::tolower); });
     if(remote_it != remotes_.end()) {
-        // If the remote has vanished, return ERROR state
+        // If the remote has vanished, return empty optional
         if(remote_it->second.lives == 0) {
-            return CSCP::State::ERROR;
+            return {};
         }
 
         return remote_it->second.last_state;
