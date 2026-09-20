@@ -65,3 +65,16 @@ class Influx(Satellite, MonitoringListener):
                     self.write_api.write(bucket=self.bucket, record=record)
                 else:
                     self.log.debug(f"Metric of type {type(value).__name__} cannot be written to InfluxDB")
+
+    def reentry(self) -> None:
+        # Close InfluxDB client
+        with self._influxdb_lock:
+            if self._influxdb_connected:
+                try:
+                    self.write_api.close()
+                    self.client.close()
+                except Exception as e:
+                    self.log.warning("Failed to close InfluxDB: %s", e)
+                self._influxdb_connected = False
+
+        super().reentry()
