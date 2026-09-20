@@ -165,9 +165,9 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     remote_it->second.role = msg.getRole();
 
     bool call_interrupt = false;
+
     // Check for ERROR and SAFE states:
-    if(remote_it->second.lives > 0 && (msg.getState() == CSCP::State::ERROR || msg.getState() == CSCP::State::SAFE)) {
-        remote_it->second.lives = 0;
+    if(msg.getState() == CSCP::State::ERROR || msg.getState() == CSCP::State::SAFE) {
         // Only trigger interrupt if demanded by the message flags:
         call_interrupt = (interrupt_callback_ && msg.hasFlag(CHP::MessageFlags::TRIGGER_INTERRUPT));
     }
@@ -177,10 +177,8 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     remote_it->second.last_heartbeat = now;
     remote_it->second.last_state = msg.getState();
 
-    // Replenish lives unless we're in ERROR or SAFE state:
-    if(msg.getState() != CSCP::State::ERROR && msg.getState() != CSCP::State::SAFE) {
-        remote_it->second.lives = CHP::Lives;
-    }
+    // Replenish lives
+    remote_it->second.lives = CHP::Lives;
 
     const auto remote_name = remote_it->first;
 
