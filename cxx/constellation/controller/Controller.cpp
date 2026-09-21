@@ -236,10 +236,8 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
             connection_updated = true;
         }
 
-        // Replenish lives unless we're in ERROR or SAFE state:
-        if(msg.getState() != CSCP::State::ERROR && msg.getState() != CSCP::State::SAFE) {
-            sat->second.lives = protocol::CHP::Lives;
-        }
+        // Replenish lives
+        sat->second.lives = protocol::CHP::Lives;
 
         // Connection was changed, propagate this:
         if(connection_updated) {
