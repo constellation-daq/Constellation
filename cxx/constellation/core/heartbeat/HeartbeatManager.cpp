@@ -143,6 +143,8 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     const auto now = std::chrono::steady_clock::now();
     std::unique_lock<std::mutex> lock {mutex_};
 
+    bool state_changed = true;
+
     // Update or add the remote:
     auto remote_it = remotes_.find(msg.getSender());
 
@@ -152,6 +154,9 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
         auto [it, inserted] =
             remotes_.emplace(msg.getSender(), Remote(msg.getRole(), msg.getInterval(), now, msg.getState(), now));
         remote_it = it;
+    } else {
+        // Check if state changed if not newly discovered remote
+        state_changed = msg.getState() != remote_it->second.last_state;
     }
 
     // Check for time deviation
@@ -167,7 +172,7 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     bool call_interrupt = false;
 
     // Check for ERROR and SAFE states:
-    if(msg.getState() == CSCP::State::ERROR || msg.getState() == CSCP::State::SAFE) {
+    if(state_changed && (msg.getState() == CSCP::State::ERROR || msg.getState() == CSCP::State::SAFE)) {
         // Only trigger interrupt if demanded by the message flags:
         call_interrupt = (interrupt_callback_ && msg.hasFlag(CHP::MessageFlags::TRIGGER_INTERRUPT));
     }
