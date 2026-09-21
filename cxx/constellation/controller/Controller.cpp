@@ -26,6 +26,7 @@
 #include <thread>
 #include <utility>
 #include <variant>
+#include <vector>
 
 #include <msgpack.hpp>
 #include <zmq.hpp>
@@ -35,6 +36,7 @@
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/log.hpp"
+#include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
@@ -618,15 +620,18 @@ void Controller::controller_loop(const std::stop_token& stop_token) {
     std::unique_lock<std::mutex> lock {connection_mutex_};
     auto wakeup = std::chrono::steady_clock::now() + 3s;
 
+    auto* chirp_manager = ManagerLocator::getCHIRPManager();
+
     // Wait until cv is notified, timeout is reached or stop is requested, returns true if stop requested
     while(!cv_.wait_until(lock, stop_token, wakeup, [&]() { return stop_token.stop_requested(); })) {
 
         // Calculate the next wake-up by checking when the next heartbeat times out, but time out after 3s anyway:
         wakeup = std::chrono::steady_clock::now() + 3s;
 
+        std::vector<MD5Hash> call_dispose;
+
         for(auto conn = connections_.begin(), next_conn = conn; conn != connections_.end(); conn = next_conn) {
             ++next_conn;
-
             auto& [key, remote] = *conn;
 
             // Check if we are beyond the interval and that we only subtract lives once every interval
@@ -646,12 +651,7 @@ void Controller::controller_loop(const std::stop_token& stop_token) {
                     LOG(logger_, DEBUG) << "Missed heartbeats from " << key << ", no lives left";
 
                     // Discard all CHIRP services for this host - this will remove the connection through the callback:
-                    lock.unlock();
-                    auto* chirp_manager = ManagerLocator::getCHIRPManager();
-                    if(chirp_manager != nullptr) {
-                        chirp_manager->forgetDiscoveredServices(conn->second.host_id);
-                    }
-                    lock.lock();
+                    call_dispose.emplace_back(conn->second.host_id);
                 } else {
                     // Trigger method for propagation of connection list updates in derived controller classes
                     propagate_update(UpdateType::UPDATED, position, connection_count_.load());
@@ -665,6 +665,15 @@ void Controller::controller_loop(const std::stop_token& stop_token) {
             }
             LOG(logger_, TRACE) << "Updated heartbeat wakeup timer to "
                                 << std::chrono::duration_cast<std::chrono::milliseconds>(wakeup - now);
+        }
+
+        // Unlock the mutex for callbacks
+        lock.unlock();
+
+        if(chirp_manager != nullptr) [[likely]] {
+            for(const auto& key : call_dispose) {
+                chirp_manager->forgetDiscoveredServices(key);
+            }
         }
     }
 }
