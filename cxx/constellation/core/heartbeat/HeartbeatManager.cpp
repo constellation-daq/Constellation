@@ -18,6 +18,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/heartbeat/HeartbeatRecv.hpp"
@@ -27,6 +28,7 @@
 #include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/thread.hpp"
@@ -73,9 +75,9 @@ std::optional<CSCP::State> HeartbeatManager::getRemoteState(std::string_view rem
     const auto remote_it = std::ranges::find_if(
         remotes_, [remote](const auto& r) { return transform(r.first, ::tolower) == transform(remote, ::tolower); });
     if(remote_it != remotes_.end()) {
-        // If the remote has vanished, return ERROR state
+        // If the remote has vanished, return empty optional
         if(remote_it->second.lives == 0) {
-            return CSCP::State::ERROR;
+            return {};
         }
 
         return remote_it->second.last_state;
@@ -91,8 +93,16 @@ void HeartbeatManager::setRole(CHP::Role role) {
 }
 
 void HeartbeatManager::host_disconnected(const chirp::DiscoveredService& service) {
+    host_removal(service, false);
+}
 
-    LOG(logger_, DEBUG) << "Processing orderly departure of remote " << service.to_uri();
+void HeartbeatManager::host_disposed(const chirp::DiscoveredService& service) {
+    host_removal(service, true);
+}
+
+void HeartbeatManager::host_removal(const chirp::DiscoveredService& service, bool disposed) {
+    LOG(logger_, DEBUG) << "Processing " << (disposed ? "disposal" : "orderly departure") << " of remote "
+                        << service.to_uri();
     std::unique_lock lock {mutex_};
 
     std::optional<std::string> call_degradation;
@@ -107,27 +117,35 @@ void HeartbeatManager::host_disconnected(const chirp::DiscoveredService& service
 
     // Check if the run needs to be marked as degraded
     if(degradation_callback_ && role_requires(remote_it->second.role, CHP::MessageFlags::MARK_DEGRADED)) {
-        call_degradation = remote_it->first + " departed illicitly";
+        call_degradation = remote_it->first + " " + (disposed ? "disposed" : "departed") + " illicitly";
     }
 
-    // Check if per its role, this remote is allowed to depart:
-    if(interrupt_callback_ && role_requires(remote_it->second.role, CHP::MessageFlags::DENY_DEPARTURE)) {
-        LOG(logger_, DEBUG) << remote_it->first << " departed with " << "DENY_DEPARTURE"_quote
-                            << " flag, requesting interrupt";
-        call_interrupt = remote_it->first + " departed illicitly";
-    } else {
-        LOG(logger_, INFO) << remote_it->first << " departed orderly";
+    // Check if per its role, this remote should trigger an interrupt if disposed
+    if(interrupt_callback_ && disposed && role_requires(remote_it->second.role, CHP::MessageFlags::TRIGGER_INTERRUPT)) {
+        call_interrupt = "No signs of life detected anymore from " + remote_it->first;
     }
+
+    // Check if per its role, this remote is allowed to depart
+    if(!disposed) {
+        if(interrupt_callback_ && role_requires(remote_it->second.role, CHP::MessageFlags::DENY_DEPARTURE)) {
+            LOG(logger_, DEBUG) << remote_it->first << " departed with " << "DENY_DEPARTURE"_quote
+                                << " flag, requesting interrupt";
+            call_interrupt = remote_it->first + " departed illicitly";
+        } else {
+            LOG(logger_, INFO) << remote_it->first << " departed orderly";
+        }
+    }
+
+    // Remove remote
     remotes_.erase(remote_it);
 
-    // Unlock
+    // Unlock for callbacks
     lock.unlock();
 
-    // Trigger callbacks:
+    // Trigger callbacks
     if(call_degradation.has_value()) {
         degradation_callback_(call_degradation.value());
     }
-
     if(call_interrupt.has_value()) {
         interrupt_callback_(call_interrupt.value());
     }
@@ -143,6 +161,8 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     const auto now = std::chrono::steady_clock::now();
     std::unique_lock<std::mutex> lock {mutex_};
 
+    bool state_changed = true;
+
     // Update or add the remote:
     auto remote_it = remotes_.find(msg.getSender());
 
@@ -152,6 +172,9 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
         auto [it, inserted] =
             remotes_.emplace(msg.getSender(), Remote(msg.getRole(), msg.getInterval(), now, msg.getState(), now));
         remote_it = it;
+    } else {
+        // Check if state changed if not newly discovered remote
+        state_changed = msg.getState() != remote_it->second.last_state;
     }
 
     // Check for time deviation
@@ -165,9 +188,9 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     remote_it->second.role = msg.getRole();
 
     bool call_interrupt = false;
+
     // Check for ERROR and SAFE states:
-    if(remote_it->second.lives > 0 && (msg.getState() == CSCP::State::ERROR || msg.getState() == CSCP::State::SAFE)) {
-        remote_it->second.lives = 0;
+    if(state_changed && (msg.getState() == CSCP::State::ERROR || msg.getState() == CSCP::State::SAFE)) {
         // Only trigger interrupt if demanded by the message flags:
         call_interrupt = (interrupt_callback_ && msg.hasFlag(CHP::MessageFlags::TRIGGER_INTERRUPT));
     }
@@ -177,10 +200,8 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     remote_it->second.last_heartbeat = now;
     remote_it->second.last_state = msg.getState();
 
-    // Replenish lives unless we're in ERROR or SAFE state:
-    if(msg.getState() != CSCP::State::ERROR && msg.getState() != CSCP::State::SAFE) {
-        remote_it->second.lives = CHP::Lives;
-    }
+    // Replenish lives
+    remote_it->second.lives = CHP::Lives;
 
     const auto remote_name = remote_it->first;
 
@@ -195,16 +216,16 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
 void HeartbeatManager::run(const std::stop_token& stop_token) {
     // Notify condition variable when stop is requested
     const std::stop_callback stop_callback {stop_token, [&]() { cv_.notify_all(); }};
-
     auto wakeup = std::chrono::steady_clock::now() + 3s;
+
+    auto* chirp_manager = ManagerLocator::getCHIRPManager();
 
     while(!stop_token.stop_requested()) {
         std::unique_lock<std::mutex> lock {mutex_};
         // Wait until condition variable is notified or timeout is reached
         cv_.wait_until(lock, wakeup);
 
-        std::optional<std::string> call_degradation;
-        std::optional<std::string> call_interrupt;
+        std::vector<MD5Hash> call_dispose;
 
         // Calculate the next wake-up by checking when the next heartbeat times out, but time out after 3s anyway:
         wakeup = std::chrono::steady_clock::now() + 3s;
@@ -219,19 +240,11 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
                 LOG(logger_, TRACE) << "Missed heartbeat from " << key << ", reduced lives to " << to_string(remote.lives);
 
                 if(remote.lives == 0) {
-                    const auto msg = "No signs of life detected anymore from " + key;
-                    LOG(logger_, WARNING) << msg;
+                    // This parrot is dead, it is no more
+                    LOG(logger_, WARNING) << "No signs of life detected anymore from " << key;
 
-                    // Check if the run needs to be marked as degraded
-                    if(degradation_callback_ && role_requires(remote.role, CHP::MessageFlags::MARK_DEGRADED)) {
-                        call_degradation = msg;
-                    }
-
-                    // Only trigger interrupt if the role demands it
-                    if(interrupt_callback_ && role_requires(remote.role, CHP::MessageFlags::TRIGGER_INTERRUPT)) {
-                        // This parrot is dead, it is no more
-                        call_interrupt = msg;
-                    }
+                    // Discard all CHIRP services for this host - this will remove the remote through the callback
+                    call_dispose.emplace_back(key);
                 }
             }
 
@@ -244,16 +257,13 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
                                 << std::chrono::duration_cast<std::chrono::milliseconds>(wakeup - now);
         }
 
-        // Unlock the mutex for callbacks:
+        // Unlock the mutex for callbacks
         lock.unlock();
 
-        // Trigger callbacks:
-        if(call_degradation.has_value()) {
-            degradation_callback_(call_degradation.value());
-        }
-
-        if(call_interrupt.has_value()) {
-            interrupt_callback_(call_interrupt.value());
+        if(chirp_manager != nullptr) [[likely]] {
+            for(const auto& key : call_dispose) {
+                chirp_manager->forgetDiscoveredServices(key);
+            }
         }
     }
 }

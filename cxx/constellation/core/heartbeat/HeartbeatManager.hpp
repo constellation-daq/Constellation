@@ -136,13 +136,28 @@ namespace constellation::heartbeat {
         CNSTLN_LOCAL void process_heartbeat(const message::CHP1Message& msg);
 
         /**
-         * @brief Helper to process satellite departure
+         * @brief Callback for orderly satellite departure
          * @details Proper departure of satellites is considered different from the simple disappearance of a heartbeat
          * signal. Whether to not to take appropriate action can be configured.
          *
          * @param service The remote service which has departed and sent an appropriate CHIRP DEPART message
          */
         void host_disconnected(const chirp::DiscoveredService& service) override;
+
+        /**
+         * @brief Callback for satellite disposal
+         *
+         * @param service The remote service which has disposed
+         */
+        void host_disposed(const chirp::DiscoveredService& service) override;
+
+        /**
+         * @brief Helper for the `host_disconnected` and `host_disposed` callbacks
+         *
+         * @param service The remote service to be removed
+         * @param disposed True if the remote service has disposed
+         */
+        void host_removal(const chirp::DiscoveredService& service, bool disposed);
 
         /**
          * @brief Main loop of the manager which checks for heartbeats of registered remotes.
