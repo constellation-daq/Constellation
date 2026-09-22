@@ -74,7 +74,7 @@ docs = [
     "pydata_sphinx_theme",
     "myst-parser",
     "ablog",
-    "breathe",
+    "breathe<5.0.0", # Causes docs build failure, thus pin for now
     "sphinxcontrib-plantuml",
     "sphinxcontrib-spelling",
     "sphinx_design",
