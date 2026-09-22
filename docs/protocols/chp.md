@@ -1,6 +1,6 @@
 # Constellation Heartbeat Protocol
 
-* Status: draft
+* Status: stable
 * Editor: The Constellation authors
 
 The Constellation Heartbeat Protocol (CHP) defines how hosts distribute and receive status information and liveliness indications for the purpose of tracking availability and uptime.

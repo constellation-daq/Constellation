@@ -68,6 +68,12 @@
   </supports>
 
   <releases>
+    <release version="1.0.0" date="2026-09-22">
+      <url type="details">https://constellation.pages.desy.de/news/2026-09-22-Constellation-Release-1.0.0.html</url>
+      <description>
+        <p>Release of Constellation Corona Australis</p>
+      </description>
+    </release>
     <release version="0.8.1" date="2026-04-14">
       <url type="details">https://constellation.pages.desy.de/news/2026-04-14-Patch-Release-0.8.1.html</url>
       <description>
