@@ -607,4 +607,5 @@ class SatelliteArgumentParser(ConstellationArgumentParser):
             "A random port will be selected if none is specified.",
         )
         if version is not None and hasattr(self.version_action, "version"):
-            self.version_action.version = f"Satellite {version}, " + self.version_action.version  # type: ignore
+            vversion = f"v{version}" if version[0].isdigit() else version
+            self.version_action.version = f"Satellite {vversion}, " + self.version_action.version  # type: ignore
