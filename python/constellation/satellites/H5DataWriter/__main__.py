@@ -5,6 +5,7 @@ SPDX-License-Identifier: EUPL-1.2
 Provides the entry point for the H5DataWriter satellite
 """
 
+from constellation.core import __version__
 from constellation.core.logging import setup_cli_logging
 from constellation.core.satellite import SatelliteArgumentParser
 
@@ -15,7 +16,7 @@ def main(args=None):
     """Satellite receiving data and writing it to HDF5 files"""
 
     # Get a dict of the parsed arguments
-    parser = SatelliteArgumentParser(description=main.__doc__)
+    parser = SatelliteArgumentParser(description=main.__doc__, version=__version__)
     args = vars(parser.parse_args(args))
 
     # Set up logging
