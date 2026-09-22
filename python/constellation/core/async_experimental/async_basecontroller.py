@@ -228,23 +228,31 @@ class AsyncBaseController(AsyncMonitoringListener, AsyncHeartbeatChecker):
         sock = self._async_ctx.socket(zmq.REQ)
         sock.connect(f"tcp://{address}:{port}")
         sock.setsockopt(zmq.LINGER, 2000)
+        lock = asyncio.Lock()
         try:
-            msg = await asyncio.wait_for(
-                self._cscp_request(sock, "get_commands", None, asyncio.Lock()),
+            # get canonical name
+            name_msg = await asyncio.wait_for(
+                self._cscp_request(sock, "get_name", None, lock),
+                timeout=5.0,
+            )
+            sat_type, sat_name = name_msg.verb_msg.split(".", maxsplit=1)
+            canonical_name = f"{sat_type}.{sat_name}"
+
+            # get list of commands
+            cmds_msg = await asyncio.wait_for(
+                self._cscp_request(sock, "get_commands", None, lock),
                 timeout=5.0,
             )
         except asyncio.CancelledError:
-            # Cancelled via _pending_setups on SERVICE_DISCONNECTED
             sock.close()
             raise
         except Exception:
             sock.close()
             return
-        canonical_name = msg.sender
         self._transmitters[canonical_name] = sock
         self._transmitter_uuids[uuid] = canonical_name
-        self._cscp_locks[canonical_name] = asyncio.Lock()
-        self._satellite_commands[canonical_name] = msg.payload if isinstance(msg.payload, dict) else {}
+        self._cscp_locks[canonical_name] = lock
+        self._satellite_commands[canonical_name] = cmds_msg.payload if isinstance(cmds_msg.payload, dict) else {}
         self._on_satellite_update(canonical_name, SatelliteUpdate.ADDED)
 
     def _cleanup_transmitter(self, satellite: UUID | str) -> None:
