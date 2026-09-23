@@ -43,7 +43,7 @@ foreach satellite : satellites_to_build
   # Create satellite library
   satellite_lib = shared_library(
     satellite_type,
-    sources: [satellite_generator, satellite_sources],
+    sources: [satellite_generator, satellite_sources, build_hpp],
     dependencies: [core_dep, satellite_dep] + satellite_dependencies,
     gnu_symbol_visibility: 'hidden',
     cpp_args: constellation_private_args,
