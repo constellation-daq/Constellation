@@ -236,6 +236,131 @@ deactivate "Satellite A"
 
 ::::
 
+### CMDP Extension Types for Structured Metrics
+
+The standard CMDP metric payload carries scalar values (integers, floats, strings, booleans, timestamps) encoded as native
+MsgPack types. For data quality monitoring, CMDP is extended with application-specific MsgPack Extension types that carry
+structured 2D data such as matrices and histograms.
+
+These types use the MsgPack Extension format, which stores a tuple of an integer type code and a byte array payload.
+MsgPack reserves type codes `[0, 127]` for application-defined use.
+
+#### Extension Type Registry
+
+| Type          | Code | Description                                       |
+|---------------|------|---------------------------------------------------|
+| Matrix        | 1    | Dense 2D array of typed numeric values            |
+| Histogram1D   | 2    | 1D histogram with uniform binning                 |
+| Histogram2D   | 3    | 2D histogram with uniform x and y binning         |
+
+#### Element Data Types
+
+Matrix elements carry a dtype tag that identifies the element type and its byte size.
+
+| dtype tag | Type    | Size (bytes) | Description                    |
+|-----------|---------|--------------|--------------------------------|
+| 0         | uint32  | 4            | 32-bit unsigned integer        |
+| 1         | uint64  | 8            | 64-bit unsigned integer        |
+| 2         | float32 | 4            | IEEE 754 single precision      |
+| 3         | float64 | 8            | IEEE 754 double precision      |
+
+Histogram1D bin counts are always float64.
+
+#### Byte Order
+
+All multi-byte numeric fields inside ext payloads use **little-endian** byte order. This matches x86 native order and NumPy
+defaults, enabling zero-copy deserialization on the most common hardware. The MsgPack framing itself (ext headers, length
+fields) remains big-endian as defined by the MsgPack specification.
+
+#### Matrix Format (ext type 1)
+
+Matrix stores a dense 2D array of typed elements in row-major order. The ext payload layout is:
+
+```text
++--------+--------+--------+--------+--------+--------+--------+--------+--------+========+
+| dtype  |             rows (uint32 LE)      |             cols (uint32 LE)      |  data  |
++--------+--------+--------+--------+--------+--------+--------+--------+--------+========+
+```
+
+where:
+
+* `dtype` is a uint8 element type tag
+* `rows` is a uint32 little-endian row count
+* `cols` is a uint32 little-endian column count
+* `data` is `rows * cols * sizeof(dtype)` bytes of element data in row-major little-endian order
+* Total payload size is `1 + 4 + 4 + rows * cols * sizeof(dtype)` bytes
+* Element at `(row, col)` is at byte offset `(row * cols + col) * sizeof(dtype)` within `data`
+* An empty matrix (0 rows or 0 columns) has a payload of exactly 9 bytes (no data section)
+
+#### Histogram1D Format (ext type 2)
+
+Histogram1D stores bin counts with uniform bin edges. The ext payload layout is:
+
+```text
++--------+--------+--------+--------+--------+--------+--------+--------+
+|                          start (float64 LE)                           |
++--------+--------+--------+--------+--------+--------+--------+--------+
+|                          end (float64 LE)                             |
++--------+--------+--------+--------+--------+--------+--------+--------+
+|          nbins (uint32 LE)        |
++--------+--------+--------+--------+
+|              bins (nbins * float64 LE)                                |
++========+
+```
+
+where:
+
+* `start` is a float64 little-endian lower edge of the first bin
+* `end` is a float64 little-endian upper edge of the last bin
+* `nbins` is a uint32 little-endian number of bins
+* `bins` is `nbins * 8` bytes of float64 little-endian bin counts
+* Total payload size is `8 + 8 + 4 + nbins * 8` bytes
+* Bin `i` (0-indexed) spans `[start + i * (end - start) / nbins, start + (i+1) * (end - start) / nbins)`
+* Underflow and overflow bins are not transmitted
+
+#### Histogram2D Format (ext type 3)
+
+Histogram2D combines axis metadata with an embedded Matrix ext blob. The ext payload layout is:
+
+```text
++--------+--------+--------+--------+--------+--------+--------+--------+
+|                          x_start (float64 LE)                         |
++--------+--------+--------+--------+--------+--------+--------+--------+
+|                          x_end (float64 LE)                           |
++--------+--------+--------+--------+--------+--------+--------+--------+
+|                          y_start (float64 LE)                         |
++--------+--------+--------+--------+--------+--------+--------+--------+
+|                          y_end (float64 LE)                           |
++--------+--------+--------+--------+--------+--------+--------+--------+
+|                     matrix (MsgPack ext type 1)                       |
++========+
+```
+
+where:
+
+* `x_start`, `x_end`, `y_start`, `y_end` are float64 little-endian axis bin edges
+* `matrix` is a complete MsgPack ext object (type 1) containing the bin count matrix
+* The x axis has `matrix.cols` bins, the y axis has `matrix.rows` bins
+* Matrix element at `(row, col)` holds the bin count for y bin `row` and x bin `col`
+* Total payload size is `8 + 8 + 8 + 8 + sizeof(matrix ext object)` bytes
+
+#### CMDP Metric Payload Integration
+
+The existing CMDP metric payload consists of three consecutive MsgPack objects:
+
+```text
++~~~~~~~~~~~~~~~~~+~~~~~~~~~~~~~~~~~+~~~~~~~~~~~~~~~~~+
+|     value       |     flags       |      unit       |
++~~~~~~~~~~~~~~~~~+~~~~~~~~~~~~~~~~~+~~~~~~~~~~~~~~~~~+
+```
+
+For scalar metrics, `value` is a standard MsgPack type (int, float, str, etc.). For DQM metrics, `value` is a MsgPack
+Extension object with type code 1, 2, or 3. Deserializers distinguish between them by checking whether the first MsgPack
+object is an Extension type and dispatching on the type code.
+
+Existing scalar metrics are unaffected. Listeners that do not understand the new extension types will encounter an unknown
+MsgPack ext object in the value position and should skip it gracefully.
+
 
 ## Network Discovery
 
