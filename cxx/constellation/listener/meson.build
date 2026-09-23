@@ -12,7 +12,7 @@ listener_src = files(
 )
 
 listener_lib = library('ConstellationListener',
-  sources: listener_src,
+  sources: [listener_src, build_hpp],
   include_directories: constellation_inc,
   dependencies: [core_dep],
   gnu_symbol_visibility: 'hidden',

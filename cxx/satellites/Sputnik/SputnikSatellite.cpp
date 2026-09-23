@@ -26,7 +26,8 @@ using namespace constellation::protocol::CSCP;
 using namespace constellation::satellite;
 using namespace std::chrono_literals;
 
-SputnikSatellite::SputnikSatellite(std::string_view type, std::string_view name) : Satellite(type, name) {
+SputnikSatellite::SputnikSatellite(std::string_view type, std::string_view name, std::string_view version)
+    : Satellite(type, name, version) {
     LOG(STATUS) << "Sputnik prototype satellite " << getCanonicalName() << " created";
     support_reconfigure(true);
 

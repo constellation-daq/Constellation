@@ -27,7 +27,7 @@
 class EudaqNativeWriterSatellite final : public constellation::satellite::ReceiverSatellite {
 public:
     /** Satellite constructor */
-    EudaqNativeWriterSatellite(std::string_view type, std::string_view name);
+    EudaqNativeWriterSatellite(std::string_view type, std::string_view name, std::string_view version);
 
     /** Transition function for initialize command */
     void initializing(constellation::config::Configuration& config) final;

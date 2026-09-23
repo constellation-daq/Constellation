@@ -1,6 +1,6 @@
 # Constellation Monitoring Distribution Protocol
 
-* Status: draft
+* Status: stable
 * Editor: The Constellation authors
 
 The Constellation Monitoring Distribution Protocol (CMDP) defines how hosts distribute and receive auxiliary information such as log messages and telemetry data for monitoring purposes.

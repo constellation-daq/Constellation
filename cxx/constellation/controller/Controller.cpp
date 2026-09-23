@@ -617,12 +617,12 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& 
 }
 
 void Controller::controller_loop(const std::stop_token& stop_token) {
-    std::unique_lock<std::mutex> lock {connection_mutex_};
     auto wakeup = std::chrono::steady_clock::now() + 3s;
 
     auto* chirp_manager = ManagerLocator::getCHIRPManager();
 
     // Wait until cv is notified, timeout is reached or stop is requested, returns true if stop requested
+    std::unique_lock<std::mutex> lock {connection_mutex_};
     while(!cv_.wait_until(lock, stop_token, wakeup, [&]() { return stop_token.stop_requested(); })) {
 
         // Calculate the next wake-up by checking when the next heartbeat times out, but time out after 3s anyway:
@@ -675,5 +675,8 @@ void Controller::controller_loop(const std::stop_token& stop_token) {
                 chirp_manager->forgetDiscoveredServices(key);
             }
         }
+
+        // Relock for condition variable
+        lock.lock();
     }
 }

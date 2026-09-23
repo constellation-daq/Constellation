@@ -12,7 +12,7 @@ satellite_src = files(
 
 satellite_lib = library(
   'ConstellationSatellite',
-  sources: satellite_src,
+  sources: [satellite_src, build_hpp],
   include_directories: constellation_inc,
   dependencies: [core_dep, atomic_queue_dep, cppzmq_dep, msgpack_cxx_dep],
   gnu_symbol_visibility: 'hidden',

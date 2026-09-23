@@ -41,7 +41,7 @@ gui_src = files(
 )
 
 gui_lib = library('ConstellationGUI',
-  sources: [gui_src, ui_files, moc_files, qrc_files],
+  sources: [gui_src, ui_files, moc_files, qrc_files, build_hpp],
   include_directories: constellation_inc,
   dependencies: [core_dep, controller_dep, qt_dep],
   gnu_symbol_visibility: 'hidden',

@@ -42,8 +42,10 @@ using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 
-EudaqNativeWriterSatellite::EudaqNativeWriterSatellite(std::string_view type, std::string_view name)
-    : ReceiverSatellite(type, name), flush_timer_({}) {}
+EudaqNativeWriterSatellite::EudaqNativeWriterSatellite(std::string_view type,
+                                                       std::string_view name,
+                                                       std::string_view version)
+    : ReceiverSatellite(type, name, version), flush_timer_({}) {}
 
 std::string EudaqNativeWriterSatellite::format_filename(const std::string& pattern, std::string_view arg) {
 #if defined(__cpp_lib_format) && __cpp_lib_format >= 201907L

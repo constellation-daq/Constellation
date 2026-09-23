@@ -214,21 +214,19 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
 }
 
 void HeartbeatManager::run(const std::stop_token& stop_token) {
-    // Notify condition variable when stop is requested
-    const std::stop_callback stop_callback {stop_token, [&]() { cv_.notify_all(); }};
     auto wakeup = std::chrono::steady_clock::now() + 3s;
 
     auto* chirp_manager = ManagerLocator::getCHIRPManager();
 
-    while(!stop_token.stop_requested()) {
-        std::unique_lock<std::mutex> lock {mutex_};
-        // Wait until condition variable is notified or timeout is reached
-        cv_.wait_until(lock, wakeup);
-
-        std::vector<MD5Hash> call_dispose;
+    // Wait until cv is notified, timeout is reached or stop is requested, returns true if stop requested
+    std::unique_lock<std::mutex> lock {mutex_};
+    while(!cv_.wait_until(lock, stop_token, wakeup, [&]() { return stop_token.stop_requested(); })) {
 
         // Calculate the next wake-up by checking when the next heartbeat times out, but time out after 3s anyway:
         wakeup = std::chrono::steady_clock::now() + 3s;
+
+        std::vector<MD5Hash> call_dispose;
+
         for(auto& [key, remote] : remotes_) {
             // Check if we are beyond the interval and that we only subtract lives once every interval
             const auto now = std::chrono::steady_clock::now();
@@ -265,5 +263,8 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
                 chirp_manager->forgetDiscoveredServices(key);
             }
         }
+
+        // Relock for condition variable
+        lock.lock();
     }
 }

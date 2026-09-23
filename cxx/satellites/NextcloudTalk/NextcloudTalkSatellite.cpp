@@ -49,8 +49,8 @@ namespace {
     const std::set<State> run_interrupting_safe {State::RUN, State::interrupting, State::SAFE};
 } // namespace
 
-NextcloudTalkSatellite::NextcloudTalkSatellite(std::string_view type, std::string_view name)
-    : Satellite(type, name), LogListener("MNTR", [this](CMDP1Message&& msg) { log_callback(std::move(msg)); }) {}
+NextcloudTalkSatellite::NextcloudTalkSatellite(std::string_view type, std::string_view name, std::string_view version)
+    : Satellite(type, name, version), LogListener("MNTR", [this](CMDP1Message&& msg) { log_callback(std::move(msg)); }) {}
 
 void NextcloudTalkSatellite::initializing(Configuration& config) {
 
