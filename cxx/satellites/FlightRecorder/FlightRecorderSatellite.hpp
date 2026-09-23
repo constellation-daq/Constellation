@@ -44,7 +44,7 @@ private:
     };
 
 public:
-    FlightRecorderSatellite(std::string_view type, std::string_view name);
+    FlightRecorderSatellite(std::string_view type, std::string_view name, std::string_view version);
 
     void initializing(constellation::config::Configuration& config) final;
     void landing() final;

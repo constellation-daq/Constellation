@@ -21,7 +21,7 @@
 
 class RandomTransmitterSatellite final : public constellation::satellite::TransmitterSatellite {
 public:
-    RandomTransmitterSatellite(std::string_view type, std::string_view name);
+    RandomTransmitterSatellite(std::string_view type, std::string_view name, std::string_view version);
 
     void initializing(constellation::config::Configuration& config) final;
     void reconfiguring(const constellation::config::Configuration& partial_config) final;

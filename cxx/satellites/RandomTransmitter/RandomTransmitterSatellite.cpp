@@ -33,8 +33,10 @@ using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 
-RandomTransmitterSatellite::RandomTransmitterSatellite(std::string_view type, std::string_view name)
-    : TransmitterSatellite(type, name), byte_rng_(generate_random_seed()) {
+RandomTransmitterSatellite::RandomTransmitterSatellite(std::string_view type,
+                                                       std::string_view name,
+                                                       std::string_view version)
+    : TransmitterSatellite(type, name, version), byte_rng_(generate_random_seed()) {
     support_reconfigure();
 
     register_timed_metric("DUTY_CYCLE", "", "Total duty cycle of the run loop", 5s, {State::RUN}, [this]() {
