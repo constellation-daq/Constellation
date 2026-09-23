@@ -15,7 +15,7 @@ controller_src = files(
 )
 
 controller_lib = library('ConstellationController',
-  sources: controller_src,
+  sources: [controller_src, build_hpp],
   include_directories: constellation_inc,
   dependencies: [core_dep, listener_dep, cppzmq_dep, msgpack_cxx_dep, tomlplusplus_dep, yamlcpp_dep],
   gnu_symbol_visibility: 'hidden',

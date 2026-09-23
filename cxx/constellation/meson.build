@@ -29,11 +29,14 @@ build_hpp = configure_file(
   input: 'build.hpp',
   output: 'build.hpp',
   configuration: build_hpp_data,
+  install_dir: get_option('includedir') / 'constellation'
 )
 
-build_vcs_hpp = vcs_tag(input: 'build_vcs.hpp', output: 'build_vcs.hpp', fallback: '')
-
-install_headers(build_hpp, subdir: 'constellation')
+build_vcs_hpp = vcs_tag(
+  input: 'build_vcs.hpp',
+  output: 'build_vcs.hpp',
+  fallback: '',
+)
 
 subdir('core')
 subdir('satellite')
