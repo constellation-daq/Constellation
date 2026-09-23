@@ -23,7 +23,7 @@
 
 class NextcloudTalkSatellite final : public constellation::satellite::Satellite, constellation::listener::LogListener {
 public:
-    NextcloudTalkSatellite(std::string_view type, std::string_view name);
+    NextcloudTalkSatellite(std::string_view type, std::string_view name, std::string_view version);
 
     void initializing(constellation::config::Configuration& config) final;
     void starting(std::string_view run_identifier) final;

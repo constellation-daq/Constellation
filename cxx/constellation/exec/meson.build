@@ -22,7 +22,7 @@ exec_src = files(
 )
 
 exec_lib = library('ConstellationExec',
-  sources: exec_src + [build_vcs_hpp],
+  sources: [exec_src, build_hpp, build_vcs_hpp],
   include_directories: constellation_inc,
   dependencies: [core_dep, satellite_dep, argparse_dep, asio_dep, dl_dep, py_dep],
   gnu_symbol_visibility: 'hidden',

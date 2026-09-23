@@ -19,7 +19,7 @@
 
 class DevNullReceiverSatellite final : public constellation::satellite::ReceiverSatellite {
 public:
-    DevNullReceiverSatellite(std::string_view type, std::string_view name);
+    DevNullReceiverSatellite(std::string_view type, std::string_view name, std::string_view version);
 
     void starting(std::string_view run_identifier) final;
     void stopping() final;

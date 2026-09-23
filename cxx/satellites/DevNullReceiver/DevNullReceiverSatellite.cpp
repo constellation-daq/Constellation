@@ -23,8 +23,8 @@ using namespace constellation::message;
 using namespace constellation::protocol::CSCP;
 using namespace constellation::satellite;
 
-DevNullReceiverSatellite::DevNullReceiverSatellite(std::string_view type, std::string_view name)
-    : ReceiverSatellite(type, name) {
+DevNullReceiverSatellite::DevNullReceiverSatellite(std::string_view type, std::string_view name, std::string_view version)
+    : ReceiverSatellite(type, name, version) {
     support_reconfigure();
 
     register_command("get_data_rate", "Get data rate during the last run in Gbps", {State::ORBIT}, [this]() {
