@@ -42,8 +42,7 @@ The URL for the release notes needs to match with the prepared release notes.
 The release on GitLab is created when an annotated tag (`git tag -s` or `git tag -m`) is pushed. The tag has to follow the
 `vMAJOR.FEATURE.PATCH` naming scheme.
 
-After the tag pipelines finished and the release is created on GitLab, the release should be edited to add the URL to the
-release notes as release asset.
+After the tag pipelines finished and the release is created on GitLab, the milestone for the release should be closed and  added to release.
 
 ## Update Satellite Templates
 
