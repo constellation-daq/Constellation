@@ -7,11 +7,6 @@ Here the release process for Constellation is described.
 Constellation roughly follows [semantic versioning](https://semver.org/), i.e. `MAJOR.FEATURE.PATCH`. The major version
 should only be increased when incompatible changes are introduced, the feature version only when new features are added.
 
-```{note}
-Currently, Constellation is in a draft state at major version `0` and without patch releases. Incompatible changes may be
-introduced in any release until major version `1`.
-```
-
 Each major and feature release of Constellation has a code name, chosen from the [IAU designated constellations](https://en.wikipedia.org/wiki/IAU_designated_constellations_by_area)
 in order of increasing solid angle they take up in the sky.
 
@@ -47,8 +42,7 @@ The URL for the release notes needs to match with the prepared release notes.
 The release on GitLab is created when an annotated tag (`git tag -s` or `git tag -m`) is pushed. The tag has to follow the
 `vMAJOR.FEATURE.PATCH` naming scheme.
 
-After the tag pipelines finished and the release is created on GitLab, the release should be edited to add the URL to the
-release notes as release asset.
+After the tag pipelines finished and the release is created on GitLab, the milestone for the release should be closed and  added to release.
 
 ## Update Satellite Templates
 

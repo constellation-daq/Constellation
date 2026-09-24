@@ -708,8 +708,9 @@ deploy:release:
       artifacts: true
   script:
     - glab auth login --hostname $CI_SERVER_HOST --token $GITLAB_ACCESS_TOKEN
-    - if [ -n "$RELEASE_NOTES_URL" ]; then NOTES_ARGS="--notes [Release Notes]($RELEASE_NOTES_URL)"; else NOTES_ARGS=""; fi
-    - glab release create $CI_COMMIT_TAG --name "Constellation ${CI_COMMIT_TAG} - ${CODENAME}" $NOTES_ARGS
+    - touch .release-notes.md
+    - if [ -n "$RELEASE_NOTES_URL" ]; then printf '[Release Notes](%s)\n' "$RELEASE_NOTES_URL" > .release-notes.md; fi
+    - glab release create $CI_COMMIT_TAG --name "Constellation ${CI_COMMIT_TAG} - ${CODENAME}" --notes-file .release-notes.md
     - glab release upload $CI_COMMIT_TAG "Constellation-${CI_COMMIT_TAG}.tar.xz#Full source code"
   rules:
     - if: $CI_COMMIT_TAG =~ /^v.*/
