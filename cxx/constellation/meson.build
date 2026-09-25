@@ -26,17 +26,28 @@ build_hpp_data.set('builddir', meson.project_build_root())
 build_hpp_data.set('dso_prefix', dso_prefix)
 build_hpp_data.set('dso_suffix', dso_suffix)
 build_hpp = configure_file(
-  input: 'build.hpp',
+  input: 'build.hpp.in',
   output: 'build.hpp',
   configuration: build_hpp_data,
   install_dir: get_option('includedir') / 'constellation'
 )
 
-build_vcs_hpp = vcs_tag(
-  input: 'build_vcs.hpp',
-  output: 'build_vcs.hpp',
-  fallback: '',
-)
+if not meson.is_subproject()
+  build_vcs_hpp = vcs_tag(
+    input: 'build_vcs.hpp.in',
+    output: 'build_vcs.hpp',
+    fallback: 'v' + meson.project_version(),
+    command: ['git', 'describe', '--tags', '--always', '--dirty']
+  )
+else
+  build_vcs_hpp_data = configuration_data()
+  build_vcs_hpp_data.set('VCS_TAG', 'v' + meson.project_version())
+  build_vcs_hpp = configure_file(
+    input: 'build_vcs.hpp.in',
+    output: 'build_vcs.hpp',
+    configuration: build_vcs_hpp_data,
+  )
+endif
 
 subdir('core')
 subdir('satellite')
