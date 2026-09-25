@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 project('Constellation',
-  version: '1.0.1',
+  version: '1.0.2',
   license: 'EUPL-1.2',
   default_options: ['warning_level=3', 'werror=true', 'cpp_std=c++20', 'b_ndebug=if-release'],
 )
