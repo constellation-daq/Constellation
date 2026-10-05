@@ -97,6 +97,7 @@ class LeCroySatellite(TransmitterSatellite):
                 event_payload = np.array([])
                 for channel in self._channels:
                     wave_desc, trg_times, trg_offsets, wave_array = self._scope.get_waveform_all(channel)
+                    num_samples = None
                     if first_channel:
                         event_payload = trg_times
                         num_samples = wave_desc["wave_array_count"] // self._num_sequences
@@ -109,7 +110,8 @@ class LeCroySatellite(TransmitterSatellite):
                     )  # already transform to V
                     event_payload = np.append(event_payload, trg_offsets)
                     event_payload = np.append(event_payload, wave_array)
-                    self._last_waveform[channel] = wave_array[-num_samples:].tolist()
+                    if num_samples:
+                        self._last_waveform[channel] = wave_array[-num_samples:].tolist()
                 data_record = self.new_data_record({"dtype": f"{event_payload.dtype}"})
                 data_record.add_block(event_payload.tobytes())
                 self.send_data_record(data_record)
@@ -135,7 +137,7 @@ class LeCroySatellite(TransmitterSatellite):
     def do_landing(self) -> str:
         self._scope.clear()
         self._scope.sock.close()
-        self.log.info(f"Landing...")
+        self.log.info("Landing...")
         return "Landed"
 
     @cscp_requestable([SatelliteState.RUN])
