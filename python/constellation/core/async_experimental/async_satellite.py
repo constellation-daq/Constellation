@@ -432,6 +432,9 @@ class AsyncSatellite(
         stop.set()
         await asyncio.gather(*com_tasks, return_exceptions=True)
 
+        # Orderly shut down communication and close sockets
+        self.reentry()
+
     def stop_requested(self) -> bool:
         """Check whether the do_run loop should terminate."""
         if self._state_stop_event is not None:
