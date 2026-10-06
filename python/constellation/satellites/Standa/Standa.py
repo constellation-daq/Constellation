@@ -9,18 +9,19 @@ Constellation interface
 import time
 from typing import Any
 
-from .stage_config import Standa_8MT30_50
-from .motor_controller import Motors
-
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
 from constellation.core.monitoring import schedule_metric
 from constellation.core.protocol.cscp1 import SatelliteState
 from constellation.core.satellite import Satellite
 
+from .motor_controller import Motors
+from .stage_config import Standa_8MT30_50
+
 _SUPPORTED_DEVICES = {
     "8MT30_50": Standa_8MT30_50,
 }
+
 
 class Standa(Satellite):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -59,13 +60,13 @@ class Standa(Satellite):
         # Calibrate to zero
         if self.calibrate_on_launch:
             self.motors.calibrate()
-            
+
         return "Launched!"
 
     def do_reconfigure(self, config: Configuration) -> str | None:
         if "position" not in config:
             return "Reconfigured without position"
-        
+
         position_section = config.get_section("position")
         position = {axis: position_section.get_float(axis) for axis in position_section.get_keys()}
 
@@ -114,7 +115,7 @@ class Standa(Satellite):
         if motors is None or axis not in motors.ids:
             return None
         return motors.get_position(axis)
-    
+
     @cscp_requestable([SatelliteState.INIT, SatelliteState.ORBIT])
     def position_x(self) -> float | None:
         "Returns the current x position of the stage"

@@ -8,7 +8,8 @@ Standa_8MT30_50 configuration by Daniil D.Rastorguev.
 
 import libximc.lowlevel as ximc
 
-def Standa_8MT30_50(lib, id):
+
+def Standa_8MT30_50(lib, stage_id):
     worst_result = ximc.Result.Ok
     result = ximc.Result.Ok
 
@@ -33,7 +34,7 @@ def Standa_8MT30_50(lib, id):
 
     feedback_settings.FeedbackFlags = FeedbackFlags_.FEEDBACK_ENC_TYPE_SINGLE_ENDED | FeedbackFlags_.FEEDBACK_ENC_TYPE_AUTO
     feedback_settings.CountsPerTurn = 4000
-    result = lib.set_feedback_settings(id, ximc.byref(feedback_settings))
+    result = lib.set_feedback_settings(stage_id, ximc.byref(feedback_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -63,8 +64,13 @@ def Standa_8MT30_50(lib, id):
         HOME_DIR_SECOND = 2
         HOME_DIR_FIRST = 1
 
-    home_settings.HomeFlags = HomeFlags_.HOME_USE_FAST | HomeFlags_.HOME_STOP_SECOND_REV | HomeFlags_.HOME_STOP_FIRST_BITS | HomeFlags_.HOME_DIR_SECOND
-    result = lib.set_home_settings(id, ximc.byref(home_settings))
+    home_settings.HomeFlags = (
+        HomeFlags_.HOME_USE_FAST
+        | HomeFlags_.HOME_STOP_SECOND_REV
+        | HomeFlags_.HOME_STOP_FIRST_BITS
+        | HomeFlags_.HOME_DIR_SECOND
+    )
+    result = lib.set_home_settings(stage_id, ximc.byref(home_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -82,7 +88,7 @@ def Standa_8MT30_50(lib, id):
     class MoveFlags_:
         RPM_DIV_1000 = 1
 
-    result = lib.set_move_settings(id, ximc.byref(move_settings))
+    result = lib.set_move_settings(stage_id, ximc.byref(move_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -121,7 +127,7 @@ def Standa_8MT30_50(lib, id):
 
     engine_settings.MicrostepMode = MicrostepMode_.MICROSTEP_MODE_FRAC_256
     engine_settings.StepsPerRev = 200
-    result = lib.set_engine_settings(id, ximc.byref(engine_settings))
+    result = lib.set_engine_settings(stage_id, ximc.byref(engine_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -145,7 +151,7 @@ def Standa_8MT30_50(lib, id):
         DRIVER_TYPE_DISCRETE_FET = 1
 
     entype_settings.DriverType = DriverType_.DRIVER_TYPE_INTEGRATE
-    result = lib.set_entype_settings(id, ximc.byref(entype_settings))
+    result = lib.set_entype_settings(stage_id, ximc.byref(entype_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -164,7 +170,7 @@ def Standa_8MT30_50(lib, id):
         POWER_REDUCT_ENABLED = 1
 
     power_settings.PowerFlags = PowerFlags_.POWER_SMOOTH_CURRENT | PowerFlags_.POWER_REDUCT_ENABLED
-    result = lib.set_power_settings(id, ximc.byref(power_settings))
+    result = lib.set_power_settings(stage_id, ximc.byref(power_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -186,12 +192,18 @@ def Standa_8MT30_50(lib, id):
         USB_BREAK_RECONNECT = 32
         ALARM_FLAGS_STICKING = 16
         ALARM_ON_BORDERS_SWAP_MISSET = 8
-        H_BRIDGE_ALERT = 4
+        H_BRstage_idGE_ALERT = 4
         LOW_UPWR_PROTECTION = 2
         ALARM_ON_DRIVER_OVERHEATING = 1
 
-    secure_settings.Flags = Flags_.ALARM_ENGINE_RESPONSE | Flags_.ALARM_FLAGS_STICKING | Flags_.ALARM_ON_BORDERS_SWAP_MISSET | Flags_.H_BRIDGE_ALERT | Flags_.ALARM_ON_DRIVER_OVERHEATING
-    result = lib.set_secure_settings(id, ximc.byref(secure_settings))
+    secure_settings.Flags = (
+        Flags_.ALARM_ENGINE_RESPONSE
+        | Flags_.ALARM_FLAGS_STICKING
+        | Flags_.ALARM_ON_BORDERS_SWAP_MISSET
+        | Flags_.H_BRstage_idGE_ALERT
+        | Flags_.ALARM_ON_DRIVER_OVERHEATING
+    )
+    result = lib.set_secure_settings(stage_id, ximc.byref(secure_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -217,21 +229,21 @@ def Standa_8MT30_50(lib, id):
     edges_settings.uLeftBorder = 0
     edges_settings.RightBorder = 38500
     edges_settings.uRightBorder = 0
-    result = lib.set_edges_settings(id, ximc.byref(edges_settings))
+    result = lib.set_edges_settings(stage_id, ximc.byref(edges_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
             worst_result = result
 
-    pid_settings = ximc.pid_settings_t()
+    pstage_id_settings = ximc.pstage_id_settings_t()
 
-    pid_settings.KpU = 0
-    pid_settings.KiU = 0
-    pid_settings.KdU = 0
-    pid_settings.Kpf = 0.006000000052154064
-    pid_settings.Kif = 0.05000000074505806
-    pid_settings.Kdf = 2.8000000384054147e-05
-    result = lib.set_pid_settings(id, ximc.byref(pid_settings))
+    pstage_id_settings.KpU = 0
+    pstage_id_settings.KiU = 0
+    pstage_id_settings.KdU = 0
+    pstage_id_settings.Kpf = 0.006000000052154064
+    pstage_id_settings.Kif = 0.05000000074505806
+    pstage_id_settings.Kdf = 2.8000000384054147e-05
+    result = lib.set_pstage_id_settings(stage_id, ximc.byref(pstage_id_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -249,7 +261,7 @@ def Standa_8MT30_50(lib, id):
     sync_in_settings.uPosition = 0
     sync_in_settings.Speed = 0
     sync_in_settings.uSpeed = 0
-    result = lib.set_sync_in_settings(id, ximc.byref(sync_in_settings))
+    result = lib.set_sync_in_settings(stage_id, ximc.byref(sync_in_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -271,7 +283,7 @@ def Standa_8MT30_50(lib, id):
     sync_out_settings.SyncOutPeriod = 2000
     sync_out_settings.Accuracy = 0
     sync_out_settings.uAccuracy = 0
-    result = lib.set_sync_out_settings(id, ximc.byref(sync_out_settings))
+    result = lib.set_sync_out_settings(stage_id, ximc.byref(sync_out_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -300,8 +312,12 @@ def Standa_8MT30_50(lib, id):
         EXTIO_SETUP_MODE_IN_NOP = 0
         EXTIO_SETUP_MODE_OUT_OFF = 0
 
-    extio_settings.EXTIOModeFlags = EXTIOModeFlags_.EXTIO_SETUP_MODE_IN_STOP | EXTIOModeFlags_.EXTIO_SETUP_MODE_IN_NOP | EXTIOModeFlags_.EXTIO_SETUP_MODE_OUT_OFF
-    result = lib.set_extio_settings(id, ximc.byref(extio_settings))
+    extio_settings.EXTIOModeFlags = (
+        EXTIOModeFlags_.EXTIO_SETUP_MODE_IN_STOP
+        | EXTIOModeFlags_.EXTIO_SETUP_MODE_IN_NOP
+        | EXTIOModeFlags_.EXTIO_SETUP_MODE_OUT_OFF
+    )
+    result = lib.set_extio_settings(stage_id, ximc.byref(extio_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -319,7 +335,7 @@ def Standa_8MT30_50(lib, id):
         BRAKE_ENABLED = 1
 
     brake_settings.BrakeFlags = BrakeFlags_.BRAKE_ENG_PWROFF
-    result = lib.set_brake_settings(id, ximc.byref(brake_settings))
+    result = lib.set_brake_settings(stage_id, ximc.byref(brake_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -369,7 +385,7 @@ def Standa_8MT30_50(lib, id):
     control_settings.Flags = FlagsControl_.CONTROL_MODE_LR | FlagsControl_.CONTROL_MODE_OFF
     control_settings.DeltaPosition = 1
     control_settings.uDeltaPosition = 0
-    result = lib.set_control_settings(id, ximc.byref(control_settings))
+    result = lib.set_control_settings(stage_id, ximc.byref(control_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -386,7 +402,7 @@ def Standa_8MT30_50(lib, id):
     class JoyFlags_:
         JOY_REVERSE = 1
 
-    result = lib.set_joystick_settings(id, ximc.byref(joystick_settings))
+    result = lib.set_joystick_settings(stage_id, ximc.byref(joystick_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -404,7 +420,7 @@ def Standa_8MT30_50(lib, id):
         CTP_ENABLED = 1
 
     ctp_settings.CTPFlags = CTPFlags_.CTP_ERROR_CORRECTION
-    result = lib.set_ctp_settings(id, ximc.byref(ctp_settings))
+    result = lib.set_ctp_settings(stage_id, ximc.byref(ctp_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -424,7 +440,7 @@ def Standa_8MT30_50(lib, id):
         UART_PARITY_BIT_EVEN = 0
 
     uart_settings.UARTSetupFlags = UARTSetupFlags_.UART_PARITY_BIT_EVEN
-    result = lib.set_uart_settings(id, ximc.byref(uart_settings))
+    result = lib.set_uart_settings(stage_id, ximc.byref(uart_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -437,7 +453,7 @@ def Standa_8MT30_50(lib, id):
     class CtrlFlags_:
         EEPROM_PRECEDENCE = 1
 
-    result = lib.set_controller_name(id, ximc.byref(controller_name))
+    result = lib.set_controller_name(stage_id, ximc.byref(controller_name))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -454,7 +470,7 @@ def Standa_8MT30_50(lib, id):
         BACK_EMF_RESISTANCE_AUTO = 2
         BACK_EMF_INDUCTANCE_AUTO = 1
 
-    result = lib.set_emf_settings(id, ximc.byref(emf_settings))
+    result = lib.set_emf_settings(stage_id, ximc.byref(emf_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -465,7 +481,7 @@ def Standa_8MT30_50(lib, id):
     engine_advanced_setup.stepcloseloop_Kw = 50
     engine_advanced_setup.stepcloseloop_Kp_low = 1000
     engine_advanced_setup.stepcloseloop_Kp_high = 33
-    result = lib.set_engine_advanced_setup(id, ximc.byref(engine_advanced_setup))
+    result = lib.set_engine_advanced_setup(stage_id, ximc.byref(engine_advanced_setup))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -474,7 +490,7 @@ def Standa_8MT30_50(lib, id):
     extended_settings = ximc.extended_settings_t()
 
     extended_settings.Param1 = 0
-    result = lib.set_extended_settings(id, ximc.byref(extended_settings))
+    result = lib.set_extended_settings(stage_id, ximc.byref(extended_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -483,7 +499,7 @@ def Standa_8MT30_50(lib, id):
     stage_name = ximc.stage_name_t()
 
     stage_name.PositionerName = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    result = lib.set_stage_name(id, ximc.byref(stage_name))
+    result = lib.set_stage_name(stage_id, ximc.byref(stage_name))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -493,8 +509,9 @@ def Standa_8MT30_50(lib, id):
 
     stage_information.Manufacturer = bytes([0, 116, 97, 110, 100, 97, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     stage_information.PartNumber = bytes(
-        [56, 77, 84, 51, 48, 45, 53, 48, 0, 77, 69, 110, 49, 0, 0, 0, 68, 67, 0, 0, 0, 0, 0, 0])
-    result = lib.set_stage_information(id, ximc.byref(stage_information))
+        [56, 77, 84, 51, 48, 45, 53, 48, 0, 77, 69, 110, 49, 0, 0, 0, 68, 67, 0, 0, 0, 0, 0, 0]
+    )
+    result = lib.set_stage_information(stage_id, ximc.byref(stage_information))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -511,7 +528,7 @@ def Standa_8MT30_50(lib, id):
     stage_settings.MaxCurrentConsumption = 0
     stage_settings.HorizontalLoadCapacity = 0
     stage_settings.VerticalLoadCapacity = 0
-    result = lib.set_stage_settings(id, ximc.byref(stage_settings))
+    result = lib.set_stage_settings(stage_id, ximc.byref(stage_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -521,7 +538,7 @@ def Standa_8MT30_50(lib, id):
 
     motor_information.Manufacturer = bytes([0, 111, 116, 105, 111, 110, 32, 67, 111, 110, 116, 114, 111, 108, 32, 80])
     motor_information.PartNumber = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    result = lib.set_motor_information(id, ximc.byref(motor_information))
+    result = lib.set_motor_information(stage_id, ximc.byref(motor_information))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -558,7 +575,7 @@ def Standa_8MT30_50(lib, id):
     motor_settings.MaxCurrentTime = 0
     motor_settings.NoLoadCurrent = 0
     motor_settings.NoLoadSpeed = 0
-    result = lib.set_motor_settings(id, ximc.byref(motor_settings))
+    result = lib.set_motor_settings(stage_id, ximc.byref(motor_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -568,7 +585,7 @@ def Standa_8MT30_50(lib, id):
 
     encoder_information.Manufacturer = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     encoder_information.PartNumber = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    result = lib.set_encoder_information(id, ximc.byref(encoder_information))
+    result = lib.set_encoder_information(stage_id, ximc.byref(encoder_information))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -589,7 +606,7 @@ def Standa_8MT30_50(lib, id):
         ENCSET_PUSHPULL_OUTPUT = 4
         ENCSET_DIFFERENTIAL_OUTPUT = 1
 
-    result = lib.set_encoder_settings(id, ximc.byref(encoder_settings))
+    result = lib.set_encoder_settings(stage_id, ximc.byref(encoder_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -599,7 +616,7 @@ def Standa_8MT30_50(lib, id):
 
     hallsensor_information.Manufacturer = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     hallsensor_information.PartNumber = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    result = lib.set_hallsensor_information(id, ximc.byref(hallsensor_information))
+    result = lib.set_hallsensor_information(stage_id, ximc.byref(hallsensor_information))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -612,7 +629,7 @@ def Standa_8MT30_50(lib, id):
     hallsensor_settings.SupplyVoltageMax = 0
     hallsensor_settings.MaxCurrentConsumption = 0
     hallsensor_settings.PPR = 0
-    result = lib.set_hallsensor_settings(id, ximc.byref(hallsensor_settings))
+    result = lib.set_hallsensor_settings(stage_id, ximc.byref(hallsensor_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -622,7 +639,7 @@ def Standa_8MT30_50(lib, id):
 
     gear_information.Manufacturer = bytes([0, 97, 120, 111, 110, 32, 109, 111, 116, 111, 114, 0, 0, 0, 0, 0])
     gear_information.PartNumber = bytes([0, 52, 52, 48, 50, 55, 0, 58, 49, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    result = lib.set_gear_information(id, ximc.byref(gear_information))
+    result = lib.set_gear_information(stage_id, ximc.byref(gear_information))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -637,7 +654,7 @@ def Standa_8MT30_50(lib, id):
     gear_settings.MaxOutputBacklash = 0
     gear_settings.InputInertia = 0
     gear_settings.Efficiency = 0
-    result = lib.set_gear_settings(id, ximc.byref(gear_settings))
+    result = lib.set_gear_settings(stage_id, ximc.byref(gear_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
@@ -645,8 +662,7 @@ def Standa_8MT30_50(lib, id):
 
     accessories_settings = ximc.accessories_settings_t()
 
-    accessories_settings.MagneticBrakeInfo = bytes(
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    accessories_settings.MagneticBrakeInfo = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
     accessories_settings.MBRatedVoltage = 0
     accessories_settings.MBRatedCurrent = 0
     accessories_settings.MBTorque = 0
@@ -656,7 +672,8 @@ def Standa_8MT30_50(lib, id):
         MB_AVAILABLE = 1
 
     accessories_settings.TemperatureSensorInfo = bytes(
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    )
     accessories_settings.TSMin = 0
     accessories_settings.TSMax = 0
     accessories_settings.TSGrad = 0
@@ -677,7 +694,7 @@ def Standa_8MT30_50(lib, id):
         LS_ON_SW2_AVAILABLE = 2
         LS_ON_SW1_AVAILABLE = 1
 
-    result = lib.set_accessories_settings(id, ximc.byref(accessories_settings))
+    result = lib.set_accessories_settings(stage_id, ximc.byref(accessories_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:

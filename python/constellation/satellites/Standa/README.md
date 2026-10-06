@@ -91,7 +91,7 @@ Positions outside the travel range of the stage are rejected rather than clipped
 
 ## Taking data at several positions
 
-The satellite holds its position for the duration of a run. A scan over positions is therefore performed by a controller which reconfigures the position between runs:
+The satellite holds its position throughout a run. A scan over positions is therefore performed by a controller which reconfigures the position between runs:
 
 ```python
 for x in numpy.arange(0.0, 40.1, 10.0):
