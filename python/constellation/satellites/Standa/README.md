@@ -44,7 +44,7 @@ The stage model is selected with the `model` configuration parameter. It determi
 
 ### `8MT30_50`
 
-The `8MT30-50` is a motorized linear stage with 50 mm of travel and a step size of 1.25 µm. Positioning uses back-EMF feedback rather than an encoder, so the satellite cannot independently verify that a requested position was reached.
+The `8MT30-50` is a motorized linear stage with 50 mm of travel and a step size of 1.25 µm.
 
 ## Parameters
 
@@ -91,7 +91,7 @@ Positions outside the travel range of the stage are rejected rather than clipped
 
 ## Taking data at several positions
 
-The satellite holds its position throughout a run. A scan over positions is therefore performed by a controller which reconfigures the position between runs:
+The satellite holds its position throughout a run. A scan over positions is therefore performed by a controller which reconfigure the position between runs:
 
 ```python
 for x in numpy.arange(0.0, 40.1, 10.0):
