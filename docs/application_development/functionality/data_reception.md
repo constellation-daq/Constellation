@@ -94,3 +94,70 @@ void MyWriterSatellite::receive_eor(std::string_view sender, const Dictionary& u
     LOG(INFO) << "Received EOR from " << sender << " with metadata" << run_metadata.to_string();
 }
 ```
+
+## Dealing with Data Records
+
+The `receive_data` callback provides each received data record as an instance of the `CDTP2Message::DataRecord` class. A data
+record consists of a sequence number, a dictionary of tags and any number of data blocks, as described in the
+[operator's guide](../../operator_guide/concepts/data.md#data-messages). The following methods provide read access to these
+components:
+
+| Method                | Return Type                         | Description                                          |
+|-----------------------|-------------------------------------|------------------------------------------------------|
+| `getSequenceNumber()` | `std::uint64_t`                     | Sequence number of the data record                   |
+| `getTags()`           | `const Dictionary&`                 | Dictionary containing the record tags                |
+| `countBlocks()`       | `std::size_t`                       | Number of data blocks attached to the data record    |
+| `getBlocks()`         | `const std::vector<PayloadBuffer>&` | Data blocks attached to the data record              |
+| `countPayloadBytes()` | `std::size_t`                       | Combined size of all data blocks in bytes            |
+
+### Sequence Number
+
+The sequence number is incremented by the sending satellite for each data record. Its continuity is checked by the framework,
+and missing data records are reflected automatically in the `INCOMPLETE` run condition flag of the respective run. Receiver
+implementations do not need to implement any check but may use the sequence number e.g. as record identifier in output files.
+
+### Tags
+
+The tags are auxiliary information attached to the data record by the transmitting satellite. They are provided as a
+`Dictionary`, which maps string keys to values. The value of individual tags can be obtained via the `get<T>()` method, where
+the template parameter denotes the requested type. Tags are optional and set by the sending satellite, so their presence
+should be checked before access:
+
+```cpp
+const auto& tags = data_record.getTags();
+if(tags.contains("timestamp_begin")) {
+    const auto timestamp_begin = tags.at("timestamp_begin").get<std::uint64_t>();
+}
+```
+
+An exception is thrown if the value cannot be converted to the requested type. The entire dictionary can be printed e.g. to
+the loggers using the `to_string()` method:
+
+```cpp
+LOG(INFO) << "Received data record tags: " << data_record.getTags().to_string();
+```
+
+### Data Blocks
+
+The data blocks are provided as a vector of `PayloadBuffer` objects. The binary content of each block is accessed via the
+`span()` method, which returns a `std::span<const std::byte>` with read-only access to the data. Alternatively, the
+`to_string_view()` method interprets the content as string. The data are not interpreted by Constellation, and any decoding
+therefore requires knowledge of the data format used by the sending satellite.
+
+The following example writes the content of all blocks of a data record to the binary output file stream opened in the
+{bdg-secondary}`starting` transition:
+
+```cpp
+void MyWriterSatellite::receive_data(std::string_view /*sender*/, const CDTP2Message::DataRecord& data_record) {
+    for(const auto& block : data_record.getBlocks()) {
+        const auto data = block.span();
+        file_stream_.write(utils::to_char_ptr(data.data()), static_cast<std::streamsize>(data.size()));
+    }
+}
+```
+
+```{note}
+The data record is passed to the callback as constant reference and is only valid during the callback. Data which are
+required beyond the scope of the callback, e.g. for asynchronous processing, have to be copied, since `PayloadBuffer` objects
+cannot be copied themselves.
+```
