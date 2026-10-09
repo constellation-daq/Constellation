@@ -69,7 +69,7 @@ class LeCroySatellite(TransmitterSatellite):
         self._last_waveform = {}
         for channel in self._channels:
             self.register_scheduled_metric(
-                WAVEFORM_METRIC.format(channel=channel),
+                f"WAVEFORM_C{channel}",
                 "V",
                 f"Most recent waveform of channel {channel}",
                 1,
