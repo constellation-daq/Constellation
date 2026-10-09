@@ -20,9 +20,6 @@ from constellation.core.monitoring import schedule_metric
 from constellation.core.protocol.cscp1 import SatelliteState
 from constellation.core.transmitter_satellite import TransmitterSatellite
 
-# Name of the per-channel waveform metric, e.g. WAVEFORM_C1
-WAVEFORM_METRIC = "WAVEFORM_C{channel}"
-
 
 class LeCroySatellite(TransmitterSatellite):
     _scope: LeCrunch3.LeCrunch3
