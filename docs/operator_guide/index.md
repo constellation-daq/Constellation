@@ -54,6 +54,7 @@ FAQ / Common Issues <get_started/faq>
 :caption: 📚 Tutorials
 
 tutorials/single_satellite
+tutorials/sending_receiving_data
 tutorials/missioncontrol
 tutorials/ipython_controller
 tutorials/observatory
