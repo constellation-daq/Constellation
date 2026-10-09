@@ -87,7 +87,7 @@ void MyWriterSatellite::receive_bor(std::string_view sender, const Dictionary& u
 }
 
 void MyWriterSatellite::receive_data(std::string_view sender, const CDTP2Message::DataRecord& data_record) {
-    LOG(DEBUG) << "Received data record from " << sender << " with " << data_record.getBlocks() << " blocks";
+    LOG(DEBUG) << "Received data record from " << sender << " with " << data_record.countBlocks() << " blocks";
 }
 
 void MyWriterSatellite::receive_eor(std::string_view sender, const Dictionary& user_tags, const Dictionary& run_metadata) {
