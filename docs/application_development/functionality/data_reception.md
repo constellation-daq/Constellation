@@ -110,6 +110,12 @@ components:
 | `getBlocks()`         | `const std::vector<PayloadBuffer>&` | Data blocks attached to the data record              |
 | `countPayloadBytes()` | `std::size_t`                       | Combined size of all data blocks in bytes            |
 
+```{seealso}
+A full description of all classes and methods is provided in the C++ API reference of the
+[message](../../framework_reference/cxx/core/message.md) and [configuration](../../framework_reference/cxx/core/config.md)
+components.
+```
+
 ### Sequence Number
 
 The sequence number is incremented by the sending satellite for each data record. Its continuity is checked by the framework,
