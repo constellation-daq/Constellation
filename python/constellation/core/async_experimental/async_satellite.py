@@ -10,7 +10,8 @@ import re
 import time
 from collections import defaultdict
 from collections.abc import Callable
-from typing import Any
+from datetime import datetime
+from typing import Any, cast
 
 import psutil
 from statemachine.exceptions import TransitionNotAllowed
@@ -31,7 +32,7 @@ from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration, ConfigurationGroup, InvalidValueError
 from constellation.core.error import debug_log, handle_error
 from constellation.core.fsm import SatelliteFSM
-from constellation.core.monitoring import MonitoringSender
+from constellation.core.monitoring import MonitoringSender, ScheduledMetric
 from constellation.core.protocol.cscp1 import SatelliteState, is_valid_canonical_name
 
 
@@ -361,6 +362,55 @@ class AsyncSatellite(
         self.register_chirp_callback("satellite_heartbeat", self._on_heartbeat_service)
 
         self.log_satellite.info(f"Satellite {self.name}, version {__version__} ready to launch!")
+
+    def _add_com_task(self) -> None:
+        """Register communication tasks including the async metric publisher."""
+        super()._add_com_task()
+        self._com_task_factories.append(self._publish_metrics_async)
+
+    async def _publish_metrics_async(self, stop: asyncio.Event) -> None:
+        """CMDP publishing loop sending scheduled metric data and updating subscriptions."""
+        last_update: dict[str, datetime] = {}
+        while not stop.is_set():
+            try:
+                await asyncio.wait_for(stop.wait(), timeout=0.1)
+                break
+            except TimeoutError:
+                pass
+
+            try:
+                self._cmdp_publisher.update_subscriptions()
+            except ValueError as exc:
+                self.log_cmdp_s.warning("Encountered unexpected subscription request: %s", exc)
+
+            for metric_name, metric in self._metrics.items():
+                if not isinstance(metric, ScheduledMetric):
+                    continue
+                metric = cast(ScheduledMetric, metric)
+                if not self._cmdp_publisher.has_metric_subscribers(metric_name):
+                    continue
+                if hasattr(self, "fsm"):
+                    state = self.fsm.state
+                    if metric.allowed_states is not None and state not in metric.allowed_states:
+                        continue
+                update = False
+                try:
+                    last = last_update[metric_name]
+                    if (datetime.now() - last).total_seconds() > metric.interval:
+                        update = True
+                except KeyError:
+                    update = True
+                if update:
+                    try:
+                        value = metric.value_cb()
+                        if value is not None:
+                            self.log_cmdp_s.trace("Sending metric %s with value %s%s", metric_name, value, metric.unit)
+                            self._cmdp_publisher.send_metric(metric, value)
+                    except Exception as e:
+                        self.log_cmdp_s.critical("Could not get metric %s: %s", metric_name, repr(e))
+                    last_update[metric_name] = datetime.now()
+
+        self.log_cmdp_s.info("Async metric publisher shutting down.")
 
     def _on_heartbeat_service(self, event: CHIRPEvent, service: DiscoveredService) -> None:
         """Handle HEARTBEAT service discovery."""
