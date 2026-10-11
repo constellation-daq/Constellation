@@ -505,6 +505,32 @@ class AsyncSatellite(
             self.run_degraded = True
             self.log_satellite.warning("Marking run as degraded: %s", reason)
 
+    def _await_state_task(self, timeout: float = 30.0) -> None:
+        """Block until the background RUN task completes or times out.
+
+        Called from wrapper methods that run via asyncio.to_thread,
+        so the event loop is available for scheduling.
+        """
+        if self._state_task is None or self._state_task.done():
+            return
+        loop = asyncio.get_event_loop()
+        future = asyncio.run_coroutine_threadsafe(self._wait_for_task(), loop)
+        try:
+            future.result(timeout=timeout)
+        except TimeoutError:
+            self.log_satellite.warning("Timed out waiting for RUN task, cancelling.")
+            self._state_task.cancel()
+        except Exception:
+            pass
+
+    async def _wait_for_task(self) -> None:
+        """Await the current state task."""
+        if self._state_task is not None:
+            try:
+                await self._state_task
+            except Exception:
+                pass
+
     # --- satellite state transition wrappers ---
 
     @handle_error
@@ -592,12 +618,7 @@ class AsyncSatellite(
         """Wrapper for the 'stopping' transitional state."""
         if self._state_stop_event:
             self._state_stop_event.set()
-        if self._state_task is not None and not self._state_task.done():
-            # Wait for the RUN task to finish
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # Cannot block here, schedule a coroutine instead
-                pass
+        self._await_state_task()
         self.log_satellite.debug("RUN task finished, continue with STOPPING.")
         res: str = self.do_stopping()
         return res
@@ -654,6 +675,7 @@ class AsyncSatellite(
                 self._state_stop_event.set()
             if self._state_task and not self._state_task.done():
                 self._state_task.cancel()
+                self._await_state_task(timeout=5.0)
             res: str = self.fail_gracefully()
             return res
         except Exception as e:
@@ -672,8 +694,7 @@ class AsyncSatellite(
         res_run: str = ""
         if self._state_stop_event:
             self._state_stop_event.set()
-        if self._state_task is not None and not self._state_task.done():
-            pass
+        self._await_state_task()
         self.log_satellite.debug("RUN task finished, continue with INTERRUPTING.")
         res: str = self.do_interrupting()
         return f"{res_run}; {res}"
