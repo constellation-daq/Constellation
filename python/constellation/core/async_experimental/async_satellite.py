@@ -340,6 +340,7 @@ class AsyncSatellite(
             self._satellite_version = __version__
 
         self._async_task_queue: asyncio.Queue = asyncio.Queue()
+        self._event_loop: asyncio.AbstractEventLoop | None = None
 
         if hasattr(self, "do_reconfigure"):
             self.add_cscp_command("reconfigure", allowed_states=[SatelliteState.ORBIT], unpack_list=False)
@@ -435,6 +436,7 @@ class AsyncSatellite(
         monitoring) and processes transition callbacks from the async
         task queue until shutdown is requested.
         """
+        self._event_loop = asyncio.get_running_loop()
         stop = asyncio.Event()
 
         # Emit CHIRP offers and request heartbeats
@@ -508,13 +510,14 @@ class AsyncSatellite(
     def _await_state_task(self, timeout: float = 30.0) -> None:
         """Block until the background RUN task completes or times out.
 
-        Called from wrapper methods that run via asyncio.to_thread,
-        so the event loop is available for scheduling.
+        Uses the stored event loop reference to bridge from the
+        thread context back to the asyncio loop.
         """
         if self._state_task is None or self._state_task.done():
             return
-        loop = asyncio.get_event_loop()
-        future = asyncio.run_coroutine_threadsafe(self._wait_for_task(), loop)
+        if self._event_loop is None:
+            return
+        future = asyncio.run_coroutine_threadsafe(self._wait_for_task(), self._event_loop)
         try:
             future.result(timeout=timeout)
         except TimeoutError:
