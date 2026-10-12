@@ -103,7 +103,12 @@ class AsyncCLIController:
 
     @property
     def constellation(self) -> SatelliteArray:
-        """Return the SatelliteArray of controlled satellites."""
+        """Return the SatelliteArray of controlled satellites.
+
+        Note that IPython may cache tab completions for this property
+        differently than for a bare variable. Both always reference
+        the same SatelliteArray instance.
+        """
         return self._constellation
 
     @property
