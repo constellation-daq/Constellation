@@ -28,7 +28,13 @@ class Standa(Satellite):
 
         super().__init__(*args, **kwargs)
         self.start_time = time.time()
-        self.motors = None
+        self._motors: Motors | None = None
+
+    @property
+    def motors(self) -> Motors:
+        if self._motors is None:
+            raise RuntimeError("Stage is not connected")
+        return self._motors
 
     def do_initializing(self, config: Configuration) -> str | None:
 
@@ -42,8 +48,8 @@ class Standa(Satellite):
         serials_section = config.get_section("axis_serials")
         serials = {axis: serials_section.get_int(axis) for axis in serials_section.get_keys()}
 
-        if not self.motors:
-            self.motors = Motors(serials, profile=self.profile, logger=self.log)
+        if self._motors is None:
+            self._motors = Motors(serials, profile=self.profile, logger=self.log)
 
         self.calibrate_on_launch = config.get_bool("calibrate_on_launch", False)
 
@@ -79,8 +85,8 @@ class Standa(Satellite):
         return f"Moved to {position}"
 
     def reentry(self) -> None:
-        if hasattr(self, "motors"):
-            self.motors.close()
+        if self._motors is not None:
+            self._motors.close()
         super().reentry()
 
     def do_stopping(self) -> str:
@@ -111,25 +117,25 @@ class Standa(Satellite):
 
     def _position(self, axis: str) -> float | None:
         """Position of an axis, or None while the stage is not connected"""
-        motors = getattr(self, "motors", None)
+        motors = self._motors
         if motors is None or axis not in motors.ids:
             return None
         return motors.get_position(axis)
 
     @cscp_requestable([SatelliteState.INIT, SatelliteState.ORBIT])
-    def position_x(self) -> float | None:
+    def position_x(self) -> tuple[str, float | None, dict[str, int]]:
         "Returns the current x position of the stage"
         pos_x = self._position("x")
         return f"Stage x is at {pos_x}", pos_x, {}
 
     @cscp_requestable([SatelliteState.INIT, SatelliteState.ORBIT])
-    def position_y(self) -> float | None:
+    def position_y(self) -> tuple[str, float | None, dict[str, int]]:
         "Returns the current y position of the stage"
         pos_y = self._position("y")
         return f"Stage y is at {pos_y}", pos_y, {}
 
     @cscp_requestable([SatelliteState.INIT, SatelliteState.ORBIT])
-    def position_z(self) -> float | None:
+    def position_z(self) -> tuple[str, float | None, dict[str, int]]:
         "Returns the current z position of the stage"
         pos_z = self._position("z")
         return f"Stage z is at {pos_z}", pos_z, {}
