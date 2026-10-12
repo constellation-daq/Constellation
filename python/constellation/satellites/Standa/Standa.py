@@ -37,6 +37,7 @@ class Standa(Satellite):
         return self._motors
 
     def do_initializing(self, config: Configuration) -> str | None:
+        self.log.info("Received configuration with parameters: %s", ", ".join(config.get_keys()))
 
         device_model = config.get_str("model")
         if device_model not in _SUPPORTED_DEVICES.keys():
@@ -60,13 +61,12 @@ class Standa(Satellite):
 
     def do_starting(self, run_identifier: str) -> str:
         self.start_time = time.time()
-        return f"Started run {run_identifier}"
+        self.log.info(f"Started run {run_identifier}")
+        return "Started run"
 
     def do_launching(self) -> str | None:
-        # Calibrate to zero
         if self.calibrate_on_launch:
             self.motors.calibrate()
-
         return "Launched!"
 
     def do_reconfigure(self, config: Configuration) -> str | None:
@@ -82,7 +82,8 @@ class Standa(Satellite):
         if not self.motors.wait_until_idle():
             raise RuntimeError(f"Stage did not reach {position} within the timeout")
 
-        return f"Moved to {position}"
+        self.log.info(f"Moved to {position}")
+        return "Moved stages"
 
     def reentry(self) -> None:
         if self._motors is not None:
@@ -91,7 +92,8 @@ class Standa(Satellite):
 
     def do_stopping(self) -> str:
         run_duration = time.time() - self.start_time
-        return f"Stopped after {run_duration:.1f}s"
+        self.log.info(f"Stopping the run after {run_duration} s")
+        return "Stopped run"
 
     @cscp_requestable([SatelliteState.INIT, SatelliteState.ORBIT])
     def home(self) -> tuple[str, Any, dict[str, Any]]:
