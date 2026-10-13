@@ -27,9 +27,14 @@ def destroy_satellites() -> None:
     """Close down connections and perform orderly re-entry."""
     for sat in SATELLITE_LIST:
         try:
+            sat.reentry()
+        except Exception:
+            print(f"Exception during re-entry from {sat.name}!")
+            print(traceback.format_exc())
+        try:
             sat.terminate()
         except Exception:
-            print(f"Exception during shutdown from {sat.name}!")
+            print(f"Exception during termination from {sat.name}!")
             print(traceback.format_exc())
     SATELLITE_LIST.clear()
 
@@ -157,20 +162,26 @@ class BaseSatelliteFrame:
             self.log.debug("Starting thread for %s communication", component)
             thread.start()
 
-    def _stop_com_threads(self, timeout: float = 1.5) -> None:
+    def _stop_com_threads(self, timeout: float = 5.0) -> None:
         """Stop all background communication threads within timeout [s]."""
         if self._com_thread_evt:
             self._com_thread_evt.set()
+            unjoined = []
             for component, thread in self._com_thread_pool.items():
                 if thread.is_alive():
                     thread.join(timeout)
                     # check if thread is still alive
                     if thread.is_alive():
-                        self.log.error(
-                            "Could not join background communication thread for %s within timeout",
-                            component,
-                        )
-                        raise RuntimeError(f"Could not join running thread for {component} within timeout of {timeout}s!")
+                        unjoined.append(component)
+
+            if unjoined:
+                components = ", ".join(unjoined)
+                self.log.error(
+                    "Could not join background communication thread(s) for %s within %.1fs",
+                    components,
+                    timeout,
+                )
+                raise RuntimeError(f"Could not join running thread(s) for {components} within timeout of {timeout}s!")
         self._com_thread_evt = None
         self._com_thread_pool = {}
 
@@ -182,7 +193,7 @@ class BaseSatelliteFrame:
     def terminate(self) -> None:
         """Terminate the satellite."""
         self.log.debug("Terminating ZMQ context.")
-        self.context.term()
+        self.context.destroy(linger=5000)
 
 
 SATELLITE_LIST: list[BaseSatelliteFrame] = []

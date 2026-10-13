@@ -292,35 +292,39 @@ class CHIRPManager(BaseSatelliteFrame):
         # assert for mypy static type analysis
         assert isinstance(self._com_thread_evt, threading.Event), "CHIRPManager thread Event no set up"
 
-        while not self._com_thread_evt.is_set():
-            msg = self._beacon.listen()
-            if not msg:
-                continue
+        try:
+            while not self._com_thread_evt.is_set():
+                msg = self._beacon.listen()
+                if not msg:
+                    continue
 
-            self.log_chirp.trace(
-                "Received CHIRP %s for %s from '%s'",
-                msg.msgtype.name,
-                msg.serviceid.name,
-                msg.from_address,
-            )
+                self.log_chirp.trace(
+                    "Received CHIRP %s for %s from '%s'",
+                    msg.msgtype.name,
+                    msg.serviceid.name,
+                    msg.from_address,
+                )
 
-            # Check Message Type
-            if msg.msgtype == CHIRPMessageType.REQUEST:
-                # wait a short moment to spread out responses somewhat
-                time.sleep(random.random() / 5.0)
-                self.emit_offers(serviceid=msg.serviceid)
-                continue
+                # Check Message Type
+                if msg.msgtype == CHIRPMessageType.REQUEST:
+                    # wait a short moment to spread out responses somewhat
+                    time.sleep(random.random() / 5.0)
+                    self.emit_offers(serviceid=msg.serviceid)
+                    continue
 
-            if msg.msgtype == CHIRPMessageType.OFFER:
-                self._discover_service(msg)
-                continue
+                if msg.msgtype == CHIRPMessageType.OFFER:
+                    self._discover_service(msg)
+                    continue
 
-            if msg.msgtype == CHIRPMessageType.DEPART and msg.port != 0:
-                self._depart_service(msg)
-                continue
-        # shutdown
-        self.log_chirp.debug("CHIRPManager thread shutting down.")
-        self.emit_depart()
-        # it can take a moment for the network buffers to be flushed
-        time.sleep(0.5)
-        self._beacon.close()
+                if msg.msgtype == CHIRPMessageType.DEPART and msg.port != 0:
+                    self._depart_service(msg)
+                    continue
+
+        finally:
+            try:
+                self.log_chirp.debug("CHIRPManager thread shutting down.")
+                self.emit_depart()
+                # it can take a moment for the network buffers to be flushed
+                time.sleep(0.1)
+            finally:
+                self._beacon.close()
