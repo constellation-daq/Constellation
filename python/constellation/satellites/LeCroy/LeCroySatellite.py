@@ -34,6 +34,13 @@ class LeCroySatellite(TransmitterSatellite):
     _horiz_offset: float = 0.0
 
     def do_initializing(self, configuration: Configuration) -> str:
+        try:  # sock.fileno() returns -1 when the socket is closed
+            if self._scope.sock.fileno() != -1:
+                self.log.info("Scope socket already connected...")
+                return "Scope already initialized..."
+        except AttributeError as err:
+            print(f"Reading existing socket failed with error {err}. Initializing...")
+
         self.log.info("Received configuration with parameters: %s", ", ".join(configuration.get_keys()))
 
         ip_address = configuration.get_str("ip_address")
@@ -131,25 +138,21 @@ class LeCroySatellite(TransmitterSatellite):
         self.log.info(f"Stopping the run after {self._num_triggers_acquired} event(s)")
         return "Stopped acquisition"
 
-    def do_landing(self) -> str:
-        self._scope.clear()
-        self._scope.sock.close()
-        self.log.info("Landing...")
-        return "Landed"
-
     @cscp_requestable([SatelliteState.RUN])
     def get_num_triggers(self) -> tuple[str, int, dict[str, Any]]:
         return f"Number of triggers: {self._num_triggers_acquired}", self._num_triggers_acquired, {}
 
     @cscp_requestable([SatelliteState.INIT, SatelliteState.ORBIT])
-    def calibrate(self) -> tuple[str, int, dict[str, Any]]:
+    def calibrate(self) -> tuple[str, int, dict[str, Any]] | None:
         """Run the internal self-calibration of the scope, returns its status code (0 = passed)"""
-        self._scope.send("*CAL?")
-        reply = self._scope.recv().strip()
-        status = int(reply.split(b" ")[-1])
-        if status != 0:
-            self.log.warning(f"Scope self-calibration returned status {status}")
-        return f"Scope self-calibration status {status}", status, {}
+        status = 0
+        try:
+            self._scope.send("*CAL?")
+            reply = self._scope.recv().strip()
+            status = int(reply.split(b" ")[-1])
+            return f"Scope self-calibration status {status}", status, {}
+        except ValueError as err:
+            self.log.warning(f"Scope self-calibration returned status {status} with error {err}")
 
     @schedule_metric("", 1, [SatelliteState.RUN])
     def NUM_TRIGGERS(self) -> int | None:
