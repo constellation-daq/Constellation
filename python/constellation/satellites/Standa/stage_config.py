@@ -235,15 +235,15 @@ def Standa_8MT30_50(lib, stage_id):
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
             worst_result = result
 
-    pstage_id_settings = ximc.pstage_id_settings_t()
+    pid_settings = ximc.pid_settings_t()
 
-    pstage_id_settings.KpU = 0
-    pstage_id_settings.KiU = 0
-    pstage_id_settings.KdU = 0
-    pstage_id_settings.Kpf = 0.006000000052154064
-    pstage_id_settings.Kif = 0.05000000074505806
-    pstage_id_settings.Kdf = 2.8000000384054147e-05
-    result = lib.set_pstage_id_settings(stage_id, ximc.byref(pstage_id_settings))
+    pid_settings.KpU = 0
+    pid_settings.KiU = 0
+    pid_settings.KdU = 0
+    pid_settings.Kpf = 0.006000000052154064
+    pid_settings.Kif = 0.05000000074505806
+    pid_settings.Kdf = 2.8000000384054147e-05
+    result = lib.set_pstage_id_settings(stage_id, ximc.byref(pid_settings))
 
     if result != ximc.Result.Ok:
         if worst_result == ximc.Result.Ok or worst_result == ximc.Result.ValueError:
