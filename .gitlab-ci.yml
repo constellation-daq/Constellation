@@ -706,12 +706,19 @@ deploy:release:
   needs:
     - job: deploy:bundle-release-artifacts
       artifacts: true
+    - job: docs:pdf
+      artifacts: true
   script:
     - glab auth login --hostname $CI_SERVER_HOST --token $GITLAB_ACCESS_TOKEN
     - touch .release-notes.md
     - if [ -n "$RELEASE_NOTES_URL" ]; then printf '[Release Notes](%s)\n' "$RELEASE_NOTES_URL" > .release-notes.md; fi
     - glab release create $CI_COMMIT_TAG --name "Constellation ${CI_COMMIT_TAG} - ${CODENAME}" --notes-file .release-notes.md
     - glab release upload $CI_COMMIT_TAG "Constellation-${CI_COMMIT_TAG}.tar.xz#Full source code"
+    - >-
+      glab release upload $CI_COMMIT_TAG
+      "pdf/operator_guide.pdf#Operator Guide (PDF)"
+      "pdf/application_development_guide.pdf#Application Developer Guide (PDF)"
+      "pdf/framework_development_guide.pdf#Framework Development Guide (PDF)"
   rules:
     - if: $CI_COMMIT_TAG =~ /^v.*/
 
