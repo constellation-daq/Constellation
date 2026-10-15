@@ -16,6 +16,7 @@
 #include <string>
 #include <thread>
 #include <utility>
+#include <variant>
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/controller/exceptions.hpp"
@@ -23,6 +24,7 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
+#include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/timers.hpp"
 #include "constellation/listener/StatListener.hpp"
@@ -80,7 +82,10 @@ void MetricCondition::await(std::atomic_bool& running, Controller& controller, L
             return;
         }
 
-        if(!comparator_(metric_value.getValue(), target_)) {
+        // Skip non-scalar metric values
+        const auto& data = metric_value.getValue();
+        const auto* scalar = std::get_if<config::Scalar>(&data);
+        if(scalar == nullptr || !comparator_(*scalar, target_)) {
             return;
         }
 

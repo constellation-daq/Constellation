@@ -13,6 +13,7 @@
 #include <string>
 #include <thread>
 #include <utility>
+#include <variant>
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -129,7 +130,7 @@ TEST_CASE("Receive triggered metric", "[core][metrics]") {
     const auto last_message = metrics_receiver.getLastMessage();
     REQUIRE(last_message->getMetric().getMetric()->name() == "TEST");
     REQUIRE(last_message->getMetric().getMetric()->unit() == "t");
-    REQUIRE(last_message->getMetric().getValue().get<int>() == 0);
+    REQUIRE(last_message->getMetric().getValue().get<constellation::config::Scalar>().get<int>() == 0);
 
     metrics_receiver.stopPool();
     metrics_manager.unregisterMetrics();
@@ -160,14 +161,14 @@ TEST_CASE("Receive with STAT macros", "[core][metrics]") {
     metrics_receiver.resetLastMessage();
     STAT("STAT", 1);
     metrics_receiver.waitNextMessage();
-    REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<int>() == 1);
+    REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<constellation::config::Scalar>().get<int>() == 1);
 
     // Trigger metric with condition
     metrics_receiver.resetLastMessage();
     STAT_IF("STAT_IF", 2, true);
     STAT_IF("STAT_IF", 3, false);
     metrics_receiver.waitNextMessage();
-    REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<int>() == 2);
+    REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<constellation::config::Scalar>().get<int>() == 2);
 
     // Trigger metric every nth call
     int nth_count = 0;
@@ -208,7 +209,8 @@ TEST_CASE("Receive timed metric", "[core][metrics]") {
 
     // Receive metric
     metrics_receiver.waitNextMessage();
-    REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<double>() == 3.14);
+    REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<constellation::config::Scalar>().get<double>() ==
+            3.14);
 
     metrics_receiver.stopPool();
     metrics_manager.unregisterMetrics();
@@ -240,7 +242,8 @@ TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
 
     // Receive metric, first time triggered immediately
     metrics_receiver.waitNextMessage();
-    REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<double>() == std::numbers::phi);
+    REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<constellation::config::Scalar>().get<double>() ==
+            std::numbers::phi);
 
     // Disable sending and adjust value
     {
@@ -251,7 +254,8 @@ TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
 
     // Ensure last received message is still at phi
     std::this_thread::sleep_for(50ms);
-    REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<double>() == std::numbers::phi);
+    REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<constellation::config::Scalar>().get<double>() ==
+            std::numbers::phi);
 
     // Adjust value and enable sending again
     {
@@ -263,7 +267,8 @@ TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
     // Check value now at pi
     metrics_receiver.resetLastMessage();
     metrics_receiver.waitNextMessage();
-    REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<double>() == std::numbers::pi);
+    REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<constellation::config::Scalar>().get<double>() ==
+            std::numbers::pi);
 
     metrics_receiver.stopPool();
     metrics_manager.unregisterMetrics();

@@ -20,6 +20,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <variant>
 
 #include "constellation/core/config/value_types.hpp"
 #include "constellation/core/metrics/exceptions.hpp"
@@ -39,20 +40,20 @@ namespace constellation::metrics {
                                              std::string description,
                                              std::chrono::steady_clock::duration interval,
                                              C value_callback) {
-        std::function<std::optional<config::Scalar>()> value_callback_cast =
-            [name, value_callback = std::move(value_callback)]() mutable -> std::optional<config::Scalar> {
+        std::function<std::optional<MetricData>()> value_callback_cast =
+            [name, value_callback = std::move(value_callback)]() mutable -> std::optional<MetricData> {
             using R = std::invoke_result_t<C>;
             // If optional, wrap the value to std::optional<config::Value>
             if constexpr(utils::is_specialization_of_v<R, std::optional>) {
                 auto value = value_callback();
                 if(value.has_value()) {
-                    return config::Scalar(value.value());
+                    return MetricData(config::Scalar(value.value()));
                 }
                 // Forward empty optional
                 return std::nullopt;
             } else {
                 // If not optional, set directly
-                return config::Scalar(value_callback());
+                return MetricData(config::Scalar(value_callback()));
             }
         };
         registerTimedMetric(std::make_shared<TimedMetric>(
@@ -62,7 +63,7 @@ namespace constellation::metrics {
     template <typename T> void MetricsManager::triggerMetric(std::string name, const T& value) {
         // Only emplace name and value, do the lookup in the run thread
         std::unique_lock triggered_queue_lock {triggered_queue_mutex_};
-        triggered_queue_.emplace(std::move(name), config::Scalar(value));
+        triggered_queue_.emplace(std::move(name), MetricData(value));
         triggered_queue_lock.unlock();
         cv_.notify_one();
     }

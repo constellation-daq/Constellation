@@ -46,6 +46,12 @@ core_protocol_files = files(
   'core/protocol/cmdp1.py',
   'core/protocol/cscp1.py',
 )
+core_metrics_files = files(
+  'core/metrics/__init__.py',
+  'core/metrics/matrix.py',
+  'core/metrics/histogram.py',
+)
+
 
 satellites_files = files(
   'satellites/__init__.py',
@@ -66,6 +72,9 @@ py.install_sources(core_message_files,
 
   py.install_sources(core_protocol_files,
     subdir: 'constellation/core/protocol')
+
+py.install_sources(core_metrics_files,
+  subdir: 'constellation/core/metrics')
 
 py.install_sources(satellites_files,
   subdir: 'constellation/satellites')

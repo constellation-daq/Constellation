@@ -181,7 +181,7 @@ namespace constellation::metrics {
         std::mutex timed_metrics_mutex_;
 
         // Queue for manually triggered metrics
-        std::queue<std::pair<std::string, config::Scalar>> triggered_queue_;
+        std::queue<std::pair<std::string, MetricData>> triggered_queue_;
         std::mutex triggered_queue_mutex_;
         std::condition_variable cv_;
 

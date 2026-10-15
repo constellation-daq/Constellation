@@ -15,6 +15,8 @@ from typing import Any, cast
 
 import msgpack  # type: ignore[import-untyped]
 
+from ..metrics.histogram import EXT_TYPE_HISTOGRAM1D, EXT_TYPE_HISTOGRAM2D, Histogram1D, Histogram2D
+from ..metrics.matrix import EXT_TYPE_MATRIX, Matrix
 from ..protocol import Protocol
 from ..protocol.cmdp1 import LogLevel, Metric, log_level_from_levelno
 from .exceptions import InvalidProtocolError, MessageDecodingError, UnexpectedProtocolError
@@ -224,14 +226,29 @@ class MetricValue:
     def assemble(self) -> bytes:
         packer = msgpack.Packer()
         stream = BytesIO()
-        stream.write(packer.pack(self.value))
+        # Pack metric value
+        if isinstance(self.value, (Matrix, Histogram1D, Histogram2D)):
+            stream.write(packer.pack(self.value.to_msgpack_ext()))
+        else:
+            stream.write(packer.pack(self.value))
         stream.write(packer.pack(0x0))  # unused metric flag
         stream.write(packer.pack(self.metric.unit))
         return stream.getvalue()
 
     @staticmethod
+    def _ext_hook(code: int, data: bytes) -> Any:
+        """Decode MsgPack ext types into metric objects."""
+        if code == EXT_TYPE_MATRIX:
+            return Matrix.from_ext_bytes(data)
+        if code == EXT_TYPE_HISTOGRAM1D:
+            return Histogram1D.from_ext_bytes(data)
+        if code == EXT_TYPE_HISTOGRAM2D:
+            return Histogram2D.from_ext_bytes(data)
+        return msgpack.ExtType(code, data)
+
+    @staticmethod
     def disassemble(name: str, frame: bytes) -> MetricValue:
-        unpacker = msgpack.Unpacker()
+        unpacker = msgpack.Unpacker(ext_hook=MetricValue._ext_hook)
         unpacker.feed(frame)
         value = unpacker.unpack()
         _ = unpacker.unpack()  # unused metric flag

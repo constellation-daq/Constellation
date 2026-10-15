@@ -12,5 +12,6 @@ This appendix contains the RFC documents for the Constellation Communication pro
    CHP <chp>
    CSCP <cscp>
    CMDP <cmdp>
+   CMDP Extension Types <cmdp_ext>
    CDTP <cdtp>
    retired/index

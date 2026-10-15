@@ -15,11 +15,13 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include <msgpack.hpp>
 
 #include "constellation/core/config/value_types.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
+#include "constellation/core/metrics/DQMTypes.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/msgpack.hpp"
@@ -30,7 +32,21 @@ using namespace constellation::utils;
 
 PayloadBuffer MetricValue::assemble() const {
     msgpack::sbuffer sbuf {};
-    msgpack_pack(sbuf, value_);
+
+    // Pack value
+    std::visit(
+        [&sbuf](const auto& val) {
+            using T = std::decay_t<decltype(val)>;
+            if constexpr(std::is_same_v<T, config::Scalar>) {
+                msgpack_pack(sbuf, val);
+            } else {
+                // Pack as MsgPack ext object
+                msgpack::packer<msgpack::sbuffer> packer {sbuf};
+                val.msgpack_pack(packer);
+            }
+        },
+        value_);
+
     msgpack_pack(sbuf, static_cast<std::uint8_t>(0x0));
     msgpack_pack(sbuf, metric_->unit());
     return {std::move(sbuf)};
@@ -42,9 +58,23 @@ MetricValue MetricValue::disassemble(std::string name, const message::PayloadBuf
 
     try {
         // Unpack value
-        auto value = msgpack_unpack_to<config::Scalar>(to_char_ptr(message.span().data()), message.span().size(), offset);
+        auto obj = msgpack::unpack(to_char_ptr(message.span().data()), message.span().size(), offset);
 
-        // Unpack flags - unused reserved value
+        MetricData value {};
+        if(obj->type == msgpack::type::EXT) {
+            // Dispatch on ext type code
+            switch(obj->via.ext.type()) {
+            case EXT_TYPE_MATRIX: value = Matrix::msgpack_unpack(obj.get()); break;
+            case EXT_TYPE_HISTOGRAM1D: value = Histogram1D::msgpack_unpack(obj.get()); break;
+            case EXT_TYPE_HISTOGRAM2D: value = Histogram2D::msgpack_unpack(obj.get()); break;
+            default: throw std::invalid_argument("Unknown DQM ext type code");
+            }
+        } else {
+            // Scalar value
+            value = obj->as<config::Scalar>();
+        }
+
+        // Unpack flags
         msgpack_unpack_to<std::uint8_t>(to_char_ptr(message.span().data()), message.span().size(), offset);
 
         // Unpack unit

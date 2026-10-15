@@ -106,3 +106,7 @@ hardcoded
 readback
 Dunder
 unscoped
+dtype
+uint
+endian
+Deserializers

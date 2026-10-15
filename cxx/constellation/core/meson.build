@@ -18,6 +18,7 @@ core_src = files(
   'message/CHP1Message.cpp',
   'message/CMDP1Message.cpp',
   'message/CSCP1Message.cpp',
+  'metrics/DQMTypes.cpp',
   'metrics/Metric.cpp',
   'metrics/MetricsManager.cpp',
   'networking/asio_helpers.cpp',
@@ -118,6 +119,8 @@ install_headers(
 
 install_headers(
   'metrics/exceptions.hpp',
+  'metrics/DQMTypes.hpp',
+  'metrics/DQMTypes.ipp',
   'metrics/Metric.hpp',
   'metrics/MetricsManager.hpp',
   'metrics/MetricsManager.ipp',

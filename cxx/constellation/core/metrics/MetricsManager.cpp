@@ -20,9 +20,11 @@
 #include <string>
 #include <thread>
 #include <utility>
+#include <variant>
 
 #include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/log.hpp"
+#include "constellation/core/metrics/DQMTypes.hpp"
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
 
@@ -154,8 +156,19 @@ void MetricsManager::run(const std::stop_token& stop_token) {
             const std::scoped_lock metrics_lock {metrics_mutex_};
             auto metric_it = metrics_.find(name);
             if(metric_it != metrics_.end()) {
-                LOG(logger_, TRACE) << "Sending metric " << name << ": " << value.to_string() << " ["
-                                    << metric_it->second->unit() << "]";
+                // Format value for logging
+                auto value_str = std::visit(
+                    [](const auto& v) -> std::string {
+                        using T = std::decay_t<decltype(v)>;
+                        if constexpr(std::is_same_v<T, config::Scalar>) {
+                            return v.to_string();
+                        } else {
+                            return v.to_string();
+                        }
+                    },
+                    value);
+                LOG(logger_, TRACE) << "Sending metric " << name << ": " << value_str << " [" << metric_it->second->unit()
+                                    << "]";
                 ManagerLocator::getSinkManager().sendCMDPMetric({metric_it->second, std::move(value)});
             } else {
                 LOG(logger_, WARNING) << "Metric " << name << " is not registered";
@@ -174,8 +187,19 @@ void MetricsManager::run(const std::stop_token& stop_token) {
             if(timed_metric.timeoutReached() && shouldStat(name)) {
                 auto value = timed_metric->currentValue();
                 if(value.has_value()) {
-                    LOG(logger_, TRACE) << "Sending metric " << timed_metric->name() << ": " << value.value().to_string()
-                                        << " [" << timed_metric->unit() << "]";
+                    // Format value for logging
+                    auto val_str = std::visit(
+                        [](const auto& v) -> std::string {
+                            using T = std::decay_t<decltype(v)>;
+                            if constexpr(std::is_same_v<T, config::Scalar>) {
+                                return v.to_string();
+                            } else {
+                                return v.to_string();
+                            }
+                        },
+                        value.value());
+                    LOG(logger_, TRACE) << "Sending metric " << timed_metric->name() << ": " << val_str << " ["
+                                        << timed_metric->unit() << "]";
                     ManagerLocator::getSinkManager().sendCMDPMetric({timed_metric.getMetric(), std::move(value.value())});
                     timed_metric.resetTimer();
                 } else {
