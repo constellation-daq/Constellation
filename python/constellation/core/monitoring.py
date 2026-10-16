@@ -254,3 +254,5 @@ class MonitoringSender(BaseSatelliteFrame):
         super().reentry()
         # Close sockets
         self._zmq_log_handler.close()
+        if not self._cmdp_publisher.closed():
+            self._cmdp_publisher.close()
