@@ -93,88 +93,92 @@ class AsyncCSCPReceiver(BaseSatelliteFrame):
 
     async def _recv_cmds_async(self, stop: asyncio.Event) -> None:
         """CSCP request receive loop."""
-        while not stop.is_set():
-            try:
-                req = await self._cmd_tm.get_message()
-            except zmq.ZMQError as e:
-                self.log_cscp.exception(e)
-                await asyncio.sleep(0.5)
-                continue
-            if not req:
-                continue
-
-            if req.verb_type != CSCP1Message.Type.REQUEST:
-                self.log_cscp.warning(f"Received malformed request with msg verb: {req.verb}")
-                await self._cmd_tm.send_reply(
-                    f"Received malformed request with msg verb: {req.verb}",
-                    CSCP1Message.Type.INVALID,
-                )
-                continue
-
-            command = req.verb_msg.lower()
-            if command not in self._cmds:
-                self.log_cscp.warning("Unknown command: %s", command)
-                await self._cmd_tm.send_reply(f"Unknown command: {command}", CSCP1Message.Type.UNKNOWN)
-                continue
-
-            command_cb = getattr(self, command)
-            if hasattr(self, "fsm") and hasattr(command_cb, "allowed_states"):
-                state = self.fsm.state
-                if command_cb.allowed_states is not None and state not in command_cb.allowed_states:
-                    self.log_cscp.warning("Command not allowed in %s state: %s", state.name, req)
-                    await self._cmd_tm.send_reply(f"Command not allowed in {state.name} state", CSCP1Message.Type.INVALID)
+        try:
+            while not stop.is_set():
+                try:
+                    req = await self._cmd_tm.get_message()
+                except zmq.ZMQError as e:
+                    self.log_cscp.exception(e)
+                    await asyncio.sleep(0.5)
+                    continue
+                if not req:
                     continue
 
-            unpack_list = command_cb.unpack_list
-            try:
-                sig = _get_signature(command_cb)
-                if sig:
-                    self.log_cscp.debug("Calling command %s with payload %s", command, req.payload)
-                    call_args = _extract_payload_args(req.payload, sig, unpack_list)
-                    rv = command_cb(*call_args)
-                else:
-                    self.log_cscp.debug("Calling command %s with no arguments", command)
-                    rv = command_cb()
-                if rv is None:
-                    self.log_cscp.warning("Command not allowed: %s", req)
-                    await self._cmd_tm.send_reply("Command not allowed", CSCP1Message.Type.INVALID)
+                if req.verb_type != CSCP1Message.Type.REQUEST:
+                    self.log_cscp.warning(f"Received malformed request with msg verb: {req.verb}")
+                    await self._cmd_tm.send_reply(
+                        f"Received malformed request with msg verb: {req.verb}",
+                        CSCP1Message.Type.INVALID,
+                    )
                     continue
-                res, payload, tags = rv
-            except (AttributeError, NotImplementedError) as e:
-                self.log_cscp.error("Command failed with %s: %s", e, req)
-                await self._cmd_tm.send_reply(
-                    f"WrongImplementation: {e}",
-                    CSCP1Message.Type.NOTIMPLEMENTED,
-                    str(e),
-                )
-                continue
-            except TransitionNotAllowed as e:
-                self.log_cscp.warning("Transition `%s` not allowed: %s", command, e)
-                await self._cmd_tm.send_reply(f"Transition not allowed: {e}", CSCP1Message.Type.INVALID, str(e))
-                continue
-            except (TypeError, ValueError) as e:
-                self.log_cscp.error("Command `%s` received wrong argument: %s", command, str(e))
-                await self._cmd_tm.send_reply(f"Wrong argument: {e}", CSCP1Message.Type.INCOMPLETE, str(e))
-                continue
-            except Exception as e:
-                self.log_cscp.error("Command `%s` failed: %s", command, str(e))
-                await self._cmd_tm.send_reply(f"Exception: {e}", CSCP1Message.Type.INVALID, str(e))
-                continue
 
-            if res is None:
-                self.log_cscp.warning("Command `%s` returned nothing: %s", command, req)
-                await self._cmd_tm.send_reply("Command returned nothing", CSCP1Message.Type.INCOMPLETE)
-                continue
+                command = req.verb_msg.lower()
+                if command not in self._cmds:
+                    self.log_cscp.warning("Unknown command: %s", command)
+                    await self._cmd_tm.send_reply(f"Unknown command: {command}", CSCP1Message.Type.UNKNOWN)
+                    continue
 
-            self.log_cscp.debug("Command `%s` succeeded with `%s`: %s", command, res, req)
-            try:
-                await self._cmd_tm.send_reply(res, CSCP1Message.Type.SUCCESS, payload, tags)
-            except TypeError as e:
-                self.log_cscp.exception("Sending response `%s` failed: %s", res, e)
-                await self._cmd_tm.send_reply(str(e), CSCP1Message.Type.ERROR, None)
+                command_cb = getattr(self, command)
+                if hasattr(self, "fsm") and hasattr(command_cb, "allowed_states"):
+                    state = self.fsm.state
+                    if command_cb.allowed_states is not None and state not in command_cb.allowed_states:
+                        self.log_cscp.warning("Command not allowed in %s state: %s", state.name, req)
+                        await self._cmd_tm.send_reply(
+                            f"Command not allowed in {state.name} state", CSCP1Message.Type.INVALID
+                        )
+                        continue
 
-        self.log_cscp.info("AsyncCSCPReceiver shutting down.")
-        self._cmd_tm.close()
+                unpack_list = command_cb.unpack_list
+                try:
+                    sig = _get_signature(command_cb)
+                    if sig:
+                        self.log_cscp.debug("Calling command %s with payload %s", command, req.payload)
+                        call_args = _extract_payload_args(req.payload, sig, unpack_list)
+                        rv = command_cb(*call_args)
+                    else:
+                        self.log_cscp.debug("Calling command %s with no arguments", command)
+                        rv = command_cb()
+                    if rv is None:
+                        self.log_cscp.warning("Command not allowed: %s", req)
+                        await self._cmd_tm.send_reply("Command not allowed", CSCP1Message.Type.INVALID)
+                        continue
+                    res, payload, tags = rv
+                except (AttributeError, NotImplementedError) as e:
+                    self.log_cscp.error("Command failed with %s: %s", e, req)
+                    await self._cmd_tm.send_reply(
+                        f"WrongImplementation: {e}",
+                        CSCP1Message.Type.NOTIMPLEMENTED,
+                        str(e),
+                    )
+                    continue
+                except TransitionNotAllowed as e:
+                    self.log_cscp.warning("Transition `%s` not allowed: %s", command, e)
+                    await self._cmd_tm.send_reply(f"Transition not allowed: {e}", CSCP1Message.Type.INVALID, str(e))
+                    continue
+                except (TypeError, ValueError) as e:
+                    self.log_cscp.error("Command `%s` received wrong argument: %s", command, str(e))
+                    await self._cmd_tm.send_reply(f"Wrong argument: {e}", CSCP1Message.Type.INCOMPLETE, str(e))
+                    continue
+                except Exception as e:
+                    self.log_cscp.error("Command `%s` failed: %s", command, str(e))
+                    await self._cmd_tm.send_reply(f"Exception: {e}", CSCP1Message.Type.INVALID, str(e))
+                    continue
+
+                if res is None:
+                    self.log_cscp.warning("Command `%s` returned nothing: %s", command, req)
+                    await self._cmd_tm.send_reply("Command returned nothing", CSCP1Message.Type.INCOMPLETE)
+                    continue
+
+                self.log_cscp.debug("Command `%s` succeeded with `%s`: %s", command, res, req)
+                try:
+                    await self._cmd_tm.send_reply(res, CSCP1Message.Type.SUCCESS, payload, tags)
+                except TypeError as e:
+                    self.log_cscp.exception("Sending response `%s` failed: %s", res, e)
+                    await self._cmd_tm.send_reply(str(e), CSCP1Message.Type.ERROR, None)
+
+        finally:
+            self.log_cscp.info("AsyncCSCPReceiver shutting down.")
+            self._cmd_tm.close()
 
     def add_cscp_command(
         self,

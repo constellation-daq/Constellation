@@ -143,45 +143,47 @@ class AsyncHeartbeatSender:
         last = time.monotonic()
         prev_status = self._fsm.status
 
-        while not stop.is_set():
-            elapsed = time.monotonic() - last
-            wait_seconds = (self._period * 0.8 / 1000) - elapsed
-            if wait_seconds > 0:
-                try:
-                    await asyncio.wait_for(stop.wait(), timeout=min(wait_seconds, 0.1))
-                except TimeoutError:
-                    pass
-                continue
+        try:
+            while not stop.is_set():
+                elapsed = time.monotonic() - last
+                wait_seconds = (self._period * 0.8 / 1000) - elapsed
+                if wait_seconds > 0:
+                    try:
+                        await asyncio.wait_for(stop.wait(), timeout=min(wait_seconds, 0.1))
+                    except TimeoutError:
+                        pass
+                    continue
 
-            # Update subscriber count and adjust heartbeat period
-            self._subscribers += await self._transmitter.parse_subscriptions()
-            self._period = min(
-                self._default_period,
-                max(
-                    self.MINIMUM_PERIOD_MS,
-                    int(self.MINIMUM_PERIOD_MS * math.sqrt(max(self._subscribers, 1) - 1) * 3),
-                ),
-            )
-
-            if self._logger:
-                self._logger.trace(
-                    f"Sending heartbeat, current period {self._period}ms with {self._subscribers} subscribers"
+                # Update subscriber count and adjust heartbeat period
+                self._subscribers += await self._transmitter.parse_subscriptions()
+                self._period = min(
+                    self._default_period,
+                    max(
+                        self.MINIMUM_PERIOD_MS,
+                        int(self.MINIMUM_PERIOD_MS * math.sqrt(max(self._subscribers, 1) - 1) * 3),
+                    ),
                 )
 
-            last = time.monotonic()
-            state = self._fsm.state
-            current_status = self._fsm.status if self._fsm.status != prev_status else None
-            await self._transmitter.send(
-                state.value,
-                self._period,
-                self._role.flags(),
-                current_status,
-            )
-            prev_status = self._fsm.status
+                if self._logger:
+                    self._logger.trace(
+                        f"Sending heartbeat, current period {self._period}ms with {self._subscribers} subscribers"
+                    )
 
-        if self._logger:
-            self._logger.info("Heartbeat sender shutting down")
-        self._transmitter.close()
+                last = time.monotonic()
+                state = self._fsm.state
+                current_status = self._fsm.status if self._fsm.status != prev_status else None
+                await self._transmitter.send(
+                    state.value,
+                    self._period,
+                    self._role.flags(),
+                    current_status,
+                )
+                prev_status = self._fsm.status
+
+        finally:
+            if self._logger:
+                self._logger.info("Heartbeat sender shutting down")
+            self._transmitter.close()
 
     def close(self) -> None:
         """Close the transmitter socket."""

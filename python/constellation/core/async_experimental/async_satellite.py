@@ -372,46 +372,48 @@ class AsyncSatellite(
     async def _publish_metrics_async(self, stop: asyncio.Event) -> None:
         """CMDP publishing loop sending scheduled metric data and updating subscriptions."""
         last_update: dict[str, datetime] = {}
-        while not stop.is_set():
-            try:
-                await asyncio.wait_for(stop.wait(), timeout=0.1)
-                break
-            except TimeoutError:
-                pass
-
-            try:
-                self._cmdp_publisher.update_subscriptions()
-            except ValueError as exc:
-                self.log_cmdp_s.warning("Encountered unexpected subscription request: %s", exc)
-
-            for metric_name, metric in self._metrics.items():
-                if not isinstance(metric, ScheduledMetric):
-                    continue
-                metric = cast(ScheduledMetric, metric)
-                if not self._cmdp_publisher.has_metric_subscribers(metric_name):
-                    continue
-                if hasattr(self, "fsm"):
-                    state = self.fsm.state
-                    if metric.allowed_states is not None and state not in metric.allowed_states:
-                        continue
-                update = False
+        try:
+            while not stop.is_set():
                 try:
-                    last = last_update[metric_name]
-                    if (datetime.now() - last).total_seconds() > metric.interval:
-                        update = True
-                except KeyError:
-                    update = True
-                if update:
-                    try:
-                        value = metric.value_cb()
-                        if value is not None:
-                            self.log_cmdp_s.trace("Sending metric %s with value %s%s", metric_name, value, metric.unit)
-                            self._cmdp_publisher.send_metric(metric, value)
-                    except Exception as e:
-                        self.log_cmdp_s.critical("Could not get metric %s: %s", metric_name, repr(e))
-                    last_update[metric_name] = datetime.now()
+                    await asyncio.wait_for(stop.wait(), timeout=0.1)
+                    break
+                except TimeoutError:
+                    pass
 
-        self.log_cmdp_s.info("Async metric publisher shutting down.")
+                try:
+                    self._cmdp_publisher.update_subscriptions()
+                except ValueError as exc:
+                    self.log_cmdp_s.warning("Encountered unexpected subscription request: %s", exc)
+
+                for metric_name, metric in self._metrics.items():
+                    if not isinstance(metric, ScheduledMetric):
+                        continue
+                    metric = cast(ScheduledMetric, metric)
+                    if not self._cmdp_publisher.has_metric_subscribers(metric_name):
+                        continue
+                    if hasattr(self, "fsm"):
+                        state = self.fsm.state
+                        if metric.allowed_states is not None and state not in metric.allowed_states:
+                            continue
+                    update = False
+                    try:
+                        last = last_update[metric_name]
+                        if (datetime.now() - last).total_seconds() > metric.interval:
+                            update = True
+                    except KeyError:
+                        update = True
+                    if update:
+                        try:
+                            value = metric.value_cb()
+                            if value is not None:
+                                self.log_cmdp_s.trace("Sending metric %s with value %s%s", metric_name, value, metric.unit)
+                                self._cmdp_publisher.send_metric(metric, value)
+                        except Exception as e:
+                            self.log_cmdp_s.critical("Could not get metric %s: %s", metric_name, repr(e))
+                        last_update[metric_name] = datetime.now()
+
+        finally:
+            self.log_cmdp_s.info("Async metric publisher shutting down.")
 
     def _on_heartbeat_service(self, event: CHIRPEvent, service: DiscoveredService) -> None:
         """Handle HEARTBEAT service discovery."""
@@ -478,7 +480,15 @@ class AsyncSatellite(
         except KeyboardInterrupt:
             print()
             self.log_satellite.warning("Satellite caught KeyboardInterrupt, shutting down.")
-            self.shutdown()
+
+        # Stop any active RUN task before tearing down communication
+        if self._state_stop_event:
+            self._state_stop_event.set()
+        if self._state_task and not self._state_task.done():
+            try:
+                await asyncio.wait_for(self._state_task, timeout=5.0)
+            except (TimeoutError, asyncio.CancelledError, Exception):
+                self._state_task.cancel()
 
         # Signal all background tasks to stop
         stop.set()

@@ -318,11 +318,13 @@ class AsyncCHIRPManager(BaseSatelliteFrame):
         """Start CHIRP discovery and run until stop is set."""
         loop = asyncio.get_running_loop()
         await self._listener.start(loop)
-        await stop.wait()
-        for service_id in list(self._registered_services):
-            self.unregister_service(service_id)
-        await asyncio.sleep(0.05)  # let the DEPART datagrams actually go out
-        self._listener.close()
+        try:
+            await stop.wait()
+            for service_id in list(self._registered_services):
+                self.unregister_service(service_id)
+            await asyncio.sleep(0.05)
+        finally:
+            self._listener.close()
 
     def register_chirp_callback(
         self,

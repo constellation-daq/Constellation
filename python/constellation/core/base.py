@@ -201,8 +201,8 @@ class BaseSatelliteFrame:
     def terminate(self) -> None:
         """Terminate the satellite."""
         self.log.debug("Terminating ZMQ context.")
-        self.context.term()
-        self._async_ctx.term()
+        self.context.destroy(linger=2000)
+        self._async_ctx.destroy(linger=2000)
 
 
 SATELLITE_LIST: list[BaseSatelliteFrame] = []

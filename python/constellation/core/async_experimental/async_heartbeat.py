@@ -6,8 +6,8 @@ Async heartbeat receiver and checker.
 """
 
 import asyncio
-import time
 import logging
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -131,10 +131,13 @@ class AsyncHeartbeatReceiver:
 
     async def run(self, stop: asyncio.Event) -> None:
         """Run pool polling and stale check loop concurrently until stop is set."""
-        await asyncio.gather(
-            self._pool.run(stop),
-            self._stale_check_loop(stop),
-        )
+        try:
+            await asyncio.gather(
+                self._pool.run(stop),
+                self._stale_check_loop(stop),
+            )
+        finally:
+            self._pool.close()
 
     async def _stale_check_loop(self, stop: asyncio.Event) -> None:
         """Check for missed heartbeats every 300ms."""
