@@ -64,6 +64,10 @@ They can be found at MENU -> COMMUNICATION -> RS-223.
 
 Possible terminals are `front` and `rear`.
 
+Supported OVP values:
+
+- 2410: `20`, `40`, `100`, `200`, `300`, `400`
+
 ## Parameters
 
 | Parameter | Description | Type | Default Value |
