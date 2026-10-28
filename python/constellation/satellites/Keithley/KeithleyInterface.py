@@ -167,7 +167,7 @@ class KeithleyInterface(metaclass=ABCMeta):
     @abstractmethod
     def initialize(self) -> None:
         """
-        Resets device and initializes appropriate settings
+        Initializes appropriate device settings
         """
         ...
 
