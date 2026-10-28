@@ -44,7 +44,7 @@ class Keithley(Satellite):
         if len(terminals) == 1:
             self.terminal = terminals[0]
         else:
-            self.terminal = config["terminal"]
+            self.terminal = config.get_str("terminal")
             if self.terminal not in terminals:
                 raise ValueError(f"{self.terminal} not a valid terminal (choose from {terminals})")
 
