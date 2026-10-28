@@ -142,14 +142,12 @@ class LeCroySatellite(TransmitterSatellite):
     @cscp_requestable([SatelliteState.INIT, SatelliteState.ORBIT])
     def calibrate(self) -> tuple[str, int, dict[str, Any]] | None:
         """Run the internal self-calibration of the scope, returns its status code (0 = passed)"""
-        status = 0
-        try:
-            self._scope.send("*CAL?")
-            reply = self._scope.recv().strip()
-            status = int(reply.split(b" ")[-1])
-            return f"Scope self-calibration status {status}", status, {}
-        except ValueError as err:
-            self.log.warning(f"Scope self-calibration returned status {status} with error {err}")
+        self._scope.send("*CAL?")
+        reply = self._scope.recv().strip()
+        status = int(reply.split(b" ")[-1])
+        if status != 0:
+            raise RuntimeError(f"Scope self-calibration failed (status {status})")
+        return f"Scope self-calibration successful", status, {}
 
     @schedule_metric("", 1, [SatelliteState.RUN])
     def NUM_TRIGGERS(self) -> int | None:
