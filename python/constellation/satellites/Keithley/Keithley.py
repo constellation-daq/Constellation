@@ -36,7 +36,9 @@ class Keithley(Satellite):
         self.voltage_step = config.get_float("voltage_step", min_val=0.0)
         self.settle_time = config.get_float("settle_time", min_val=0.0)
 
-        self.ovp = config.get_float("ovp", min_val=0.0)
+        self.ovp = None
+        if "ovp" in config:
+            self.ovp = config.get_float("ovp", min_val=0.0)
         self.compliance = config.get_float("compliance", min_val=0.0)
 
         # If one terminal, select as default, otherwise get from config
@@ -44,12 +46,24 @@ class Keithley(Satellite):
         if len(terminals) == 1:
             self.terminal = terminals[0]
         else:
-            self.terminal = config["terminal"]
+            self.terminal = config.get_str("terminal")
             if self.terminal not in terminals:
                 raise ValueError(f"{self.terminal} not a valid terminal (choose from {terminals})")
 
+        self.skip_reset = config.get_bool("skip_reset", default_value=False)
+        if self.device.output_enabled() and not self.skip_reset:
+            raise RuntimeError(
+                "Output is currently enabled but reset is not skipped."
+                "Either manually disable output first or enable `skip_reset`"
+            )
+
+        if not self.skip_reset:
+            self.log.debug("Resetting Keithly")
+            self.device.reset()
+
         self.log.info(f"Initializing Keithley {device_name}")
         self.device.initialize()
+
         identify = self.device.identify()
         if not identify:
             del self.device
@@ -57,16 +71,16 @@ class Keithley(Satellite):
         self.log.info("Device: %s", identify)
 
     def do_launching(self) -> str:
-        self.device.set_terminal(self.terminal)
         self._set_ovp()
         self._set_compliance()
 
-        # Set voltage to zero in case it wasn't properly reset for some reason
-        self.device.enable_output(False)
-        self.device.set_voltage(0.0)
+        if not self.skip_reset:
+            self.device.set_terminal(self.terminal)
+            # Set voltage to zero in case it wasn't properly reset for some reason
+            self.device.set_voltage(0.0)
+            self.device.enable_output(True)
 
         # Ramp to target voltage
-        self.device.enable_output(True)
         self._ramp(self.voltage)
 
         return f"Keithley at {self.device.get_voltage()}V"
@@ -123,11 +137,14 @@ class Keithley(Satellite):
         super().reentry()
 
     def _set_ovp(self) -> None:
-        self.log.info(f"Setting OVP to {self.ovp}V")
-        self.device.set_ovp(self.ovp)
-        device_ovp = self.device.get_ovp()
-        if device_ovp != self.ovp:
-            raise ValueError(f"OVP set to {self.ovp}V but {device_ovp}V was applied (check manual for supported values)")
+        if self.ovp:
+            self.log.info(f"Setting OVP to {self.ovp}V")
+            self.device.set_ovp(self.ovp)
+            device_ovp = self.device.get_ovp()
+            if device_ovp != self.ovp:
+                raise ValueError(f"OVP set to {self.ovp}V but {device_ovp}V was applied (check manual for supported values)")
+        else:
+            self.log.info("Skip setting OVP since not set")
 
     def _set_compliance(self) -> None:
         self.log.info(f"Setting compliance to {self.compliance}A")

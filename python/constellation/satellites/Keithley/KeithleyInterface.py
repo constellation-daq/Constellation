@@ -62,118 +62,118 @@ class KeithleyInterface(metaclass=ABCMeta):
         """
         Resets device settings
         """
-        pass
+        ...
 
     @abstractmethod
     def identify(self) -> str:
         """
         Identifies device
         """
-        pass
+        ...
 
     @abstractmethod
     def enable_output(self, enable: bool) -> None:
         """
         Enable or disable output
         """
-        pass
+        ...
 
     @abstractmethod
     def output_enabled(self) -> bool:
         """
         If the output is enabled
         """
-        pass
+        ...
 
     @abstractmethod
     def get_terminals(self) -> list[str]:
         """
         List of terminals which can be controlled
         """
-        pass
+        ...
 
     @abstractmethod
     def set_terminal(self, terminal: str) -> None:
         """
         Terminal for which to control output
         """
-        pass
+        ...
 
     @abstractmethod
     def get_terminal(self) -> str:
         """
         Get terminal for which output is controlled
         """
-        pass
+        ...
 
     @abstractmethod
     def set_voltage(self, voltage: float) -> None:
         """
         Set output voltage
         """
-        pass
+        ...
 
     @abstractmethod
     def get_voltage(self) -> float:
         """
         Get output voltage
         """
-        pass
+        ...
 
     @abstractmethod
     def set_ovp(self, voltage: float) -> None:
         """
         Set over-voltage protection voltage
         """
-        pass
+        ...
 
     @abstractmethod
     def get_ovp(self) -> float:
         """
         Get over-voltage protection voltage
         """
-        pass
+        ...
 
     @abstractmethod
     def set_compliance(self, current: float) -> None:
         """
         Set current compliance
         """
-        pass
+        ...
 
     @abstractmethod
     def get_compliance(self) -> float:
         """
         Get current compliance
         """
-        pass
+        ...
 
     @abstractmethod
     def in_compliance(self) -> bool:
         """
         If current is in compliance
         """
-        pass
+        ...
 
     @abstractmethod
     def read_output(self) -> tuple[float, float, float]:
         """
         Reads voltage, current, timestamp
         """
-        pass
+        ...
 
     # Device helper functions
 
     @abstractmethod
     def initialize(self) -> None:
         """
-        Resets device and initializes appropriate settings
+        Initializes appropriate device settings
         """
-        pass
+        ...
 
     @abstractmethod
     def release(self) -> None:
         """
         Release device from remote mode
         """
-        pass
+        ...

@@ -64,17 +64,22 @@ They can be found at MENU -> COMMUNICATION -> RS-223.
 
 Possible terminals are `front` and `rear`.
 
+Supported OVP values:
+
+- 2410: `20`, `40`, `100`, `200`, `300`, `400`
+
 ## Parameters
 
 | Parameter | Description | Type | Default Value |
 |-----------|-------------|------|---------------|
 | `device` | Device | String | - |
 | `port` | Serial port to connect to | String | - |
+| `skip_reset` | Skip resetting the device. This can be used to start a satellite when a device is already operating and an output is active, in order to not set deactivate the output first. **This skips resetting the device and configuring relevant settings such as auto-range or the output terminal**. | Boolean | `false` |
 | `terminal` | Terminal output to control | String | - |
 | `voltage` | Target output voltage | Float | - |
 | `voltage_step` | Voltage step in which to ramp to target voltage | Float | - |
 | `settle_time` | Time to wait before continuing with the next voltage step | Float | - |
-| `ovp` | Voltage limit for over-voltage protection | Float | - |
+| `ovp` | Voltage limit for over-voltage protection (optional) | Float | - |
 | `compliance` | Current limit in Ampere | Float | - |
 
 ## Metrics
