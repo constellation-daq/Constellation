@@ -27,7 +27,7 @@ def msgpack_unpack_to(unpacker: msgpack.Unpacker, target_type: type[T]) -> T:
     value = None
     try:
         value = unpacker.unpack()
-    except msgpack.UnpackException as e:
+    except (msgpack.UnpackException, ValueError) as e:
         raise MessageDecodingError("Error unpacking data") from e
     if type(value) is not target_type:
         raise MessageDecodingError(f"Type error: expected {target_type} but got {type(value)}")
