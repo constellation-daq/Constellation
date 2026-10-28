@@ -474,6 +474,9 @@ void BaseSatellite::cscp_loop(const std::stop_token& stop_token) {
         } catch(const MessageDecodingError& error) {
             LOG(logger_, WARNING) << error.what();
             send_reply({CSCP1Message::Type::ERROR, error.what()});
+        } catch(const std::exception& error) {
+            LOG(logger_, WARNING) << "Caught exception while handling command: " << error.what();
+            send_reply({CSCP1Message::Type::ERROR, std::string("Caught exception while handling command: ") + error.what()});
         }
     }
 }
