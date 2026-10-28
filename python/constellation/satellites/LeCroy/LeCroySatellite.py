@@ -34,13 +34,6 @@ class LeCroySatellite(TransmitterSatellite):
     _horiz_offset: float = 0.0
 
     def do_initializing(self, configuration: Configuration) -> str:
-        try:  # sock.fileno() returns -1 when the socket is closed
-            if self._scope.sock.fileno() != -1:
-                self.log.info("Scope socket already connected...")
-                return "Scope already initialized..."
-        except AttributeError as err:
-            print(f"Reading existing socket failed with error {err}. Initializing...")
-
         self.log.info("Received configuration with parameters: %s", ", ".join(configuration.get_keys()))
 
         ip_address = configuration.get_str("ip_address")
@@ -48,6 +41,10 @@ class LeCroySatellite(TransmitterSatellite):
         timeout = configuration.get_num("timeout", 5.0)
         num_sequences = configuration.get_int("nsequence", 1)
 
+        # If re-initializing, close previous socket
+        if hasattr(self, "_scope"):
+            self._scope.clear()
+            self._scope.sock.close()
         try:
             self._scope = LeCrunch3.LeCrunch3(str(ip_address), port=int(port), timeout=float(timeout))
         except ConnectionRefusedError as e:
