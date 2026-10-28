@@ -36,7 +36,9 @@ class Keithley(Satellite):
         self.voltage_step = config.get_float("voltage_step", min_val=0.0)
         self.settle_time = config.get_float("settle_time", min_val=0.0)
 
-        self.ovp = config.get_float("ovp", min_val=0.0)
+        self.ovp = None
+        if "ovp" in config:
+            self.ovp = config.get_float("ovp", min_val=0.0)
         self.compliance = config.get_float("compliance", min_val=0.0)
 
         # If one terminal, select as default, otherwise get from config
@@ -123,11 +125,14 @@ class Keithley(Satellite):
         super().reentry()
 
     def _set_ovp(self) -> None:
-        self.log.info(f"Setting OVP to {self.ovp}V")
-        self.device.set_ovp(self.ovp)
-        device_ovp = self.device.get_ovp()
-        if device_ovp != self.ovp:
-            raise ValueError(f"OVP set to {self.ovp}V but {device_ovp}V was applied (check manual for supported values)")
+        if self.ovp:
+            self.log.info(f"Setting OVP to {self.ovp}V")
+            self.device.set_ovp(self.ovp)
+            device_ovp = self.device.get_ovp()
+            if device_ovp != self.ovp:
+                raise ValueError(f"OVP set to {self.ovp}V but {device_ovp}V was applied (check manual for supported values)")
+        else:
+            self.log.info("Skip setting OVP since not set")
 
     def _set_compliance(self) -> None:
         self.log.info(f"Setting compliance to {self.compliance}A")

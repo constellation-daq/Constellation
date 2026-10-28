@@ -74,7 +74,7 @@ Possible terminals are `front` and `rear`.
 | `voltage` | Target output voltage | Float | - |
 | `voltage_step` | Voltage step in which to ramp to target voltage | Float | - |
 | `settle_time` | Time to wait before continuing with the next voltage step | Float | - |
-| `ovp` | Voltage limit for over-voltage protection | Float | - |
+| `ovp` | Voltage limit for over-voltage protection (optional) | Float | - |
 | `compliance` | Current limit in Ampere | Float | - |
 
 ## Metrics
