@@ -2,7 +2,7 @@
 SPDX-FileCopyrightText: 2026 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
 
-Serial interface for a Keithley Series 2400 SourceMeter as voltage source.
+Serial interface for a Keithley Model 6487 Picoammeter/Voltage source as voltage source.
 
 Keithley needs to be set to RS-232 mode with:
 - BAUD: 19200
