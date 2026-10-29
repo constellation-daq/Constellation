@@ -99,7 +99,7 @@ namespace constellation::satellite {
         /**
          * @brief Return the current status of the satellite
          */
-        std::string_view getStatus() const { return fsm_.getStatus(); }
+        std::string getStatus() const { return fsm_.getStatus(); }
 
         /**
          * @brief Return the current or last used run identifier

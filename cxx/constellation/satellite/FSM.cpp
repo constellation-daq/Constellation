@@ -96,7 +96,7 @@ void FSM::set_status(std::string status) {
     }
 }
 
-std::string_view FSM::getStatus() const {
+std::string FSM::getStatus() const {
     const std::scoped_lock status_lock {status_mutex_};
     return status_;
 }
@@ -613,7 +613,7 @@ FSM::State FSM::failure(TransitionPayload payload) {
         reason = std::get<std::string>(std::move(payload));
         set_status(reason);
     } else {
-        reason = std::string(getStatus());
+        reason = getStatus();
     }
 
     auto call_wrapper = [this](State previous_state, std::string reason) {

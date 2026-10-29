@@ -303,7 +303,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         break;
     }
     case get_status: {
-        return_verb = {CSCP1Message::Type::SUCCESS, std::string(fsm_.getStatus())};
+        return_verb = {CSCP1Message::Type::SUCCESS, fsm_.getStatus()};
         break;
     }
     case get_config: {
