@@ -293,6 +293,8 @@ namespace constellation::satellite {
 
         std::optional<std::string> user_status_;
         std::mutex user_status_mutex_;
+        std::mutex config_mutex_;
+        std::mutex run_identifier_mutex_;
 
         CommandRegistry user_commands_;
         heartbeat::HeartbeatManager heartbeat_manager_;
