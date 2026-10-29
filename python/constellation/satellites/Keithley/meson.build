@@ -6,6 +6,7 @@ example_sat_files = files(
   '__main__.py',
   'Keithley.py',
   'Keithley2410.py',
+  'Keithley6487.py',
   'KeithleyInterface.py',
 )
 

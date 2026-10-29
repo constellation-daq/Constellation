@@ -68,6 +68,30 @@ Supported OVP values:
 
 - 2410: `20`, `40`, `100`, `200`, `300`, `400`
 
+### `6487`
+
+The `6487` device supports the Keithley Model 6487 Picoammeter/Voltage Source in RS-232 mode.
+The following serial communication settings are required and have to be configured on the SMU before starting the satellite.
+They can be found at MENU -> COMMUNICATION -> RS-223.
+
+- `BAUD`: `19200`
+- `BITS`: `8`
+- `PARITY`: `EVEN`
+- `TERMINATOR`: `<CR+LF>`
+- `FLOW-CTRL`: `NONE`
+
+The only possible terminal is `rear`.
+
+Supported OVP values:
+
+- 6487: `10`, `50`, `500`
+
+Supported compliance values:
+
+- 6487: `2.5e-5`, `2.5e-4`, `2.5e-3`, `2.5e-2`
+
+The compliance of 25mA is only supported in the 10 V range.
+
 ## Parameters
 
 | Parameter | Description | Type | Default Value |
