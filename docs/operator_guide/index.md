@@ -56,6 +56,7 @@ FAQ / Common Issues <get_started/faq>
 tutorials/single_satellite
 tutorials/sending_receiving_data
 tutorials/missioncontrol
+tutorials/webcontrol
 tutorials/ipython_controller
 tutorials/observatory
 The Command-Line Monitor <tutorials/cli_monitor>
