@@ -467,13 +467,16 @@ void BaseSatellite::cscp_loop(const std::stop_token& stop_token) {
             LOG(logger_, WARNING) << "Received unknown command " << quote(command_string) << " - ignoring";
             send_reply({CSCP1Message::Type::UNKNOWN, std::move(unknown_command_reply)});
 
-        } catch(const zmq::error_t& error) {
+        } catch(const NetworkError& error) {
             LOG(logger_, CRITICAL) << "ZeroMQ error while trying to receive a message: " << error.what();
             LOG(logger_, CRITICAL) << "Stopping command receiver loop, no further commands can be received";
             break;
         } catch(const MessageDecodingError& error) {
             LOG(logger_, WARNING) << error.what();
             send_reply({CSCP1Message::Type::ERROR, error.what()});
+        } catch(const std::exception& error) {
+            LOG(logger_, WARNING) << "Caught exception while handling command: " << error.what();
+            send_reply({CSCP1Message::Type::ERROR, std::string("Caught exception while handling command: ") + error.what()});
         }
     }
 }
