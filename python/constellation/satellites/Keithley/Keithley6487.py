@@ -1,5 +1,5 @@
 """
-SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+SPDX-FileCopyrightText: 2026 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
 
 Serial interface for a Keithley Series 2400 SourceMeter as voltage source.
