@@ -15,10 +15,12 @@ from constellation.core.protocol.cscp1 import SatelliteState, states_except
 from constellation.core.satellite import Satellite
 
 from .Keithley2410 import Keithley2410
+from .Keithley6487 import Keithley6487
 from .KeithleyInterface import KeithleyInterface
 
 _SUPPORTED_DEVICES = {
     "2410": Keithley2410,
+    "6487": Keithley6487,
 }
 
 
