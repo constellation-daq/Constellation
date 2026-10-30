@@ -54,6 +54,7 @@ void LoadedCppSatellite::start(std::string_view group,
     const auto canonical_name = to_string(getTypeName()) + '.' + to_string(satellite_name);
     constellation_setup_chirp(group, canonical_name, interfaces);
     satellite_ = satellite_generator_(getTypeName(), satellite_name);
+    satellite_->start();
 }
 
 void LoadedCppSatellite::join() {
