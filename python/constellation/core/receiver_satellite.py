@@ -7,6 +7,7 @@ A base module for a Constellation Satellite that receives data.
 
 import pathlib
 import random
+import shutil
 import string
 import time
 from enum import Enum
@@ -42,6 +43,7 @@ class ReceiverSatellite(Satellite):
         super().__init__(*args, **kwargs)
 
         self.log_cdtp = self.get_logger("DATA")
+        self.register_metric("OUTPUT_FILE", "", "Current output file path. Updated when changed.")
 
     def _pre_initializing_hook(self, config: Configuration) -> None:
         """Configure values specific for all ReceiverSatellite-type classes."""
@@ -169,6 +171,7 @@ class ReceiverSatellite(Satellite):
             raise RuntimeError(f"Issue with output directory: {e}") from e
         if not directory.is_dir():
             raise RuntimeError(f"Requested output directory {directory} is not a directory")
+        self._register_diskspace_metric(directory)
         return directory
 
     def validate_output_file(self, path: pathlib.Path | str, file_name: str, ext: None | str = None) -> pathlib.Path:
@@ -207,7 +210,32 @@ class ReceiverSatellite(Satellite):
         except OSError as e:
             raise RuntimeError(f"Issue with output path: {e}") from e
 
+        self._register_diskspace_metric(file)
+
+        # Send metric with new output file path
+        self.stat("OUTPUT_FILE", str(file))
+
         return file
+
+    def _register_diskspace_metric(self, path: pathlib.Path) -> None:
+        """Register or update the disk space metric for the given path"""
+
+        def diskspace_free() -> int | None:
+            try:
+                available_mib = shutil.disk_usage(path).free >> 20
+            except OSError as e:
+                self.log_cdtp.debug(str(e))
+                return None
+            # Less than 10GiB disk space - let's warn the user via logs!
+            if available_mib >> 10 < 3:
+                self.log_cdtp.critical("Available disk space critically low, %sMiB left", available_mib)
+            elif available_mib >> 10 < 10:
+                self.log_cdtp.warning("Available disk space low, %sMiB left", available_mib)
+            return available_mib
+
+        self.register_scheduled_metric(
+            "DISKSPACE_FREE", "MiB", "Available disk space at the target location of the output file", 5, diskspace_free
+        )
 
     @schedule_metric("B", 5)
     def rx_bytes(self) -> int | None:
