@@ -5,7 +5,11 @@ SPDX-License-Identifier: EUPL-1.2
 A base module for a Constellation Satellite that receives data.
 """
 
+import pathlib
+import random
+import string
 import time
+from enum import Enum
 from typing import Any
 
 from .cdtp import DataReceiver, RecvTimeoutError
@@ -19,11 +23,20 @@ from .protocol.cscp1 import is_valid_canonical_name
 from .satellite import Satellite
 
 
+class FileConflictStrategy(Enum):
+    """Strategy for handling conflicts in file creation"""
+
+    ERROR = "ERROR"
+    OVERWRITE = "OVERWRITE"
+    RENAME = "RENAME"
+
+
 class ReceiverSatellite(Satellite):
     """Constellation Satellite which can receive data via CDTP"""
 
     def __init__(self, *args: Any, **kwargs: Any):
         self._drc: DataReceiver | None = None
+        self._file_conflict_strategy = FileConflictStrategy.RENAME
 
         # Initialize satellite
         super().__init__(*args, **kwargs)
@@ -35,6 +48,11 @@ class ReceiverSatellite(Satellite):
         super()._pre_initializing_hook(config)
 
         config_data = config.get_section("_data", {})
+        self._file_conflict_strategy = config_data.get_enum(
+            FileConflictStrategy, "file_conflict_strategy", FileConflictStrategy.RENAME
+        )
+        self.log_cdtp.info("Solution strategy for file name conflicts: %s", self._file_conflict_strategy.name)
+
         data_transmitters: None | set[str] = None
         if "receive_from" in config_data:
             data_transmitters = config_data.get_set("receive_from", element_type=str)
@@ -136,6 +154,60 @@ class ReceiverSatellite(Satellite):
                 self._drc.remove_sender(service)
             else:
                 self._drc.add_sender(service)
+
+    def validate_output_directory(self, path: pathlib.Path | str) -> pathlib.Path:
+        """Validate the output directory
+
+        This method checks if the directory exists and is a directory, creates all parent directories if necessary, and
+        registers a disk space metric for the path. Returns prospective output directory as absolute path
+        """
+        try:
+            directory = pathlib.Path(path)
+            directory.mkdir(parents=True, exist_ok=True)
+            directory = directory.resolve()
+        except OSError as e:
+            raise RuntimeError(f"Issue with output directory: {e}") from e
+        if not directory.is_dir():
+            raise RuntimeError(f"Requested output directory {directory} is not a directory")
+        return directory
+
+    def validate_output_file(self, path: pathlib.Path | str, file_name: str, ext: None | str = None) -> pathlib.Path:
+        """Create the output file path
+
+        Create the final output file path from output directory, file name and extension and validates access. Returns the
+        absolute path to the file.
+        """
+        file = pathlib.Path(path) / file_name
+        try:
+            # Replace extension if desired
+            if ext:
+                file = file.with_suffix("." + ext.removeprefix("."))
+
+            # Create all the required directories
+            file.parent.mkdir(parents=True, exist_ok=True)
+
+            # Handle file name conflicts
+            if file.exists():
+                if self._file_conflict_strategy == FileConflictStrategy.ERROR:
+                    raise RuntimeError(f"Overwriting of existing file {file} denied")
+                elif self._file_conflict_strategy == FileConflictStrategy.RENAME:
+                    suffix = "".join(random.choices(string.digits + string.ascii_lowercase, k=8))
+                    file = file.with_name(f"{file.stem}_{suffix}{file.suffix}")
+                    self.log_cdtp.warning("Target file exists, redirecting output to file %s", file)
+                else:
+                    self.log_cdtp.warning("File %s exists and will be overwritten", file)
+                    file.unlink()
+
+            # Create the file exclusively to check if it can be accessed
+            with open(file, "x"):
+                pass
+            file = file.resolve()
+        except FileExistsError as e:
+            raise RuntimeError(f"Overwriting of existing file {file} denied") from e
+        except OSError as e:
+            raise RuntimeError(f"Issue with output path: {e}") from e
+
+        return file
 
     @schedule_metric("B", 5)
     def rx_bytes(self) -> int | None:
