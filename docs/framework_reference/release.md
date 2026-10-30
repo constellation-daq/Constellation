@@ -4,8 +4,8 @@ Here the release process for Constellation is described.
 
 ## Updating the Version and Code Name
 
-Constellation roughly follows [semantic versioning](https://semver.org/), i.e. `MAJOR.FEATURE.PATCH`. The major version
-should only be increased when incompatible changes are introduced, the feature version only when new features are added.
+Constellation follows [semantic versioning](https://semver.org/), i.e. `MAJOR.MINOR.PATCH`. The guarantees connected to each
+part of the version number are described in the [application developer guide](../application_development/intro/versioning.md) section.
 
 Each major and feature release of Constellation has a code name, chosen from the [IAU designated constellations](https://en.wikipedia.org/wiki/IAU_designated_constellations_by_area)
 in order of increasing solid angle they take up in the sky.
