@@ -442,7 +442,7 @@ lint:basedpyright:
     - .python-venv
     - .python-3.11
   script:
-    - pip install --no-build-isolation -e .[dev,test,cli,hdf5,influx,lecroy,visa,particulars]
+    - pip install --no-build-isolation -e .[dev,test,cli,hdf5,influx,lecroy,visa,particulars,standa]
     - basedpyright python --gitlabcodequality code-quality-report.json
   artifacts:
     reports:
