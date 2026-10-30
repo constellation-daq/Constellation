@@ -9,7 +9,9 @@ Original code by Daniil D.Rastorguev.
 import logging
 import time
 
-from libximc.lowlevel import lib as ximc
+import libximc.lowlevel as ximc
+
+lib = ximc.lib
 
 
 def steps_to_mm(steps, usteps):
@@ -32,8 +34,8 @@ class Motors:
         sn_to_axis = {int(sn): axis for axis, sn in serials.items()}
 
         try:
-            device_enum = ximc.enumerate_devices(ximc.EnumerateFlags.ENUMERATE_PROBE, "")
-            device_count = ximc.get_device_count(device_enum)
+            device_enum = lib.enumerate_devices(ximc.EnumerateFlags.ENUMERATE_PROBE, "")
+            device_count = lib.get_device_count(device_enum)
             self.log.info(f"ximc device count: {device_count}")
         except Exception:
             self.log.critical("Failed to detect ximc devices")
@@ -45,17 +47,17 @@ class Motors:
 
         for device_index in range(device_count):
             try:
-                device_name = ximc.get_device_name(device_enum, device_index)
-                device_id = ximc.open_device(device_name)
+                device_name = lib.get_device_name(device_enum, device_index)
+                device_id = lib.open_device(device_name)
                 if profile is not None:
-                    profile(ximc, device_id)
+                    profile(lib, device_id)
             except Exception:
                 self.log.critical("Failed to open ximc device")
                 self.close()
                 raise
 
             serial_number = ximc.c_uint()
-            ximc.get_serial_number(device_id, ximc.byref(serial_number))
+            lib.get_serial_number(device_id, ximc.byref(serial_number))
             serial_number = serial_number.value
             if serial_number not in sn_to_axis:
                 self.log.warning(f"Ignoring ximc device with unconfigured S/N {serial_number}")
@@ -71,32 +73,32 @@ class Motors:
 
     def close(self):
         for device_id in self.ids.values():
-            ximc.close_device(ximc.byref(ximc.cast(device_id, ximc.POINTER(ximc.c_int))))
+            lib.close_device(ximc.byref(ximc.cast(device_id, ximc.POINTER(ximc.c_int))))
         self.ids.clear()
 
     def calibrate(self):
         self.log.info("Calibrating motors...")
         for device_id in self.ids.values():
-            ximc.command_home(device_id)
+            lib.command_home(device_id)
         for device_id in self.ids.values():
-            ximc.command_wait_for_stop(device_id, 10)
+            lib.command_wait_for_stop(device_id, 10)
 
         time.sleep(1)
 
         for device_id in self.ids.values():
-            ximc.command_zero(device_id)
+            lib.command_zero(device_id)
         self.log.info("Motor calibration finished")
 
     def get_position(self, axis):
         pos = ximc.get_position_t()
-        ximc.get_position(self.ids[axis], ximc.byref(pos))
+        lib.get_position(self.ids[axis], ximc.byref(pos))
         # microsteps ignored
         steps, usteps = pos.Position, pos.uPosition
         return steps_to_mm(steps, usteps)
 
     def is_moving(self, axis):
         status = ximc.status_t()
-        ximc.get_status(self.ids[axis], ximc.byref(status))
+        lib.get_status(self.ids[axis], ximc.byref(status))
 
         return bool(status.MvCmdSts & ximc.MvcmdStatus.MVCMD_RUNNING)
 
@@ -105,7 +107,7 @@ class Motors:
             raise ValueError(f"Target {mm} mm of axis '{axis}' is outside the travel range 0mm - 50mm")
 
         steps, usteps = mm_to_steps(mm)
-        ximc.command_move(self.ids[axis], steps, usteps)
+        lib.command_move(self.ids[axis], steps, usteps)
 
     def move_rel(self, axis, mm):
         destination = mm + self.get_position(axis)
@@ -113,7 +115,7 @@ class Motors:
 
     def wait_for_stop(self):
         for device_id in self.ids.values():
-            ximc.command_wait_for_stop(device_id, 50)
+            lib.command_wait_for_stop(device_id, 50)
 
     def wait_until_idle(self, timeout=30.0, poll_interval=0.05):
         time.sleep(poll_interval)
