@@ -115,11 +115,10 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
     const auto old_lowest_state = getLowestState();
     const auto old_is_global = isInGlobalState();
 
-    std::unique_lock<std::mutex> lock {connection_mutex_};
-
     // Add or drop, depending on message:
     const auto uri = service.to_uri();
     if(status == chirp::ServiceStatus::DEPARTED || status == chirp::ServiceStatus::DEAD) {
+        std::unique_lock<std::mutex> lock {connection_mutex_};
         const auto it =
             std::ranges::find(connections_, service.host_id, [&](const auto& sat) { return sat.second.host_id; });
         if(it != connections_.end()) {
@@ -165,6 +164,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
             conn.state = enum_cast<CSCP::State>(recv_msg_state.getVerb().second).value_or(CSCP::State::NEW);
 
             // Add to map of open connections
+            std::unique_lock<std::mutex> lock {connection_mutex_};
             const auto [it, success] = connections_.emplace(name, std::move(conn));
             connection_count_.store(connections_.size());
 
