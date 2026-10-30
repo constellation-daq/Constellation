@@ -73,17 +73,6 @@ class Satellite(
         # give monitoring a chance to start up and catch early messages
         time.sleep(0.1)
 
-        # set up background communication threads
-        super()._add_com_thread()
-        super()._start_com_threads()
-
-        # register CHIRP services on offer and request heartbeats
-        self.register_offer(CHIRPServiceIdentifier.CONTROL, self.cmd_port)
-        self.register_offer(CHIRPServiceIdentifier.HEARTBEAT, self.hb_port)
-        self.register_offer(CHIRPServiceIdentifier.MONITORING, self.mon_port)
-        self.emit_offers()
-        self.request(CHIRPServiceIdentifier.HEARTBEAT)
-
         # Check whether the Satellite has a reconfigure state implemented.
         # If so, add the command to the list of available commands.
         if hasattr(self, "do_reconfigure"):
@@ -135,6 +124,17 @@ class Satellite(
         e.g. state transitions.
 
         """
+        # set up background communication threads
+        super()._add_com_thread()
+        super()._start_com_threads()
+
+        # register CHIRP services on offer and request heartbeats
+        self.register_offer(CHIRPServiceIdentifier.CONTROL, self.cmd_port)
+        self.register_offer(CHIRPServiceIdentifier.HEARTBEAT, self.hb_port)
+        self.register_offer(CHIRPServiceIdentifier.MONITORING, self.mon_port)
+        self.emit_offers()
+        self.request(CHIRPServiceIdentifier.HEARTBEAT)
+
         while self._com_thread_evt and not self._com_thread_evt.is_set():
             try:
                 # blocking call but with timeout to prevent deadlocks
