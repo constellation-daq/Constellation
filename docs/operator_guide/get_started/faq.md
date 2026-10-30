@@ -14,6 +14,11 @@ issue in the network communication:
 * The communication is **routed over the wrong network** interface. When starting Constellation nodes, the `-i`/`--interface` command line argument can be used to restrict communication to one or several network interfaces. Command line arguments are documented in the [Satellite section](../concepts/satellite.md#the-satellite-executable).
 :::
 
+:::{dropdown} Can satellites with different Constellation versions be operated together?
+Yes, as long as all components share the same major version, as described in the
+[installation guide](installation.md#running-different-versions).
+:::
+
 ## Configuration
 
 :::{dropdown} MissionControl warns about satellites not found in configuration file
