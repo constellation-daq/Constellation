@@ -13,6 +13,7 @@
 :caption: Introduction
 
 intro/install_from_source
+intro/versioning
 intro/listing
 intro/tools
 ```
