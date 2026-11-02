@@ -139,7 +139,7 @@ class LeCroySatellite(TransmitterSatellite):
     def get_num_triggers(self) -> tuple[str, int, dict[str, Any]]:
         return f"Number of triggers: {self._num_triggers_acquired}", self._num_triggers_acquired, {}
 
-    @cscp_requestable([SatelliteState.INIT, SatelliteState.ORBIT])
+    @cscp_requestable([SatelliteState.INIT])
     def calibrate(self) -> tuple[str, int, dict[str, Any]] | None:
         """Run the internal self-calibration of the scope, returns its status code (0 = passed)"""
         self._scope.send("*CAL?")
