@@ -147,7 +147,7 @@ class LeCroySatellite(TransmitterSatellite):
         status = int(reply.split(b" ")[-1])
         if status != 0:
             raise RuntimeError(f"Scope self-calibration failed (status {status})")
-        return f"Scope self-calibration successful", status, {}
+        return "Scope self-calibration successful", status, {}
 
     @schedule_metric("", 1, [SatelliteState.RUN])
     def NUM_TRIGGERS(self) -> int | None:
