@@ -408,6 +408,15 @@ class Satellite(
             time.sleep(0.2)
         return "Finished RUN"
 
+    def failure(self, error_message: str) -> None:
+        """Trigger satellite failure"""
+
+        def failure_wrapper():
+            self._transition("failure", error_message, thread=False)
+            self.fsm.status = "Failure: " + error_message
+
+        threading.Thread(target=failure_wrapper).start()
+
     @debug_log
     def _wrap_failure(self, payload: Any) -> str:
         """Wrapper for the 'ERROR' state of the FSM.
