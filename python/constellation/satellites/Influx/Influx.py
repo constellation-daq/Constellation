@@ -61,7 +61,9 @@ class Influx(Satellite, MonitoringListener):
             interval = int(config.get_num("flush_interval", 2.5, min_val=1) * 1000)
 
             self.client = InfluxDBClient(url=url, token=token, org=org)
-            self.write_api = self.client.write_api(write_options=WriteOptions(flush_interval=interval))
+            self.write_api = self.client.write_api(
+                write_options=WriteOptions(flush_interval=interval), error_callback=self._write_error
+            )
 
             # Test connection
             self.log.debug('Connecting to InfluxDB with org "%s" at %s', org, url)
@@ -93,6 +95,12 @@ class Influx(Satellite, MonitoringListener):
                     self.write_api.write(bucket=self.bucket, record=record)
                 else:
                     self.log.debug(f"Metric of type {type(value).__name__} cannot be written to InfluxDB")
+
+    def _write_error(self, conf: Any, data: Any, exception: Exception) -> None:
+        """Called by the InfluxDB client from batching thread"""
+
+        err_msg = f"Failed to write to InfluxDB: {exception.status} {exception.reason}: {exception.message}"
+        self.log.critical(err_msg)
 
     def reentry(self) -> None:
         # Close InfluxDB client
