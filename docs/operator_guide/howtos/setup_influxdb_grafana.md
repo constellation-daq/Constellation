@@ -296,3 +296,26 @@ from(bucket: "constellation")
   |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)
   |> yield(name: "mean")
 ```
+
+### Displaying States
+
+States can be displayed in state timelines using the following query:
+
+```text
+getState = (start, stop) =>
+  from(bucket: "sparc")
+    |> range(start: start, stop: stop)
+    |> filter(fn: (r) => r["_field"] == "STATE")
+    |> drop(columns: ["_start", "_stop"])
+
+state_before = getState(start: -14d, stop: v.timeRangeStart)
+  |> last()
+  |> map(fn: (r) => ({r with _time: v.timeRangeStart}))
+
+states_inside = getState(start: v.timeRangeStart, stop: v.timeRangeStop)
+
+union(tables: [state_before, states_inside])
+  |> group(columns: ["_measurement", "_field"])
+  |> sort(columns: ["_time"])
+  |> yield(name: "state")
+```
