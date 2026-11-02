@@ -38,7 +38,7 @@ Satellites should restrict the Constellation dependency to the minor version the
 updates to new patch versions while protecting against interface changes:
 
 ::::{tab-set}
-:::{tab-item} C++
+:::{tab-item} C++ / Meson
 :sync: cxx
 
 ```meson
