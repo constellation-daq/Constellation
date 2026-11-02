@@ -92,7 +92,7 @@ class Influx(Satellite, MonitoringListener):
         message = getattr(exception, "message", str(exception))
 
         if status in (401, 403, 404):
-            self._fail(f"InfluxDB error {status} {reason}: {message}")
+            self.failure(f"InfluxDB error {status} {reason}: {message}")
         elif status in (400, 413, 422):
             self.log.warning(f"InfluxDB rejected batch, {status} {reason}, {message}")
         else:
@@ -100,13 +100,7 @@ class Influx(Satellite, MonitoringListener):
             self._write_failures += 1
             self.log.warning(f"Failed writing ({self._write_failures}x) to InfluxDB, {status} {reason}, {message}")
             if self._write_failures >= 3:
-                self._fail(f"InfluxDB unreachable: {message}")
-
-    def _fail(self, err_msg: str) -> None:
-        """Send FSM into failure from the InfluxDB background thread"""
-        self.log.critical(err_msg)
-        self.fsm.failure(err_msg)
-        self._wrap_failure(err_msg)
+                self.failure(f"InfluxDB unreachable: {message}")
 
     def reentry(self) -> None:
         # Close InfluxDB client
