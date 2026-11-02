@@ -89,7 +89,16 @@ class SatelliteCommLink(SatelliteTypeCommLink):
 
 
 class SatelliteArray:
-    """Provide object-oriented control of connected Satellites."""
+    """Provide object-oriented control of connected Satellites.
+
+    Satellite types and instances are added as attributes via setattr
+    when new satellites connect. In IPython, tab completion on a bare
+    variable (``constellation.<TAB>``) and on a property access
+    (``ctrl.constellation.<TAB>``) may show different results due to
+    completer caching. Both paths return the same object and dir()
+    output is always identical. Re-assigning the variable after new
+    satellites connect resolves the discrepancy.
+    """
 
     def __init__(
         self,
