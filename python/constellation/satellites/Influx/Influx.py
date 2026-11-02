@@ -5,7 +5,6 @@ SPDX-License-Identifier: EUPL-1.2
 Provides the class for the Influx satellite
 """
 
-import logging
 from datetime import datetime
 from threading import Lock
 from typing import Any
@@ -21,31 +20,9 @@ from constellation.core.listener import MonitoringListener
 from constellation.core.satellite import Satellite
 
 
-class InfluxLogForwarder(logging.Handler):
-    """Forward log records of the influxdb_client library to a Constellation logger."""
-
-    def __init__(self, target: logging.Logger):
-        super().__init__(level=logging.NOTSET)
-        self._target = target
-
-    def emit(self, record: logging.LogRecord) -> None:
-        try:
-            self._target.log(record.levelno, record.getMessage(), exc_info=record.exc_info)
-        except Exception:
-            self.handleError(record)
-
-
 class Influx(Satellite, MonitoringListener):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        # Redirect influxdb_client logs to new Constellation logger
-        self.log_influxdb = self.get_logger("DB")
-        self._influx_log_forwarder = InfluxLogForwarder(self.log_influxdb)
-        influx_logger = logging.getLogger("influxdb_client")
-        influx_logger.addHandler(self._influx_log_forwarder)
-        influx_logger.propagate = False
-        influx_logger.setLevel(logging.DEBUG)
 
         self._influxdb_connected = False
         self._influxdb_lock = Lock()
@@ -141,10 +118,5 @@ class Influx(Satellite, MonitoringListener):
                 except Exception as e:
                     self.log.warning("Failed to close InfluxDB: %s", e)
                 self._influxdb_connected = False
-
-        # Detach log forwarder
-        influx_logger = logging.getLogger("influxdb_client")
-        influx_logger.removeHandler(self._influx_log_forwarder)
-        influx_logger.propagate = True
 
         super().reentry()
