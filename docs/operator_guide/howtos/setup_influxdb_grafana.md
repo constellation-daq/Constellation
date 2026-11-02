@@ -21,8 +21,8 @@ services:
     ports:
       - "8086:8086"
     volumes:
-      - ./influxdb-config:/etc/influxdb2
-      - ./influxdb-data:/var/lib/influxdb2
+      - ./influxdb-config:/etc/influxdb2:Z
+      - ./influxdb-data:/var/lib/influxdb2:Z
 
   grafana:
     image: docker.io/grafana/grafana:latest
@@ -32,7 +32,7 @@ services:
       - influxdb
     user: "0"
     volumes:
-      - ./grafana:/var/lib/grafana
+      - ./grafana:/var/lib/grafana:Z
 ```
 
 Then the containers can be started with:
@@ -173,7 +173,7 @@ Now, the `Mariner` should send a `BRIGHTNESS` metric to the `Influx` satellite, 
 To add a visualization in the dashboard, a Flux query needs to be made to the database. The easiest way to do this is using
 the InfluxDB Data Explorer shown in {numref}`fig-influxdb-query-builder`.
 There, the bucket (`constellation`), the measurement (sending satellite) and the filed (metric) can be chosen.
-On the right, the aggregate function should be set to "last" and then the query can be submitted.
+Then the query can be submitted.
 
 ```{figure} influxdb_query_builder.png
 :align: center
@@ -252,9 +252,9 @@ from(bucket: "constellation")
   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
   |> filter(fn: (r) => r["_measurement"] == "Mariner.Nine")
   |> filter(fn: (r) => r["_field"] == "BRIGHTNESS")
-  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)
   |> map(fn: (r) => ({ r with _value: float(v: r._value) * 0.01 }))
-  |> yield(name: "last")
+  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)
+  |> yield(name: "mean")
 ```
 
 ```{seealso}
@@ -288,11 +288,34 @@ from(bucket: "constellation")
   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
   |> filter(fn: (r) => r["_measurement"] == "PyDevNullReceiver.Receiver" or r["_measurement"] == "PyRandomTransmitter.Sender")
   |> filter(fn: (r) => r["_field"] == "RX_BYTES" or r["_field"] == "TX_BYTES")
-  |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)
   |> aggregate.rate(
     every: 30s,
     unit: 1s,
     groupColumns: ["_measurement", "_field"],
   )
-  |> yield(name: "last")
+  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)
+  |> yield(name: "mean")
+```
+
+### Displaying States
+
+States can be displayed in state timelines using the following query:
+
+```text
+getState = (start, stop) =>
+  from(bucket: "sparc")
+    |> range(start: start, stop: stop)
+    |> filter(fn: (r) => r["_field"] == "STATE")
+    |> drop(columns: ["_start", "_stop"])
+
+state_before = getState(start: -14d, stop: v.timeRangeStart)
+  |> last()
+  |> map(fn: (r) => ({r with _time: v.timeRangeStart}))
+
+states_inside = getState(start: v.timeRangeStart, stop: v.timeRangeStop)
+
+union(tables: [state_before, states_inside])
+  |> group(columns: ["_measurement", "_field"])
+  |> sort(columns: ["_time"])
+  |> yield(name: "state")
 ```
