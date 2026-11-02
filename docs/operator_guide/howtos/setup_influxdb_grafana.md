@@ -21,8 +21,8 @@ services:
     ports:
       - "8086:8086"
     volumes:
-      - ./influxdb-config:/etc/influxdb2
-      - ./influxdb-data:/var/lib/influxdb2
+      - ./influxdb-config:/etc/influxdb2:Z
+      - ./influxdb-data:/var/lib/influxdb2:Z
 
   grafana:
     image: docker.io/grafana/grafana:latest
@@ -32,7 +32,7 @@ services:
       - influxdb
     user: "0"
     volumes:
-      - ./grafana:/var/lib/grafana
+      - ./grafana:/var/lib/grafana:Z
 ```
 
 Then the containers can be started with:
