@@ -45,6 +45,7 @@ public:
                                      {constellation::protocol::CSCP::State::RUN},
                                      &DummySatelliteNR::usr_cmd_void,
                                      this);
+        SatelliteT::start();
     }
 
     void reactFSM(constellation::satellite::FSM::Transition transition,

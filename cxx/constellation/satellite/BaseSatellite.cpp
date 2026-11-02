@@ -88,19 +88,6 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name, std::
         throw NetworkError(e.what());
     }
 
-    // Announce service via CHIRP
-    auto* chirp_manager = ManagerLocator::getCHIRPManager();
-    if(chirp_manager != nullptr) {
-        chirp_manager->registerService(CHIRP::CONTROL, cscp_port_);
-    } else {
-        LOG(logger_, WARNING) << "Failed to advertise command receiver on the network, satellite might not be discovered";
-    }
-    LOG(logger_, INFO) << "Starting to listen to commands on port " << cscp_port_;
-
-    // Start receiving CSCP commands
-    cscp_thread_ = std::jthread(std::bind_front(&BaseSatellite::cscp_loop, this));
-    set_thread_name(cscp_thread_, "CSCP");
-
     // Register metric for announcing new run ids and states:
     utils::ManagerLocator::getMetricsManager().registerMetric("RUN_ID", "", "Current run identifier. Updated when changed.");
     utils::ManagerLocator::getMetricsManager().registerMetric("STATE", "", "Current satellite state. Updated when changed.");
@@ -119,6 +106,21 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name, std::
 
     // Register remote state callback to retrieve information on distant satellites
     fsm_.registerRemoteCallback([&](std::string_view name) { return heartbeat_manager_.getRemoteState(name); });
+}
+
+void BaseSatellite::start() {
+    // Announce service via CHIRP
+    auto* chirp_manager = ManagerLocator::getCHIRPManager();
+    if(chirp_manager != nullptr) {
+        chirp_manager->registerService(CHIRP::CONTROL, cscp_port_);
+    } else {
+        LOG(logger_, WARNING) << "Failed to advertise command receiver on the network, satellite might not be discovered";
+    }
+    LOG(logger_, INFO) << "Starting to listen to commands on port " << cscp_port_;
+
+    // Start receiving CSCP commands
+    cscp_thread_ = std::jthread(std::bind_front(&BaseSatellite::cscp_loop, this));
+    set_thread_name(cscp_thread_, "CSCP");
 }
 
 std::string BaseSatellite::getCanonicalName() const {
