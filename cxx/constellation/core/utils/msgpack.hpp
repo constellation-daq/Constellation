@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <type_traits>
 #include <typeinfo>
 
@@ -39,15 +40,19 @@ namespace constellation::utils {
 
     /**
      * @brief MsgPack helper to unpack a value to target type
+     * @note Unpacking is limited to the buffer length, the nesting depth limit is hardcoded to 64
      *
      * @throw MsgpackUnpackError if unpacking fails
      * @tparam R Target return type
-     * @tparam Args Variadic arguments
+     * @param data Pointer to the buffer
+     * @param len Length of the buffer
+     * @param offset Offset in the buffer, updated to the position after the unpacked value
      * @return Unpacked value in target type
      */
-    template <typename R, typename... Args> inline R msgpack_unpack_to(Args&&... args) {
+    template <typename R> inline R msgpack_unpack_to(const char* data, std::size_t len, std::size_t& offset) {
         try {
-            const auto msgpack_var = msgpack::unpack(std::forward<Args>(args)...);
+            const auto limit = msgpack::unpack_limit(len, len, len, len, len, 64);
+            const auto msgpack_var = msgpack::unpack(data, len, offset, nullptr, nullptr, limit);
             return msgpack_var->template as<R>();
         } catch(const msgpack::type_error& e) {
             throw MsgpackUnpackError("Type error for " + utils::demangle<R>(), e.what());
@@ -58,6 +63,20 @@ namespace constellation::utils {
         } catch(const msgpack::unpack_error& e) {
             throw MsgpackUnpackError("Error unpacking data", e.what());
         }
+    }
+
+    /**
+     * @brief MsgPack helper to unpack a value to target type from the start of a buffer
+     *
+     * @throw MsgpackUnpackError if unpacking fails
+     * @tparam R Target return type
+     * @param data Pointer to the buffer
+     * @param len Length of the buffer
+     * @return Unpacked value in target type
+     */
+    template <typename R> inline R msgpack_unpack_to(const char* data, std::size_t len) {
+        std::size_t offset = 0;
+        return msgpack_unpack_to<R>(data, len, offset);
     }
 
     /**

@@ -544,6 +544,35 @@ TEST_CASE("Catch incorrect payload", "[satellite]") {
     satellite.exit();
 }
 
+TEST_CASE("Catch exception while handling command", "[satellite]") {
+    // Create and start satellite
+    DummySatellite satellite {};
+
+    // Create sender
+    CSCPSender sender {satellite.getCommandPort()};
+
+    // Send initialize with two keys to throw exception when creating the configuration object
+    Dictionary config {};
+    config["Key"] = 1;
+    config["key"] = 2;
+    auto initialize_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "initialize"});
+    initialize_msg.addPayload(config.assemble());
+    sender.send(initialize_msg);
+
+    // Check reply
+    auto recv_msg_initialize = sender.recv();
+    REQUIRE(recv_msg_initialize.getVerb().first == CSCP1Message::Type::ERROR);
+    REQUIRE_THAT(to_string(recv_msg_initialize.getVerb().second), StartsWith("Caught exception while handling command:"));
+
+    // Check state
+    sender.sendCommand("get_state");
+    auto recv_msg_get_status = sender.recv();
+    REQUIRE(recv_msg_get_status.getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE_THAT(to_string(recv_msg_get_status.getVerb().second), Equals("NEW"));
+
+    satellite.exit();
+}
+
 TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     class MySatellite : public DummySatellite<> {
     public:

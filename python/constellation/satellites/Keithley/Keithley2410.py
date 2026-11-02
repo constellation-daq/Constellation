@@ -102,7 +102,6 @@ class Keithley2410(KeithleyInterface):
     # Device helper functions
 
     def initialize(self) -> None:
-        self.reset()
         # Set data format to ascii (comma-separated)
         self._write(":FORM:DATA ASC")
         # Output voltage, current and timestamp

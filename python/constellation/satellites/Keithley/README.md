@@ -64,17 +64,46 @@ They can be found at MENU -> COMMUNICATION -> RS-223.
 
 Possible terminals are `front` and `rear`.
 
+Supported OVP values:
+
+- 2410: `20`, `40`, `100`, `200`, `300`, `400`
+
+### `6487`
+
+The `6487` device supports the Keithley Model 6487 Picoammeter/Voltage Source in RS-232 mode.
+The following serial communication settings are required and have to be configured on the SMU before starting the satellite.
+They can be found at MENU -> COMMUNICATION -> RS-223.
+
+- `BAUD`: `19200`
+- `BITS`: `8`
+- `PARITY`: `EVEN`
+- `TERMINATOR`: `<CR+LF>`
+- `FLOW-CTRL`: `NONE`
+
+The only possible terminal is `rear`.
+
+Supported OVP values:
+
+- 6487: `10`, `50`, `500`
+
+Supported compliance values:
+
+- 6487: `2.5e-5`, `2.5e-4`, `2.5e-3`, `2.5e-2`
+
+The compliance of 25mA is only supported in the 10 V range.
+
 ## Parameters
 
 | Parameter | Description | Type | Default Value |
 |-----------|-------------|------|---------------|
 | `device` | Device | String | - |
 | `port` | Serial port to connect to | String | - |
+| `skip_reset` | Skip resetting the device. This can be used to start a satellite when a device is already operating and an output is active, in order to not set deactivate the output first. **This skips resetting the device and configuring relevant settings such as auto-range or the output terminal**. | Boolean | `false` |
 | `terminal` | Terminal output to control | String | - |
 | `voltage` | Target output voltage | Float | - |
 | `voltage_step` | Voltage step in which to ramp to target voltage | Float | - |
 | `settle_time` | Time to wait before continuing with the next voltage step | Float | - |
-| `ovp` | Voltage limit for over-voltage protection | Float | - |
+| `ovp` | Voltage limit for over-voltage protection (optional) | Float | - |
 | `compliance` | Current limit in Ampere | Float | - |
 
 ## Metrics

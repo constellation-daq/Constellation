@@ -129,3 +129,14 @@ The following tags are available for each images:
 - `latest`: tag pointing to the last released version
 - `vX.Y.Z`: tags for each release starting from version 0.6
 - `nightly`: tag pointing to the last nightly build from the main branch (not recommended for production use)
+
+## Running Different Versions
+
+All Constellation components of the same major version can be operated together, independently of the minor and patch
+version and of the installation method. A Constellation may for example consist of satellites running version `1.2.0` from
+a Flatpak installation and satellites running version `1.3.4` installed from PyPI.
+
+Not all features might be available when running different minor versions of satellites or controllers. Components of
+different major versions might still be able to communicate, but this is not guaranteed and should be avoided.
+
+The installed version can be checked with the `--version` argument of any Constellation executable.

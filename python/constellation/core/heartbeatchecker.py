@@ -39,11 +39,8 @@ class HeartbeatState:
         self.outdated: bool = False
         self.failed: threading.Event = evt
 
-    def refresh(self, ts: datetime | None = None) -> None:
-        if not ts:
-            self.last_refresh = time.monotonic()
-        else:
-            self.last_refresh = time.monotonic() + (ts - datetime.now(UTC)).total_seconds()
+    def refresh(self) -> None:
+        self.last_refresh = time.monotonic()
 
     @property
     def seconds_since_refresh(self) -> float:
@@ -215,7 +212,10 @@ class HeartbeatChecker(BaseSatelliteFrame):
                 hb = self._remote_heartbeat_states[socket]
                 # update values
                 hb.name = name
-                hb.refresh(timestamp.to_datetime())
+                hb.refresh()
+                deviation = timestamp.to_datetime() - datetime.now(UTC)
+                if abs(deviation.total_seconds()) > 3:
+                    self.log_chp.debug("Detected time deviation of %ss to %s", round(deviation.total_seconds()), name)
                 state_enum = SatelliteState(state)
 
                 # Update the state

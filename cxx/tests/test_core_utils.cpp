@@ -118,6 +118,19 @@ TEST_CASE("Msgpack enum", "[core]") {
                            Message("Type error for test::TestEnum: value out of range"));
 }
 
+TEST_CASE("Msgpack unpack limits", "[core]") {
+    // Array header indicating more elements than the buffer can hold
+    const std::string array_header = "\xdd\xff\xff\xff\xff";
+    REQUIRE_THROWS_MATCHES(msgpack_unpack_to<std::vector<int>>(array_header.data(), array_header.size()),
+                           MsgpackUnpackError,
+                           Message("Error unpacking data: array size overflow"));
+    // Arrays nested deeper than allowed
+    const std::string nested = std::string(65, '\x91') + '\x00';
+    REQUIRE_THROWS_MATCHES(msgpack_unpack_to<int>(nested.data(), nested.size()),
+                           MsgpackUnpackError,
+                           Message("Error unpacking data: depth size overflow"));
+}
+
 TEST_CASE("Env resolution controller", "[core]") {
 
     // Set an environment variable

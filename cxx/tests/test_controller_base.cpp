@@ -17,12 +17,14 @@
 #include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
+#include <zmq.hpp>
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/controller/exceptions.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/value_types.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
+#include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
@@ -37,6 +39,7 @@ using namespace Catch::Matchers;
 using namespace constellation::config;
 using namespace constellation::controller;
 using namespace constellation::message;
+using namespace constellation::networking;
 using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
@@ -190,6 +193,46 @@ TEST_CASE("Satellite departing", "[controller]") {
     // Stop controller and exit satellite
     controller.stop();
     satellite.exit();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+}
+
+TEST_CASE("Unresponsive satellite connecting", "[controller]") {
+    // Create CHIRP manager for control service discovery
+    create_chirp_manager();
+
+    // Create and start controller
+    DummyController controller {"ctrl"};
+    controller.start();
+
+    // Create and start satellite
+    DummySatellite satellite {};
+    chirp_mock_service("Dummy.sat1", CHIRP::CONTROL, satellite.getCommandPort());
+
+    // Check that satellite connected
+    while(controller.getConnectionCount() < 1) {
+        std::this_thread::sleep_for(50ms);
+    }
+
+    // Offer control service which never replies
+    zmq::socket_t rep_socket {*global_zmq_context(), zmq::socket_type::rep};
+    const auto port = bind_ephemeral_port(rep_socket);
+    chirp_mock_service("Dummy.unresponsive", CHIRP::CONTROL, port);
+    std::this_thread::sleep_for(100ms);
+
+    // Commands are not blocked by pending connection
+    const auto start = std::chrono::steady_clock::now();
+    const auto reply = controller.sendCommand("Dummy.sat1", "get_state");
+    REQUIRE(reply.getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE(std::chrono::steady_clock::now() - start < 500ms);
+
+    // Unresponsive satellite is not added
+    std::this_thread::sleep_for(2s);
+    REQUIRE(controller.getConnectionCount() == 1);
+
+    // Stop controller and exit satellite
+    controller.stop();
+    satellite.exit();
+    rep_socket.close();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 

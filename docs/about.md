@@ -6,6 +6,7 @@ Constellation is an autonomous control and data acquisition system for small-sca
 :alt: DESY Logo
 :width: 100px
 :align: left
+:class: dark-light
 ```
 
 Constellation is hosted at and mainly developed by [Deutsches Elektronen-Synchrotron DESY](https://www.desy.de/), a Research Center of the Helmholtz Association.

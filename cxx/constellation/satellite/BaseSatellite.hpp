@@ -124,6 +124,13 @@ namespace constellation::satellite {
         FSM& getFSM() { return fsm_; }
 
         /**
+         * @brief Start receiving commands and announce the satellite on the network
+         *
+         * @warning Has to be called once the satellite is fully constructed
+         */
+        void start();
+
+        /**
          * @brief Join CSCP processing thread
          *
          * Join the CSCP processing thread, which happens when the satellite is shut down or terminated.

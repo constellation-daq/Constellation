@@ -88,19 +88,6 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name, std::
         throw NetworkError(e.what());
     }
 
-    // Announce service via CHIRP
-    auto* chirp_manager = ManagerLocator::getCHIRPManager();
-    if(chirp_manager != nullptr) {
-        chirp_manager->registerService(CHIRP::CONTROL, cscp_port_);
-    } else {
-        LOG(logger_, WARNING) << "Failed to advertise command receiver on the network, satellite might not be discovered";
-    }
-    LOG(logger_, INFO) << "Starting to listen to commands on port " << cscp_port_;
-
-    // Start receiving CSCP commands
-    cscp_thread_ = std::jthread(std::bind_front(&BaseSatellite::cscp_loop, this));
-    set_thread_name(cscp_thread_, "CSCP");
-
     // Register metric for announcing new run ids and states:
     utils::ManagerLocator::getMetricsManager().registerMetric("RUN_ID", "", "Current run identifier. Updated when changed.");
     utils::ManagerLocator::getMetricsManager().registerMetric("STATE", "", "Current satellite state. Updated when changed.");
@@ -119,6 +106,21 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name, std::
 
     // Register remote state callback to retrieve information on distant satellites
     fsm_.registerRemoteCallback([&](std::string_view name) { return heartbeat_manager_.getRemoteState(name); });
+}
+
+void BaseSatellite::start() {
+    // Announce service via CHIRP
+    auto* chirp_manager = ManagerLocator::getCHIRPManager();
+    if(chirp_manager != nullptr) {
+        chirp_manager->registerService(CHIRP::CONTROL, cscp_port_);
+    } else {
+        LOG(logger_, WARNING) << "Failed to advertise command receiver on the network, satellite might not be discovered";
+    }
+    LOG(logger_, INFO) << "Starting to listen to commands on port " << cscp_port_;
+
+    // Start receiving CSCP commands
+    cscp_thread_ = std::jthread(std::bind_front(&BaseSatellite::cscp_loop, this));
+    set_thread_name(cscp_thread_, "CSCP");
 }
 
 std::string BaseSatellite::getCanonicalName() const {
@@ -467,13 +469,16 @@ void BaseSatellite::cscp_loop(const std::stop_token& stop_token) {
             LOG(logger_, WARNING) << "Received unknown command " << quote(command_string) << " - ignoring";
             send_reply({CSCP1Message::Type::UNKNOWN, std::move(unknown_command_reply)});
 
-        } catch(const zmq::error_t& error) {
+        } catch(const NetworkError& error) {
             LOG(logger_, CRITICAL) << "ZeroMQ error while trying to receive a message: " << error.what();
             LOG(logger_, CRITICAL) << "Stopping command receiver loop, no further commands can be received";
             break;
         } catch(const MessageDecodingError& error) {
             LOG(logger_, WARNING) << error.what();
             send_reply({CSCP1Message::Type::ERROR, error.what()});
+        } catch(const std::exception& error) {
+            LOG(logger_, WARNING) << "Caught exception while handling command: " << error.what();
+            send_reply({CSCP1Message::Type::ERROR, std::string("Caught exception while handling command: ") + error.what()});
         }
     }
 }
