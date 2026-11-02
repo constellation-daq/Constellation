@@ -30,7 +30,7 @@ class InfluxLogForwarder(logging.Handler):
 
     def emit(self, record: logging.LogRecord) -> None:
         try:
-            self._target.log(record.levelno, "%s: %s", record.name, record.getMessage(), exc_info=record.exc_info)
+            self._target.log(record.levelno, record.getMessage(), exc_info=record.exc_info)
         except Exception:
             self.handleError(record)
 
