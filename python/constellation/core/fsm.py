@@ -97,11 +97,6 @@ class SatelliteFSM(StateMachine):
         self.last_changed = datetime.now(UTC)
         super().__init__()
 
-    def set_status(self, status: str) -> None:
-        """Update the status and set updated flag if the status message is new"""
-        if self.status != status:
-            self.status = status
-
     def before_transition(self, status: str) -> None:
         """Set status before the state change"""
         self.status = status
@@ -296,7 +291,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
                     if msg not in self.dbg_msg_logged:
                         self.log_fsm.debug(msg)
                         self.dbg_msg_logged.add(msg)
-                    self.fsm.set_status(msg)
+                    self.fsm.status = msg
                     satisfied = False
                     break
 
