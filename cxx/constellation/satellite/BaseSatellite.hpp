@@ -99,7 +99,7 @@ namespace constellation::satellite {
         /**
          * @brief Return the current status of the satellite
          */
-        std::string_view getStatus() const { return fsm_.getStatus(); }
+        std::string getStatus() const { return fsm_.getStatus(); }
 
         /**
          * @brief Return the current or last used run identifier
@@ -300,6 +300,8 @@ namespace constellation::satellite {
 
         std::optional<std::string> user_status_;
         std::mutex user_status_mutex_;
+        std::mutex config_mutex_;
+        std::mutex run_identifier_mutex_;
 
         CommandRegistry user_commands_;
         heartbeat::HeartbeatManager heartbeat_manager_;

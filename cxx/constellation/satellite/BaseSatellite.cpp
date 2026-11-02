@@ -305,15 +305,17 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         break;
     }
     case get_status: {
-        return_verb = {CSCP1Message::Type::SUCCESS, std::string(fsm_.getStatus())};
+        return_verb = {CSCP1Message::Type::SUCCESS, fsm_.getStatus()};
         break;
     }
     case get_config: {
+        const std::scoped_lock config_lock {config_mutex_};
         return_verb = {CSCP1Message::Type::SUCCESS, "Configuration attached in payload"};
         return_payload = config_.assemble();
         break;
     }
     case get_run_id: {
+        const std::scoped_lock run_identifier_lock {run_identifier_mutex_};
         return_verb = {CSCP1Message::Type::SUCCESS, run_identifier_};
         break;
     }
@@ -492,7 +494,9 @@ std::size_t BaseSatellite::store_config(Configuration&& config) {
     }
 
     // Store new configuration
+    std::unique_lock config_lock {config_mutex_};
     config_ = std::move(config);
+    config_lock.unlock();
 
     // Log config
     LOG(logger_, INFO) << "Configuration:" << config_.to_string(Configuration::USER);
@@ -510,7 +514,9 @@ std::size_t BaseSatellite::update_config(Configuration& partial_config) {
     }
 
     // Update configuration
+    std::unique_lock config_lock {config_mutex_};
     config_.update(partial_config);
+    config_lock.unlock();
 
     // Log config
     LOG(logger_, INFO) << "Configuration:" << config_.to_string(Configuration::USER);
@@ -643,7 +649,9 @@ std::optional<std::string> BaseSatellite::starting_wrapper(std::string run_ident
     run_degraded_ = false;
 
     // Store run identifier
+    std::unique_lock run_identifier_lock {run_identifier_mutex_};
     run_identifier_ = std::move(run_identifier);
+    run_identifier_lock.unlock();
 
     starting(run_identifier_);
 
