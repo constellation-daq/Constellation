@@ -40,7 +40,7 @@ class Influx(Satellite, MonitoringListener):
         super().__init__(*args, **kwargs)
 
         # Redirect influxdb_client logs to new Constellation logger
-        self.log_influxdb = self.get_logger("INFLUXDB")
+        self.log_influxdb = self.get_logger("DB")
         self._influx_log_forwarder = InfluxLogForwarder(self.log_influxdb)
         influx_logger = logging.getLogger("influxdb_client")
         influx_logger.addHandler(self._influx_log_forwarder)
@@ -72,7 +72,8 @@ class Influx(Satellite, MonitoringListener):
                 query_api.query(org=org, query="buckets()")
                 query_api.query(org=org, query=f'from(bucket: "{self.bucket}") |> range(start: -1s) |> limit(n: 1)')
             except InfluxDBError as e:
-                raise ConnectionError(f"InfluxDB returned {e.status} {e.reason}: {e.message}") from e
+                err_msg = f" {e.response.status} {e.response.reason}" if e.response else ""
+                raise ConnectionError(f"InfluxDB error{err_msg}: {e.message}") from e
             except Exception as e:
                 raise ConnectionError("Could not connect to InfluxDB") from e
 
@@ -99,7 +100,8 @@ class Influx(Satellite, MonitoringListener):
     def _write_error(self, conf: Any, data: Any, exception: Exception) -> None:
         """Called by the InfluxDB client from batching thread"""
 
-        err_msg = f"Failed to write to InfluxDB: {exception.status} {exception.reason}: {exception.message}"
+        error = f" {exception.response.status} {exception.response.reason}" if exception.response else ""
+        err_msg = f"InfluxDB error{error}: {exception.message}"
         self.log.critical(err_msg)
 
     def reentry(self) -> None:
