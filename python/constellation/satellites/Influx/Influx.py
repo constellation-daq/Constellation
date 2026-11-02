@@ -38,8 +38,9 @@ class Influx(Satellite, MonitoringListener):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Redirect influxdb_client logs to the satellite logger
-        self._influx_log_forwarder = InfluxLogForwarder(self.log)
+        # Redirect influxdb_client logs to new Constellation logger
+        self.log_influxdb = self.get_logger("INFLUXDB")
+        self._influx_log_forwarder = InfluxLogForwarder(self.log_influxdb)
         influx_logger = logging.getLogger("influxdb_client")
         influx_logger.addHandler(self._influx_log_forwarder)
         influx_logger.propagate = False
