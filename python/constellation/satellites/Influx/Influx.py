@@ -49,6 +49,7 @@ class Influx(Satellite, MonitoringListener):
 
         self._influxdb_connected = False
         self._influxdb_lock = Lock()
+        self._write_failures = 0
 
     def do_initializing(self, config: Configuration) -> None:
         with self._influxdb_lock:
@@ -62,7 +63,9 @@ class Influx(Satellite, MonitoringListener):
 
             self.client = InfluxDBClient(url=url, token=token, org=org)
             self.write_api = self.client.write_api(
-                write_options=WriteOptions(flush_interval=interval), error_callback=self._write_error
+                write_options=WriteOptions(flush_interval=interval),
+                success_callback=self._write_success,
+                error_callback=self._write_error,
             )
 
             # Test connection
@@ -97,12 +100,36 @@ class Influx(Satellite, MonitoringListener):
                 else:
                     self.log.debug(f"Metric of type {type(value).__name__} cannot be written to InfluxDB")
 
-    def _write_error(self, conf: Any, data: Any, exception: Exception) -> None:
-        """Called by the InfluxDB client from batching thread"""
+    def _write_success(self, conf: Any, data: Any) -> None:
+        """Called on write success by the InfluxDB client from batching"""
+        self._write_failures = 0
 
-        error = f" {exception.response.status} {exception.response.reason}" if exception.response else ""
-        err_msg = f"InfluxDB error{error}: {exception.message}"
+    def _write_error(self, conf: Any, data: Any, exception: Exception) -> None:
+        """Called on write failure by the InfluxDB client from batching thread"""
+        status = None
+        reason = ""
+        if isinstance(exception, InfluxDBError) and exception.response is not None:
+            status = exception.response.status
+            reason = exception.response.reason
+
+        message = getattr(exception, "message", str(exception))
+
+        if status in (401, 403, 404):
+            self._fail(f"InfluxDB error {status} {reason}: {message}")
+        elif status in (400, 413, 422):
+            self.log.warning(f"InfluxDB rejected batch, {status} {reason}, {message}")
+        else:
+            # Server overloaded or unreachable even after retries
+            self._write_failures += 1
+            self.log.warning(f"Failed writing ({self._write_failures}x) to InfluxDB, {status} {reason}, {message}")
+            if self._write_failures >= 3:
+                self._fail(f"InfluxDB unreachable: {message}")
+
+    def _fail(self, err_msg: str) -> None:
+        """Send FSM into failure from the InfluxDB background thread"""
         self.log.critical(err_msg)
+        self.fsm.failure(err_msg)
+        self._wrap_failure(err_msg)
 
     def reentry(self) -> None:
         # Close InfluxDB client
