@@ -10,6 +10,7 @@ from datetime import datetime
 from threading import Lock
 from typing import Any
 
+from influxdb_client.client.exceptions import InfluxDBError
 from influxdb_client.client.influxdb_client import InfluxDBClient
 from influxdb_client.client.write.point import Point
 from influxdb_client.client.write_api import WriteOptions
@@ -67,6 +68,9 @@ class Influx(Satellite, MonitoringListener):
             try:
                 query_api = self.client.query_api()
                 query_api.query(org=org, query="buckets()")
+                query_api.query(org=org, query=f'from(bucket: "{self.bucket}") |> range(start: -1s) |> limit(n: 1)')
+            except InfluxDBError as e:
+                raise ConnectionError(f"InfluxDB returned {e.status} {e.reason}: {e.message}") from e
             except Exception as e:
                 raise ConnectionError("Could not connect to InfluxDB") from e
 
