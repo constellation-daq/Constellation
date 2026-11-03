@@ -74,6 +74,7 @@ def monitoringsender():
     # teardown
     logging.root.removeHandler(m._zmq_log_handler)
     m.reentry()
+    m.terminate()
 
 
 @pytest.fixture
@@ -91,6 +92,7 @@ def monitoringlistener():
 
     m.set_topics([])
     m.reentry()
+    m.terminate()
 
 
 def test_log(monitoringsender: MyMonitoringSender, monitoringlistener: MyMonitoringListener):

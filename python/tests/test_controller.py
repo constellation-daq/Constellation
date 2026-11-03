@@ -10,6 +10,8 @@ import pytest
 from constellation.core.controller import SatelliteUpdate
 from constellation.core.protocol.cscp1 import SatelliteState
 
+from .conftest import wait_for_state
+
 # %%%%%%%%%%%%%%%
 # TESTS
 # %%%%%%%%%%%%%%%
@@ -56,6 +58,7 @@ def test_ctrl_reconfigure_cmd_missing(mock_controller, mock_satellite):
 
 def test_ctrl_reconfigure_call(mock_controller, mock_example_satellite):
     """Test reconfigure calls via satellite array."""
+    satellite, _ctx = mock_example_satellite
     ctrl, _ctx = mock_controller
     timeout = 2
     while timeout > 0 and len(ctrl.constellation.satellites) < 1:
@@ -70,8 +73,10 @@ def test_ctrl_reconfigure_call(mock_controller, mock_example_satellite):
     # prepare for reconfigure
     res = ctrl.constellation.MockExampleSatellite.mock_satellite.initialize({})
     assert res.msg == "transitioning"
+    wait_for_state(satellite.fsm, "INIT")
     res = ctrl.constellation.MockExampleSatellite.mock_satellite.launch()
     assert res.msg == "transitioning"
+    wait_for_state(satellite.fsm, "ORBIT")
 
     # sat array does not have reconfigure command
     with pytest.raises(AttributeError):
@@ -79,6 +84,7 @@ def test_ctrl_reconfigure_call(mock_controller, mock_example_satellite):
     # but class has
     res = ctrl.constellation.MockExampleSatellite.reconfigure({})
     assert res["MockExampleSatellite.mock_satellite"].msg == "transitioning"
+    wait_for_state(satellite.fsm, "ORBIT")
     # and so does the satellite itself
     res = ctrl.constellation.MockExampleSatellite.mock_satellite.reconfigure({})
     assert res.msg == "transitioning"
@@ -114,7 +120,7 @@ def test_satellite_init_w_fullcfg(mock_controller, mock_example_satellite, rawco
 
     res = ctrl.constellation.MockExampleSatellite.mock_satellite.initialize(rawconfig_toml)
     assert res.msg == "transitioning"
-    time.sleep(0.1)
+    wait_for_state(satellite.fsm, "INIT")
 
     # Remove unused keys from excepted configuration
     exp_config = rawconfig_toml.get_satellite_configuration("MockExampleSatellite.mock_satellite")._dictionary
