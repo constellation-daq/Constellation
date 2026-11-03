@@ -7,6 +7,7 @@ Module implementing the Constellation Data Transmission Protocol.
 
 from __future__ import annotations
 
+import os
 import queue
 import threading
 import time
@@ -487,6 +488,7 @@ class DataReceiver:
                     frames = socket.recv_multipart()
                     msg = CDTP2Message.disassemble(frames)
                     self._handle_cdtp_message(msg)
+                os.sched_yield()  # force-release lock
         except Exception as e:
             self._pull_thread_exc = e
 
