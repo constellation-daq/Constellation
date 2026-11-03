@@ -59,13 +59,17 @@ The IP address to use in this satellite will be provided beside the selection bo
 
 | Metric | Description | Value Type | Interval |
 |--------|-------------|------------|----------|
-| `NUM_TRIGGERS` | Number of triggers collected so far | Integer | 10s |
+| `NUM_TRIGGERS` | Number of triggers collected so far | Integer | 1s |
+| `SAMPLING_PERIOD` | Time between two samples of the waveform metrics in seconds | Float | 1s |
+| `SAMPLE_OFFSET` | Time of the first waveform sample relative to the trigger in seconds | Float | 1s |
+| `WAVEFROM_C<CHANNEL>`| Most recent waveform of each channel in volts | List of floats | 1s |
 
 ## Custom Commands
 
 | Command | Description | Arguments | Return Value | Allowed States |
 |---------|-------------|-----------|--------------|----------------|
 | `get_num_triggers` | Retrieve the number of triggers collected so far | - | Integer | any |
+| `calibrate` | Run the internal self-calibration of the scope | - | Integer | `INIT` |
 
 ## Output data format
 

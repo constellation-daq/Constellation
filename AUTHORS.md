@@ -20,6 +20,7 @@ The following authors, in alphabetical order, have developed or contributed to C
 * Simon Koch, CERN, [sfkoch](https://gitlab.cern.ch/sfkoch)
 * David Leppla-Weber, Deutsches Elektronen-Synchrotron DESY, [david.leppla-weber](https://gitlab.desy.de/david.leppla-weber)
 * Rasmus Partzsch, Universität Bonn, [rpartzsch](https://github.com/rpartzsch)
+* Andreas Pettersson, Lunds universitet [apetters](https://gitlab.desy.de/apetters)
 * Linus Ros, Prevas AB, [linus.ros](https://gitlab.desy.de/linus.ros)
 * Luis Sarmiento Pico, Lunds universitet, [donpicoro](https://github.com/donpicoro)
 * Aditya Saroha, SJC Institute of Technology, [ext-adityasaroha456](https://gitlab.desy.de/ext-adityasaroha456)

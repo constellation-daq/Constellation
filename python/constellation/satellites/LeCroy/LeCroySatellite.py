@@ -8,6 +8,7 @@ Constellation interface
 
 import datetime
 import struct
+from functools import partial
 from typing import Any
 
 import LeCrunch3
@@ -28,6 +29,10 @@ class LeCroySatellite(TransmitterSatellite):
     _num_sequences: int = 1
     _num_triggers_acquired: int = 0
 
+    _last_waveform: dict[int, list[float]] = {}
+    _horiz_interval: float = 0.0
+    _horiz_offset: float = 0.0
+
     def do_initializing(self, configuration: Configuration) -> str:
         self.log.info("Received configuration with parameters: %s", ", ".join(configuration.get_keys()))
 
@@ -36,6 +41,10 @@ class LeCroySatellite(TransmitterSatellite):
         timeout = configuration.get_num("timeout", 5.0)
         num_sequences = configuration.get_int("nsequence", 1)
 
+        # If re-initializing, close previous socket
+        if hasattr(self, "_scope"):
+            self._scope.clear()
+            self._scope.sock.close()
         try:
             self._scope = LeCrunch3.LeCrunch3(str(ip_address), port=int(port), timeout=float(timeout))
         except ConnectionRefusedError as e:
@@ -57,6 +66,18 @@ class LeCroySatellite(TransmitterSatellite):
         self.bor["sampling_period"] = float(self._settings["TIME_DIV"].split(b" ")[1])
         self.bor["channels"] = ",".join([str(c) for c in self._channels])
 
+        self.reset_metrics()
+        self._last_waveform = {}
+        for channel in self._channels:
+            self.register_scheduled_metric(
+                f"WAVEFORM_C{channel}",
+                "V",
+                f"Most recent waveform of channel {channel}",
+                1,
+                partial(self._last_waveform.get, channel),
+                [SatelliteState.RUN],
+            )
+
         return f"Connected to scope at {ip_address}"
 
     def do_reconfigure(self, configuration: Configuration) -> str:
@@ -69,6 +90,7 @@ class LeCroySatellite(TransmitterSatellite):
     def do_run(self) -> str:
         num_sequences_acquired = 0
         self._num_triggers_acquired = 0
+        self._last_waveform.clear()
         while not self.stop_requested():
             try:
                 self._scope.trigger()
@@ -76,16 +98,21 @@ class LeCroySatellite(TransmitterSatellite):
                 event_payload = np.array([])
                 for channel in self._channels:
                     wave_desc, trg_times, trg_offsets, wave_array = self._scope.get_waveform_all(channel)
+                    num_samples = None
                     if first_channel:
                         event_payload = trg_times
                         num_samples = wave_desc["wave_array_count"] // self._num_sequences
                         event_payload = np.append(event_payload, num_samples)
                         first_channel = False
+                        self._horiz_interval = float(wave_desc["horiz_interval"])
+                        self._horiz_offset = float(wave_desc["horiz_offset"])
                     wave_array = (
                         wave_array * wave_desc["vertical_gain"] - wave_desc["vertical_offset"]
                     )  # already transform to V
                     event_payload = np.append(event_payload, trg_offsets)
                     event_payload = np.append(event_payload, wave_array)
+                    if num_samples:
+                        self._last_waveform[channel] = wave_array[-num_samples:].tolist()
                 data_record = self.new_data_record({"dtype": f"{event_payload.dtype}"})
                 data_record.add_block(event_payload.tobytes())
                 self.send_data_record(data_record)
@@ -112,9 +139,29 @@ class LeCroySatellite(TransmitterSatellite):
     def get_num_triggers(self) -> tuple[str, int, dict[str, Any]]:
         return f"Number of triggers: {self._num_triggers_acquired}", self._num_triggers_acquired, {}
 
-    @schedule_metric("", 10, [SatelliteState.RUN])
+    @cscp_requestable([SatelliteState.INIT])
+    def calibrate(self) -> tuple[str, int, dict[str, Any]] | None:
+        """Run the internal self-calibration of the scope, returns its status code (0 = passed)"""
+        self._scope.send("*CAL?")
+        reply = self._scope.recv().strip()
+        status = int(reply.split(b" ")[-1])
+        if status != 0:
+            raise RuntimeError(f"Scope self-calibration failed (status {status})")
+        return "Scope self-calibration successful", status, {}
+
+    @schedule_metric("", 1, [SatelliteState.RUN])
     def NUM_TRIGGERS(self) -> int | None:
         return self._num_triggers_acquired
+
+    @schedule_metric("s", 1, [SatelliteState.RUN])
+    def SAMPLING_PERIOD(self) -> float | None:
+        """Time between two samples of the waveform metrics"""
+        return self._horiz_interval if self._horiz_interval > 0 else None
+
+    @schedule_metric("s", 1, [SatelliteState.RUN])
+    def SAMPLE_OFFSET(self) -> float | None:
+        """Time of the first waveform sample relative to the trigger"""
+        return self._horiz_offset if self._horiz_interval > 0 else None
 
     def _configure_sequences(self, num_sequences: int):
         self._num_sequences = num_sequences
