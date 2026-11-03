@@ -67,6 +67,7 @@ test = [
     "pytest",
     "pytest-cov",
     "pytest-sugar",
+    "pytest-timeout",
 ]
 docs = [
     "sphinx",
@@ -117,6 +118,7 @@ typeCheckingMode = "standard"
 
 [tool.pytest.ini_options]
 testpaths = ["python/tests"]
+timeout = 300
 markers = [
     "constellation: specify, which Constellation group name to use (not supported by all fixtures yet)",
 ]
