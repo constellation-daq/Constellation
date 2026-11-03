@@ -49,15 +49,16 @@ class ParticularsLaserController(Satellite):
 
     def do_launching(self):
         self._turn_on()
-        return f"Laser at {self.frequency}Hz, {self.dac} DAC."
+        self.log.info(f"Laser at {self.frequency}Hz, {self.DAC} DAC.")
 
     def do_landing(self):
         self._turn_off()
-        return "Laser is turned off."
+        self.log.info("Laser is turned off.")
+        # return "Laser is turned off."
 
     def do_interrupting(self):
         self._turn_off()
-        return "Laser is turned off."
+        self.log.info("Laser is turned off.")
 
     def do_reconfigure(self, partial_config: Configuration) -> str:
         config_keys = partial_config.get_keys()
@@ -70,7 +71,7 @@ class ParticularsLaserController(Satellite):
             self.frequency = partial_config.get_float("frequency", min_val=50.0)
             self._set_frequency(Hz=self.frequency)
 
-        return f"Laser reconfigured at {self.frequency} Hz, {self.dac} DAC."
+        self.log.info(f"Laser reconfigured at {self.frequency} Hz, {self.DAC} DAC.")
 
     def _send_packet(self, packet):
         """Send a packet of bytes from the computer to the laser controller.

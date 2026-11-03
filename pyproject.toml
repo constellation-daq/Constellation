@@ -47,6 +47,7 @@ SatelliteInflux = "constellation.satellites.Influx.__main__:main"
 SatelliteKeithley = "constellation.satellites.Keithley.__main__:main"
 SatelliteLakeShore218 = "constellation.satellites.LakeShore218.__main__:main"
 SatelliteLeCroy = "constellation.satellites.LeCroy.__main__:main"
+SatelliteParticularsLaser = "constellation.satellites.ParticularsLaser.__main__:main"
 SatelliteMariner = "constellation.satellites.Mariner.__main__:main"
 SatellitePyDevNullReceiver = "constellation.satellites.PyDevNullReceiver.__main__:main"
 SatellitePyRandomTransmitter = "constellation.satellites.PyRandomTransmitter.__main__:main"
@@ -93,6 +94,7 @@ hdf5 = ["h5py", "numpy"]
 influx = ["influxdb-client"]
 lecroy = ["lecrunch3>=3.0.3", "numpy"]
 visa = ["pyvisa", "pyvisa-py", "pyserial", "zeroconf"]
+laser = ["pyurl"]
 
 [tool.meson-python.args]
 setup = ["--wrap-mode=forcefallback", "-Dimpl_py=enabled", "-Dimpl_cxx=disabled"]  # disable C++ by default

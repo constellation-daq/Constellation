@@ -6,3 +6,6 @@ example_sat_files = files(
   '__main__.py',
   'ParticularsLaser.py',
 )
+
+py.install_sources(example_sat_files,
+  subdir: 'constellation/satellites/ParticularsLaser')
