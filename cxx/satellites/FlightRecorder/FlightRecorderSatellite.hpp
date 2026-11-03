@@ -72,6 +72,11 @@ private:
      */
     std::filesystem::path validate_file_path(const std::filesystem::path& file_path) const;
 
+    /**
+     * @brief Reset the sink and drop it from the spdlog
+     */
+    void reset_sink();
+
 private:
     LogMethod method_ {LogMethod::FILE};
     std::filesystem::path path_;
