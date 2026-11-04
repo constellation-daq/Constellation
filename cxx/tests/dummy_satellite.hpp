@@ -58,11 +58,11 @@ public:
     }
 
     void progressFsm() {
-        auto old_state = SatelliteT::getState();
+        const auto old_state = SatelliteT::getState();
         LOG(DEBUG) << "Progressing FSM, old state " << old_state << " (" << SatelliteT::getCanonicalName() << ")";
         progress_fsm_ = true;
-        // wait for state change
-        while(old_state == SatelliteT::getState()) {
+        // wait for steady state
+        while(!constellation::protocol::CSCP::is_steady(SatelliteT::getState())) {
             std::this_thread::yield();
         }
         progress_fsm_ = false;

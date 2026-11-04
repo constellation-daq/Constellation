@@ -34,7 +34,6 @@ TEST_CASE("Send a heartbeat", "[chp][send]") {
     auto receiver = CHPMockReceiver();
     receiver.startPool();
 
-    auto timer = StopwatchTimer();
     const auto interval = std::chrono::milliseconds(300);
     auto sender = HeartbeatSend("Sender", [&]() { return CSCP::State::NEW; }, interval);
 
@@ -45,13 +44,13 @@ TEST_CASE("Send a heartbeat", "[chp][send]") {
     // Wait for first message
     receiver.waitNextMessage();
 
-    // Start timer and wait for the next:
-    timer.start();
+    // Record time of first message and wait for the next:
+    const auto first = receiver.getLastMessage()->getTime();
     receiver.waitNextMessage();
-    timer.stop();
+    const auto second = receiver.getLastMessage()->getTime();
 
     // The delay should have been less than the configured interval:
-    REQUIRE(std::chrono::duration_cast<std::chrono::milliseconds>(timer.duration()) < interval);
+    REQUIRE(std::chrono::duration_cast<std::chrono::milliseconds>(second - first) < interval);
 
     // Check that heartbeat is decoded correctly
     const auto last_message = receiver.getLastMessage();
@@ -78,6 +77,9 @@ TEST_CASE("Send an extrasystole", "[chp][send]") {
     // Mock service and wait until subscribed
     const auto mocked_service = MockedChirpService("Sender", CHIRP::ServiceIdentifier::HEARTBEAT, sender.getPort());
     receiver.waitSubscription();
+
+    // Wait for the first heartbeat
+    receiver.waitNextMessage();
 
     // Set state and send extrasystole
     state = CSCP::State::RUN;
@@ -115,7 +117,6 @@ TEST_CASE("Change heartbeat interval", "[chp][send]") {
     auto receiver = CHPMockReceiver();
     receiver.startPool();
 
-    auto timer = StopwatchTimer();
     auto sender = HeartbeatSend("Sender", [&]() { return CSCP::State::NEW; }, std::chrono::milliseconds(200));
 
     // Mock service and wait until subscribed
@@ -125,13 +126,13 @@ TEST_CASE("Change heartbeat interval", "[chp][send]") {
     // Wait for first message
     receiver.waitNextMessage();
 
-    // Start timer and wait for the next:
-    timer.start();
+    // Record time of first message and wait for the next:
+    const auto first = receiver.getLastMessage()->getTime();
     receiver.waitNextMessage();
-    timer.stop();
+    const auto second = receiver.getLastMessage()->getTime();
 
     // The delay should have been less than the configured interval:
-    REQUIRE(std::chrono::duration_cast<std::chrono::milliseconds>(timer.duration()) < std::chrono::milliseconds(200));
+    REQUIRE(std::chrono::duration_cast<std::chrono::milliseconds>(second - first) < std::chrono::milliseconds(200));
 
     // Change interval:
     sender.setMaximumInterval(std::chrono::milliseconds(500));
@@ -139,13 +140,13 @@ TEST_CASE("Change heartbeat interval", "[chp][send]") {
     // Wait for first message
     receiver.waitNextMessage();
 
-    // Start timer and wait for the next:
-    timer.start();
+    // Record time of current message and wait for the next:
+    const auto first_new = receiver.getLastMessage()->getTime();
     receiver.waitNextMessage();
-    timer.stop();
+    const auto second_new = receiver.getLastMessage()->getTime();
 
     // The delay should have been less than the new but more than the previous interval:
-    const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer.duration());
+    const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(second_new - first_new);
     REQUIRE(duration > std::chrono::milliseconds(200));
     REQUIRE(duration < std::chrono::milliseconds(500));
 
@@ -176,6 +177,7 @@ TEST_CASE("Heartbeat congestion control", "[chp][send]") {
     // Current heartbeat interval is adjusted to single subscriber
     REQUIRE(sender.getSubscriberCount() == 1);
     REQUIRE(sender.getCurrentInterval() == 500ms);
+    REQUIRE(receiver.getLastMessage()->getInterval() == 500ms);
 
     // Mock another service and wait until subscribed
     const auto mocked_service2 = MockedChirpService("Sender2", CHIRP::ServiceIdentifier::HEARTBEAT, sender.getPort());
@@ -187,6 +189,7 @@ TEST_CASE("Heartbeat congestion control", "[chp][send]") {
     // Current heartbeat interval is adjusted to single subscriber
     REQUIRE(sender.getSubscriberCount() == 2);
     REQUIRE(sender.getCurrentInterval() == 1500ms);
+    REQUIRE(receiver.getLastMessage()->getInterval() == 1500ms);
 
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
     sender.terminate();
