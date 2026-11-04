@@ -166,9 +166,10 @@ namespace constellation::message {
          */
         zmq::message_t to_zmq_msg_release() {
             // Free function for zero-copy: delete std::any owning the memory
-            auto free_fn = [](void* /* data */, void* hint) {
-                auto* any_ptr = reinterpret_cast<std::any*>(hint); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-                delete any_ptr;                                    // NOLINT(cppcoreguidelines-owning-memory)
+            const auto free_fn = [](void* /* data */, void* hint) {
+                const auto* any_ptr =
+                    reinterpret_cast<std::any*>(hint); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+                delete any_ptr;                        // NOLINT(cppcoreguidelines-owning-memory)
             };
             // zmq::message_t constructor with free function does not copy the data, pass any_ptr_ as hint
             auto msg = zmq::message_t(span_.data(), span_.size(), free_fn, any_ptr_);

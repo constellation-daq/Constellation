@@ -44,10 +44,10 @@ TEST_CASE("Sorting of registered services", "[chirp]") {
 }
 
 TEST_CASE("Sorting of discovered services", "[chirp]") {
-    auto id1 = MD5Hash("a");
-    auto id2 = MD5Hash("b");
-    auto ip1 = asio::ip::make_address_v4("1.2.3.4");
-    auto ip2 = asio::ip::make_address_v4("4.3.2.1");
+    const auto id1 = MD5Hash("a");
+    const auto id2 = MD5Hash("b");
+    const auto ip1 = asio::ip::make_address_v4("1.2.3.4");
+    const auto ip2 = asio::ip::make_address_v4("4.3.2.1");
 
     // test self not smaller than self
     REQUIRE_FALSE(DiscoveredService({ip1, id1, DATA, 0}) < DiscoveredService({ip1, id1, DATA, 0}));
@@ -68,8 +68,8 @@ TEST_CASE("Sorting of discovered services", "[chirp]") {
 TEST_CASE("Sorting of discover callbacks", "[chirp]") {
     auto* cb1 = reinterpret_cast<DiscoverCallback*>(1); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
     auto* cb2 = reinterpret_cast<DiscoverCallback*>(2); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-    auto ud1 = std::make_any<int>(1);
-    auto ud2 = std::make_any<int>(2);
+    const auto ud1 = std::make_any<int>(1);
+    const auto ud2 = std::make_any<int>(2);
 
     // test self not smaller than self
     REQUIRE_FALSE(DiscoverCallbackEntry({cb1, DATA, ud1}) < DiscoverCallbackEntry({cb1, DATA, ud1}));
@@ -108,7 +108,7 @@ TEST_CASE("Register callbacks in CHIRP manager", "[chirp][chirp::manager]") {
     Manager manager {"group1", "sat1", get_loopback_if()};
 
     // DiscoverCallback signature NOLINTNEXTLINE(performance-unnecessary-value-param)
-    auto callback = [](DiscoveredService, ServiceStatus, std::any) {};
+    const auto callback = [](DiscoveredService, ServiceStatus, std::any) {};
 
     // test that first register works
     REQUIRE(manager.registerDiscoverCallback(callback, CONTROL, nullptr));
@@ -223,7 +223,7 @@ TEST_CASE("Execute callbacks in CHIRP manager", "[chirp][chirp::manager]") {
     CBTest cb_test_data {};
 
     // Create a callback, use pointer to access test variable
-    auto callback = [](DiscoveredService service, ServiceStatus status, std::any cb_info) {
+    const auto callback = [](DiscoveredService service, ServiceStatus status, std::any cb_info) {
         auto* cb_test_data_p = std::any_cast<CBTest*>(cb_info);
         cb_test_data_p->status = status;
         cb_test_data_p->service = std::move(service);
@@ -324,7 +324,8 @@ TEST_CASE("Send CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") {
     manager.sendRequest(CONTROL);
     // Receive message
     const auto raw_msg = raw_msg_fut.get();
-    auto msg_from_manager = CHIRPMessage::disassemble(raw_msg.value().content); // NOLINT(bugprone-unchecked-optional-access)
+    const auto msg_from_manager =
+        CHIRPMessage::disassemble(raw_msg.value().content); // NOLINT(bugprone-unchecked-optional-access)
     // Check message
     REQUIRE(msg_from_manager.getType() == REQUEST);
     REQUIRE(msg_from_manager.getServiceIdentifier() == CONTROL);

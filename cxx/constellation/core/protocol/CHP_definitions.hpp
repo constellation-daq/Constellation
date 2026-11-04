@@ -44,7 +44,7 @@ namespace constellation::protocol::CHP {
         NONE,      ///< No Flags
         TRANSIENT, ///< Flags MARK_DEGRADED
         DYNAMIC,   ///< Flags MARK_DEGRADED, TRIGGER_INTERRUPT
-        ESSENTIAL  ///< Flags MARK_DEGRADED, TRIGGER_INTERRUPT, DENY_DEPARTURE
+        ESSENTIAL, ///< Flags MARK_DEGRADED, TRIGGER_INTERRUPT, DENY_DEPARTURE
     };
 
     /**

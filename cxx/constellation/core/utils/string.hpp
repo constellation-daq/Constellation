@@ -39,7 +39,7 @@ namespace constellation::utils {
     template <typename F> inline std::string transform(std::string_view string, F operation) {
         std::string out {};
         out.reserve(string.size());
-        for(auto character : string) {
+        for(const auto character : string) {
             out += static_cast<char>(operation(static_cast<unsigned char>(character)));
         }
         return out;
@@ -160,9 +160,9 @@ namespace constellation::utils {
     inline std::string quote(S str) {
         std::string out {};
         if(!str.empty()) {
-            out += "`";
+            out += '`';
             out += str;
-            out += "`";
+            out += '`';
         }
         return out;
     }

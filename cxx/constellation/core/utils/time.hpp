@@ -98,8 +98,8 @@ namespace constellation::utils {
 
 #if __cpp_lib_chrono >= 201907L
         const auto local_time = std::chrono::zoned_time(std::chrono::current_zone(), time_point);
-        auto local_timepoint = local_time.get_local_time();
-        auto date = std::chrono::floor<std::chrono::days>(local_timepoint);
+        const auto local_timepoint = local_time.get_local_time();
+        const auto date = std::chrono::floor<std::chrono::days>(local_timepoint);
 
         datetime.first = std::chrono::year_month_day {date};
         datetime.second = std::chrono::hh_mm_ss<std::chrono::seconds> {

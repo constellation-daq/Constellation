@@ -95,7 +95,7 @@ namespace {
                 LOG(logger, DEBUG) << "Added run identifier " << quote(run_identifier) << " to message";
             }
 
-            auto responses = controller.sendCommands(send_msg);
+            const auto responses = controller.sendCommands(send_msg);
             for(const auto& [sat, recv_msg] : responses) {
                 // Print message
                 LOG(logger, INFO) << recv_msg.getHeader().to_string() << "\n"

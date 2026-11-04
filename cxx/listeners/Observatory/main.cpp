@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
     try {
         // Initialize Qt application
         initResources();
-        auto qapp = std::make_shared<QApplication>(argc, argv);
+        const auto qapp = std::make_unique<QApplication>(argc, argv);
 
         try {
             QCoreApplication::setOrganizationName("Constellation");

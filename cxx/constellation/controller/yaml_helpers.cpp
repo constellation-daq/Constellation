@@ -71,7 +71,7 @@ bool constellation::controller::parse_yaml_time(const YAML::Node& node, std::chr
         R"((\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})[\.]?(\d+)?(Z|[+-]\d{2}:\d{2})?)");
 
     // Chrono parsing:
-    auto node_str = node.as<std::string>();
+    const auto node_str = node.as<std::string>();
     std::smatch match;
 
     // Check if this is a daytime:

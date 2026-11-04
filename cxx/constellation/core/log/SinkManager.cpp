@@ -233,8 +233,8 @@ std::shared_ptr<spdlog::async_logger> SinkManager::create_logger(std::string_vie
 
 void SinkManager::calculate_log_level(std::shared_ptr<spdlog::async_logger>& logger) {
     // Order of sinks given in create_logger()
-    auto& console_proxy_sink = logger->sinks().at(0);
-    auto& cmdp_proxy_sink = logger->sinks().at(1);
+    const auto& console_proxy_sink = logger->sinks().at(0);
+    const auto& cmdp_proxy_sink = logger->sinks().at(1);
 
     // Acquire lock for level variables
     std::unique_lock levels_lock {levels_mutex_};
