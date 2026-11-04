@@ -70,7 +70,7 @@ void ComboBoxItemDelegate::setEditorData(QWidget* editor, const QModelIndex& ind
 }
 
 void ComboBoxItemDelegate::setModelData(QWidget* editor, QAbstractItemModel* model, const QModelIndex& index) const {
-    auto* box = dynamic_cast<QComboBox*>(editor);
+    const auto* box = dynamic_cast<QComboBox*>(editor);
     model->setData(index, box->currentText(), Qt::EditRole);
 }
 

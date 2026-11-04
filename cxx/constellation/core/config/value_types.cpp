@@ -280,7 +280,7 @@ std::string Dictionary::format(bool newline_prefix, std::size_t indent) const {
     return out;
 }
 
-// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static,modernize-use-string-view)
 std::string Dictionary::demangle() const {
     return "Dictionary";
 }

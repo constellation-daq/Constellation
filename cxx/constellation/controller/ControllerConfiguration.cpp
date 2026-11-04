@@ -447,6 +447,7 @@ bool ControllerConfiguration::check_transition_deadlock(CSCP::State transition) 
     // Traverse each satellite for the given transition
     const auto deadlock = std::ranges::any_of(transition_graph_.at(transition), [&](const auto& p) {
         const std::string& satellite = p.first;
+        // NOLINTNEXTLINE(readability-redundant-nested-if)
         if(!visited.contains(satellite)) {
             if(dfs(dfs, satellite)) {
                 // Deadlock detected in this transition
@@ -464,7 +465,7 @@ void ControllerConfiguration::overwrite_config(const std::string& key_prefix,
                                                Dictionary& base_config,
                                                const Dictionary& config) const {
     for(const auto& [key, value] : config) {
-        auto base_kv_it = base_config.find(key);
+        const auto base_kv_it = base_config.find(key);
         if(base_kv_it != base_config.cend()) {
             // Overwrite existing parameter
             const auto prefixed_key = key_prefix + key;
@@ -497,7 +498,7 @@ bool ControllerConfiguration::hasTypeConfiguration(std::string_view type) const 
 void ControllerConfiguration::addTypeConfiguration(std::string_view type, Dictionary config) {
     // Check if already there
     const auto type_lc = transform(type, ::tolower);
-    auto config_it = type_configs_.find(type_lc);
+    const auto config_it = type_configs_.find(type_lc);
     if(config_it != type_configs_.cend()) {
         LOG(config_parser_logger_, WARNING) << "Overwriting existing satellite type configuration for " << quote(type);
         config_it->second = std::move(config);
@@ -530,8 +531,8 @@ bool ControllerConfiguration::hasSatelliteConfiguration(std::string_view canonic
 void ControllerConfiguration::addSatelliteConfiguration(std::string_view canonical_name, Dictionary config) {
     // Check if already there
     const auto canonical_name_lc = transform(canonical_name, ::tolower);
-    auto config_it = satellite_configs_.find(canonical_name_lc);
-    if(config_it != satellite_configs_.end()) {
+    const auto config_it = satellite_configs_.find(canonical_name_lc);
+    if(config_it != satellite_configs_.cend()) {
         LOG(config_parser_logger_, WARNING) << "Overwriting existing satellite configuration for " << quote(canonical_name);
         config_it->second = std::move(config);
     } else {
@@ -552,7 +553,7 @@ Dictionary ControllerConfiguration::getSatelliteConfiguration(std::string_view c
 
     // Add parameters from satellite level
     const auto config_it = satellite_configs_.find(canonical_name_lc);
-    if(config_it != satellite_configs_.end()) {
+    if(config_it != satellite_configs_.cend()) {
         LOG(config_parser_logger_, TRACE) << "Found config at satellite level for " << quote(canonical_name);
         overwrite_config("", config, config_it->second);
     }

@@ -63,7 +63,7 @@ public:
     bool canRecv() {
         zmq::message_t msg {};
         pub_socket_.set(zmq::sockopt::rcvtimeo, 200);
-        auto recv_res = pub_socket_.recv(msg);
+        const auto recv_res = pub_socket_.recv(msg);
         pub_socket_.set(zmq::sockopt::rcvtimeo, -1);
         return recv_res.has_value();
     }

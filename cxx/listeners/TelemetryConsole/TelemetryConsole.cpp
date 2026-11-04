@@ -380,10 +380,10 @@ void TelemetryConsole::add_metric_sender(const QString& name, const QString& sen
     const std::scoped_lock widgets_lock {metric_widgets_mutex_};
 
     // Find metric - always add sender to the last widget registered with this metric
-    auto it = std::ranges::find_if(std::ranges::reverse_view(metric_widgets_),
-                                   [name](const auto& entry) { return entry->getMetric() == name; });
+    const auto it = std::ranges::find_if(std::ranges::reverse_view(metric_widgets_),
+                                         [name](const auto& entry) { return entry->getMetric() == name; });
 
-    if(it != metric_widgets_.rend()) {
+    if(it != metric_widgets_.crend()) {
         const auto& metric = *it;
         metric->addSender(sender);
         stat_listener_.subscribeMetric(sender.toStdString(), name.toStdString());
@@ -436,7 +436,7 @@ void TelemetryConsole::closeEvent(QCloseEvent* event) {
             // For each row, store horizontal splitter states
             gui_settings_.beginWriteArray("horizontal");
             for(int i = 0; i < splitter_vertical->count(); ++i) {
-                auto* splitter_horizontal = qobject_cast<QSplitter*>(splitter_vertical->widget(i));
+                const auto* splitter_horizontal = qobject_cast<QSplitter*>(splitter_vertical->widget(i));
                 if(splitter_horizontal != nullptr) {
                     gui_settings_.setArrayIndex(i);
                     gui_settings_.setValue("cells", QVariant::fromValue(splitter_horizontal->sizes()));

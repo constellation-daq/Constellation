@@ -304,7 +304,6 @@ namespace constellation::satellite {
         CNSTLN_API auto failure(TransitionPayload payload) -> State;
 
         // clang-format off
-        // NOLINTBEGIN(readability-trailing-comma)
         const StateTransitionMap state_transition_map_ { // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
             {State::NEW, {
                 {Transition::initialize, &FSM::initialize},
@@ -363,7 +362,6 @@ namespace constellation::satellite {
                 {Transition::initialize, &FSM::initialize},
             }},
         };
-        // NOLINTEND(readability-trailing-comma)
         // clang-format on
 
     private:

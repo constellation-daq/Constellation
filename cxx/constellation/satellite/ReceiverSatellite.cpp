@@ -469,7 +469,7 @@ void ReceiverSatellite::handle_bor_message(const CDTP2BORMessage& bor_message) {
                                                : "\nand user tags:" + bor_message.getUserTags().format(true));
 
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
-    auto data_transmitter_it = data_transmitter_states_.find(sender);
+    const auto data_transmitter_it = data_transmitter_states_.find(sender);
     // Check that transmitter is not connected yet
     if(data_transmitter_it != data_transmitter_states_.cend()) {
         // If stored states, check that not connected yet
@@ -520,7 +520,7 @@ void ReceiverSatellite::handle_eor_message(const CDTP2EORMessage& eor_message) {
                                                : "\nand user tags:" + eor_message.getUserTags().format(true));
 
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
-    auto data_transmitter_it = data_transmitter_states_.find(sender);
+    const auto data_transmitter_it = data_transmitter_states_.find(sender);
     // Check that BOR was received
     if(data_transmitter_it == data_transmitter_states_.cend() ||
        data_transmitter_it->second.state != TransmitterState::BOR_RECEIVED) [[unlikely]] {
@@ -530,8 +530,8 @@ void ReceiverSatellite::handle_eor_message(const CDTP2EORMessage& eor_message) {
     auto metadata = eor_message.getRunMetadata();
 
     const auto apply_run_condition = [&metadata, this](CDTP::RunCondition condition_code) {
-        auto condition_code_it = metadata.find("condition_code");
-        if(condition_code_it != metadata.end()) {
+        const auto condition_code_it = metadata.find("condition_code");
+        if(condition_code_it != metadata.cend()) {
             // Add flag to existing condition
             try {
                 condition_code |=

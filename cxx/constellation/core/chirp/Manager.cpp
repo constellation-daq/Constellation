@@ -139,7 +139,7 @@ bool Manager::unregisterService(ServiceIdentifier service_id, Port port) {
 
 void Manager::unregisterServices() {
     const std::scoped_lock registered_services_lock {registered_services_mutex_};
-    for(auto service : registered_services_) {
+    for(const auto service : registered_services_) {
         send_message(DEPART, service);
     }
     registered_services_.clear();
@@ -268,7 +268,7 @@ void Manager::handle_incoming_message(message::CHIRPMessage chirp_msg, const asi
 
     switch(chirp_msg.getType()) {
     case REQUEST: {
-        auto service_id = discovered_service.identifier;
+        const auto service_id = discovered_service.identifier;
         LOG(logger_, DEBUG) << "Received REQUEST for " << quote(service_id) << " services";
         const std::scoped_lock registered_services_lock {registered_services_mutex_};
         // Replay OFFERs for registered services with same service identifier
@@ -281,8 +281,8 @@ void Manager::handle_incoming_message(message::CHIRPMessage chirp_msg, const asi
     }
     case OFFER: {
         std::unique_lock discovered_services_lock {discovered_services_mutex_};
-        auto discovered_service_it = discovered_services_.find(discovered_service);
-        if(discovered_service_it != discovered_services_.end()) {
+        const auto discovered_service_it = discovered_services_.find(discovered_service);
+        if(discovered_service_it != discovered_services_.cend()) {
             // Check if new port if service already discovered
             if(discovered_service_it->port != discovered_service.port) {
                 // Assume old host is dead

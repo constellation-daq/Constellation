@@ -172,8 +172,8 @@ void CMDPSink::handle_log_subscriptions(bool subscribe, std::string_view body) {
     string_hash_map<Level> cmdp_sub_topic_levels {};
     cmdp_sub_topic_levels.reserve(log_subscriptions_.size());
     for(const auto& [logger, levels] : log_subscriptions_) {
-        auto it = std::ranges::find_if(levels, [](const auto& i) { return i.second > 0; });
-        if(it != levels.end()) {
+        const auto it = std::ranges::find_if(levels, [](const auto& i) { return i.second > 0; });
+        if(it != levels.cend()) {
             if(!logger.empty()) {
                 cmdp_sub_topic_levels[logger] = it->first;
             } else {

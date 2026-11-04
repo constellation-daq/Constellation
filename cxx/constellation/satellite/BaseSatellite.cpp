@@ -161,7 +161,7 @@ std::optional<CSCP1Message> BaseSatellite::get_next_command() {
     zmq::multipart_t recv_msg {};
 
     try {
-        auto received = recv_msg.recv(cscp_rep_socket_);
+        const auto received = recv_msg.recv(cscp_rep_socket_);
 
         // Return if timeout
         if(!received) {
@@ -249,7 +249,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         const auto user_commands = user_commands_.describeCommands();
         for(const auto& cmd : user_commands) {
             // Command starting with underscore are not listed:
-            if(cmd.first.starts_with("_")) {
+            if(cmd.first.starts_with('_')) {
                 continue;
             }
             command_dict.emplace(cmd.first, cmd.second);
@@ -279,7 +279,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         const auto user_commands = user_commands_.describeCommands();
         for(const auto& cmd : user_commands) {
             // Only commands starting with underscore are listed:
-            if(!cmd.first.starts_with("_")) {
+            if(!cmd.first.starts_with('_')) {
                 continue;
             }
             command_dict.emplace(cmd.first, cmd.second);

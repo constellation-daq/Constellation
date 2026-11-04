@@ -59,7 +59,7 @@ QSubscriptionList::QSubscriptionList(QWidget* parent)
 
 void QSubscriptionList::addHost(const QString& host, QLogListener& log_listener, const QStringList& topics) {
 
-    auto item = std::make_shared<QSenderSubscriptions>(
+    const auto item = std::make_shared<QSenderSubscriptions>(
         host,
         [&](const std::string& host, const std::string& topic, Level level) {
             log_listener.subscribeExtaLogTopic(host, topic, level);
@@ -83,8 +83,8 @@ void QSubscriptionList::addHost(const QString& host, QLogListener& log_listener,
 }
 
 void QSubscriptionList::removeHost(const QString& host) {
-    auto item = std::ranges::find_if(items_, [host](const auto& it) { return it->getName() == host; });
-    if(item == items_.end()) {
+    const auto item = std::ranges::find_if(items_, [host](const auto& it) { return it->getName() == host; });
+    if(item == items_.cend()) {
         return;
     }
 
@@ -103,8 +103,8 @@ void QSubscriptionList::removeHost(const QString& host) {
 }
 
 void QSubscriptionList::setTopics(const QString& host, const QStringList& topics) {
-    auto item = std::ranges::find_if(items_, [host](const auto& it) { return it->getName() == host; });
-    if(item != items_.end()) {
+    const auto item = std::ranges::find_if(items_, [host](const auto& it) { return it->getName() == host; });
+    if(item != items_.cend()) {
         (*item)->setTopics(topics);
     }
 }
