@@ -76,7 +76,7 @@ namespace constellation::protocol {
             return CDTP1;
         }
         // Unknown protocol
-        throw std::invalid_argument(std::string(protocol_identifier).c_str());
+        throw std::invalid_argument(std::string(protocol_identifier));
     }
 
     /**

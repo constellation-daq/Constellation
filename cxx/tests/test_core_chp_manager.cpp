@@ -40,7 +40,7 @@ namespace {
         CHPManager(std::string name)
             : HeartbeatManager(
                   std::move(name),
-                  [&]() { return CSCP::State::NEW; },
+                  []() { return CSCP::State::NEW; },
                   [&](std::string_view status) {
                       const std::scoped_lock lock {mutex_};
                       interrupt_message_ = std::string(status);

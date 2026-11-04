@@ -131,9 +131,9 @@ std::string MetricCondition::str() const {
     msg += remote_;
     msg += " reports ";
     msg += metric_;
-    msg += " ";
+    msg += ' ';
     msg += comparator_str_;
-    msg += " ";
+    msg += ' ';
     msg += target_.to_string();
     return msg;
 }

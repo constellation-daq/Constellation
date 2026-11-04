@@ -109,9 +109,9 @@ void HeartbeatManager::host_removal(const chirp::DiscoveredService& service, boo
     std::optional<std::string> call_interrupt;
 
     // Remove the remote
-    auto remote_it =
+    const auto remote_it =
         std::ranges::find_if(remotes_, [&service](const auto& remote) { return MD5Hash(remote.first) == service.host_id; });
-    if(remote_it == remotes_.end()) {
+    if(remote_it == remotes_.cend()) {
         return;
     }
 

@@ -56,7 +56,7 @@ namespace constellation::config {
             const auto key_lc = utils::transform(key, tolower);
             try {
                 const auto composite = dictionary_->at(key_lc);
-                auto value = composite.get<T>();
+                auto value = composite.get<T>(); // NOLINT(misc-const-correctness)
                 mark_used(key_lc);
 
                 // Resolve environment variables for string-type values:
