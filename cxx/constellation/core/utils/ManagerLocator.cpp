@@ -63,7 +63,7 @@ MetricsManager& ManagerLocator::getMetricsManager() {
 }
 
 chirp::Manager* ManagerLocator::getCHIRPManager() {
-    auto& instance = getInstance();
+    const auto& instance = getInstance();
     // TODO(stephan.lachnit): use create_dependent_managers() once CHIRPManager has been reworked
     return instance.chirp_manager_.get();
 }

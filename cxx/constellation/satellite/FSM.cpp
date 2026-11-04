@@ -71,9 +71,8 @@ FSM::TransitionFunction FSM::find_transition_function(Transition transition) con
     const auto transition_function_it = transition_map.find(transition);
     if(transition_function_it != transition_map.end()) [[likely]] {
         return transition_function_it->second;
-    } else {
-        throw InvalidFSMTransition(transition, state_.load());
     }
+    throw InvalidFSMTransition(transition, state_.load());
 }
 
 void FSM::set_state(FSM::State new_state) {
@@ -114,7 +113,7 @@ void FSM::react(Transition transition, TransitionPayload payload) {
     // Acquire lock to prevent other threads from setting state
     const std::scoped_lock transition_lock {transition_mutex_};
     // Find transition
-    auto transition_function = find_transition_function(transition);
+    const auto transition_function = find_transition_function(transition);
 
     LOG(logger_, INFO) << "Reacting to transition " << transition;
     // Execute transition function
@@ -135,7 +134,7 @@ bool FSM::reactIfAllowed(Transition transition, TransitionPayload payload) {
 std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand transition_command,
                                                              const PayloadBuffer& payload) {
     // Cast to normal transition, underlying values are identical
-    auto transition = static_cast<Transition>(transition_command);
+    const auto transition = static_cast<Transition>(transition_command);
     LOG(logger_, INFO) << "Reacting to transition " << transition;
     // Acquire lock to prevent other threads from setting state
     const std::scoped_lock transition_lock {transition_mutex_};
@@ -154,7 +153,7 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
         return {CSCP1Message::Type::NOTIMPLEMENTED, std::move(reconfigure_info)};
     }
     // Check if payload only in initialize, reconfigure, and start
-    auto should_have_payload =
+    const auto should_have_payload =
         (transition == Transition::initialize || transition == Transition::reconfigure || transition == Transition::start);
     if(should_have_payload && payload.empty()) {
         std::string payload_info {"Transition " + to_string(transition) + " requires a payload frame"};
@@ -471,7 +470,7 @@ void FSM::initialize_fsm(Configuration& config) {
 // NOLINTBEGIN(performance-unnecessary-value-param,readability-convert-member-functions-to-static)
 
 FSM::State FSM::initialize(TransitionPayload payload) {
-    auto call_wrapper = [this](Configuration&& config) {
+    const auto call_wrapper = [this](Configuration&& config) {
         // First join failure thread
         join_failure_thread();
 
@@ -500,7 +499,7 @@ FSM::State FSM::initialized(TransitionPayload /* payload */) {
 }
 
 FSM::State FSM::launch(TransitionPayload /* payload */) {
-    auto call_wrapper = [this]() {
+    const auto call_wrapper = [this]() {
         LOG(logger_, INFO) << "Calling launching function of satellite...";
         const auto success = call_satellite_function(&BaseSatellite::launching_wrapper);
         react(success ? Transition::launched : Transition::failure);
@@ -514,7 +513,7 @@ FSM::State FSM::launched(TransitionPayload /* payload */) {
 }
 
 FSM::State FSM::land(TransitionPayload /* payload */) {
-    auto call_wrapper = [this]() {
+    const auto call_wrapper = [this]() {
         LOG(logger_, INFO) << "Calling landing function of satellite...";
         const auto success = call_satellite_function(&BaseSatellite::landing_wrapper);
         react(success ? Transition::landed : Transition::failure);
@@ -528,7 +527,7 @@ FSM::State FSM::landed(TransitionPayload /* payload */) {
 }
 
 FSM::State FSM::reconfigure(TransitionPayload payload) {
-    auto call_wrapper = [this](Configuration partial_config) {
+    const auto call_wrapper = [this](Configuration partial_config) {
         LOG(logger_, INFO) << "Calling reconfiguring function of satellite...";
         const auto success = call_satellite_function(&BaseSatellite::reconfiguring_wrapper, partial_config);
         react(success ? Transition::reconfigured : Transition::failure);
@@ -542,7 +541,7 @@ FSM::State FSM::reconfigured(TransitionPayload /* payload */) {
 }
 
 FSM::State FSM::start(TransitionPayload payload) {
-    auto call_wrapper = [this](std::string&& run_id) {
+    const auto call_wrapper = [this](std::string&& run_id) {
         LOG(logger_, INFO) << "Calling starting function of satellite...";
         const auto success = call_satellite_function(&BaseSatellite::starting_wrapper, std::move(run_id));
         react(success ? Transition::started : Transition::failure);
@@ -552,7 +551,7 @@ FSM::State FSM::start(TransitionPayload payload) {
 }
 
 FSM::State FSM::started(TransitionPayload /* payload */) {
-    auto call_wrapper = [this](const std::stop_token& stop_token) {
+    const auto call_wrapper = [this](const std::stop_token& stop_token) {
         LOG(logger_, INFO) << "Calling running function of satellite...";
         const auto success = call_satellite_function(&BaseSatellite::running_wrapper, stop_token);
         if(!success) {
@@ -564,7 +563,7 @@ FSM::State FSM::started(TransitionPayload /* payload */) {
 }
 
 FSM::State FSM::stop(TransitionPayload /* payload */) {
-    auto call_wrapper = [this]() {
+    const auto call_wrapper = [this]() {
         // First stop RUN thread
         stop_run_thread();
 
@@ -588,7 +587,7 @@ FSM::State FSM::interrupt(TransitionPayload payload) {
         set_status(reason);
     }
 
-    auto call_wrapper = [this](State previous_state, std::string reason) {
+    const auto call_wrapper = [this](State previous_state, std::string reason) {
         // First stop RUN thread if in RUN
         if(previous_state == State::RUN) {
             stop_run_thread();
@@ -616,7 +615,7 @@ FSM::State FSM::failure(TransitionPayload payload) {
         reason = getStatus();
     }
 
-    auto call_wrapper = [this](State previous_state, std::string reason) {
+    const auto call_wrapper = [this](State previous_state, std::string reason) {
         // First stop RUN thread if in RUN
         if(previous_state == State::RUN) {
             stop_run_thread();

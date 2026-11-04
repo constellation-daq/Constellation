@@ -320,7 +320,7 @@ void Section::validate_update(const Section& other) {
 // NOLINTNEXTLINE(misc-no-recursion)
 void Section::update_impl(const Section& other) {
     for(const auto& [other_key, other_value] : *other.dictionary_) {
-        auto entry_it = dictionary_->find(other_key);
+        const auto entry_it = dictionary_->find(other_key);
         const auto& key = entry_it->first;
         const auto& value = entry_it->second;
         if(std::holds_alternative<Dictionary>(value)) {
@@ -366,7 +366,7 @@ std::string Configuration::to_string(ConfigurationGroup configuration_group) con
     case USER: {
         Dictionary user_dict {};
         for(const auto& [key, value] : root_dictionary_) {
-            if(!key.starts_with("_")) {
+            if(!key.starts_with('_')) {
                 user_dict.emplace(key, value);
             }
         }
@@ -375,7 +375,7 @@ std::string Configuration::to_string(ConfigurationGroup configuration_group) con
     case INTERNAL: {
         Dictionary internal_dict {};
         for(const auto& [key, value] : root_dictionary_) {
-            if(key.starts_with("_")) {
+            if(key.starts_with('_')) {
                 internal_dict.emplace(key, value);
             }
         }

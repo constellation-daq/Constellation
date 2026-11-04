@@ -276,10 +276,10 @@ Dictionary Controller::getConnectionCommands(std::string_view satellite_name) {
     const std::scoped_lock connection_lock {connection_mutex_};
 
     // Find satellite by canonical name:
-    auto sat = connections_.find(satellite_name);
+    const auto sat = connections_.find(satellite_name);
 
     // Get list of commands
-    if(sat != connections_.end()) {
+    if(sat != connections_.cend()) {
         auto send_msg_cmd = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_commands"});
         const auto recv_msg_cmd = send_receive(sat->second, send_msg_cmd);
         return Dictionary::disassemble(recv_msg_cmd.getPayload());
@@ -511,7 +511,7 @@ CSCP1Message Controller::sendCommand(std::string_view satellite_name, CSCP1Messa
 
         // Find satellite by canonical name:
         const auto sat = connections_.find(satellite_name);
-        if(sat == connections_.end()) {
+        if(sat == connections_.cend()) {
             return {{controller_name_}, {CSCP1Message::Type::ERROR, "Target satellite is unknown to controller"}};
         }
 

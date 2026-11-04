@@ -223,7 +223,7 @@ std::optional<QDateTime> QMetricDisplay::rescale_axes(const QDateTime& newTime) 
     double global_max = std::numeric_limits<double>::lowest();
     bool has_points = false;
 
-    for(auto* series : series_) {
+    for(const auto* series : series_) {
         const auto& points = series->points();
         if(points.isEmpty()) {
             continue;

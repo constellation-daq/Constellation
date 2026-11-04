@@ -134,11 +134,11 @@ namespace {
                 std::cout << quote(cmd_split[0]) << " is not a valid command\n" << std::flush;
                 continue;
             }
-            auto cmd = cmd_opt.value();
+            const auto cmd = cmd_opt.value();
 
             // List registered services
             if(cmd == list_registered_services) {
-                auto registered_services = manager.getRegisteredServices();
+                const auto registered_services = manager.getRegisteredServices();
                 std::cout << " Registered Services:\n";
                 for(const auto& service : registered_services) {
                     std::cout << " Service " << pad_str_right(enum_name(service.identifier), 10) //
@@ -154,8 +154,8 @@ namespace {
                 if(cmd_split.size() >= 2) {
                     service_opt = enum_cast<ServiceIdentifier>(cmd_split[1]);
                 }
-                auto discovered_services = service_opt.has_value() ? manager.getDiscoveredServices(service_opt.value())
-                                                                   : manager.getDiscoveredServices();
+                const auto discovered_services = service_opt.has_value() ? manager.getDiscoveredServices(service_opt.value())
+                                                                         : manager.getDiscoveredServices();
                 std::cout << " Discovered Services:\n";
                 for(const auto& service : discovered_services) {
                     std::cout << " Service " << pad_str_right(enum_name(service.identifier), 15) //
@@ -178,14 +178,14 @@ namespace {
                     std::from_chars(cmd_split[2].data(), cmd_split[2].data() + cmd_split[2].size(), port);
                 }
                 if(cmd == register_service) {
-                    auto ret = manager.registerService(service, port);
+                    const auto ret = manager.registerService(service, port);
                     if(ret) {
                         std::cout << " Registered Service " << pad_str_right(enum_name(service), 10) //
                                   << " Port " << std::setw(5) << port << "\n"
                                   << std::flush;
                     }
                 } else {
-                    auto ret = manager.unregisterService(service, port);
+                    const auto ret = manager.unregisterService(service, port);
                     if(ret) {
                         std::cout << " Unregistered Service " << pad_str_right(enum_name(service), 10) //
                                   << " Port " << std::setw(5) << port << "\n"
@@ -201,12 +201,12 @@ namespace {
                     service = enum_cast<ServiceIdentifier>(cmd_split[1]).value_or(CONTROL);
                 }
                 if(cmd == register_callback) {
-                    auto ret = manager.registerDiscoverCallback(&discover_callback, service, nullptr);
+                    const auto ret = manager.registerDiscoverCallback(&discover_callback, service, nullptr);
                     if(ret) {
                         std::cout << " Registered Callback for " << service << "\n" << std::flush;
                     }
                 } else {
-                    auto ret = manager.unregisterDiscoverCallback(&discover_callback, service);
+                    const auto ret = manager.unregisterDiscoverCallback(&discover_callback, service);
                     if(ret) {
                         std::cout << " Unregistered Callback for " << service << "\n" << std::flush;
                     }

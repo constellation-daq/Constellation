@@ -107,7 +107,7 @@ TEST_CASE("Get timeout on asynchronous multicast receive", "[chirp]") {
     MulticastSocket receiver {get_loopback_if(), asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
 
     // Try receiving new message
-    auto msg_opt = receiver.recvMessage(10ms);
+    const auto msg_opt = receiver.recvMessage(10ms);
 
     // No message send, thus check for timeout that there is no message
     REQUIRE_FALSE(msg_opt.has_value());

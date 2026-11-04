@@ -46,9 +46,9 @@ TEST_CASE("Sorting of MD5 hashes", "[chirp][md5]") {
 }
 
 TEST_CASE("Reconstruct CHIRP message from assembled blob", "[chirp][chirp::message]") {
-    auto msg = CHIRPMessage(OFFER, "group", "host", CONTROL, 47890);
+    const auto msg = CHIRPMessage(OFFER, "group", "host", CONTROL, 47890);
     auto asm_msg = msg.assemble();
-    auto msg_reconstructed = CHIRPMessage::disassemble(asm_msg);
+    const auto msg_reconstructed = CHIRPMessage::disassemble(asm_msg);
 
     REQUIRE(msg.getType() == msg_reconstructed.getType());
     REQUIRE(msg.getGroupID() == msg_reconstructed.getGroupID());
@@ -68,7 +68,7 @@ TEST_CASE("Detect invalid length in CHIRP message", "[chirp][chirp::message]") {
 }
 
 TEST_CASE("Detect invalid identifier in CHIRP message", "[chirp][chirp::message]") {
-    auto msg = CHIRPMessage(REQUEST, "group", "host", HEARTBEAT, 0);
+    const auto msg = CHIRPMessage(REQUEST, "group", "host", HEARTBEAT, 0);
     auto asm_msg = msg.assemble();
     asm_msg[0] = std::byte('X');
 
@@ -78,7 +78,7 @@ TEST_CASE("Detect invalid identifier in CHIRP message", "[chirp][chirp::message]
 }
 
 TEST_CASE("Detect invalid version in CHIRP message", "[chirp][chirp::message]") {
-    auto msg = CHIRPMessage(REQUEST, "group", "host", HEARTBEAT, 0);
+    const auto msg = CHIRPMessage(REQUEST, "group", "host", HEARTBEAT, 0);
     auto asm_msg = msg.assemble();
     asm_msg[5] = std::byte('2');
 
@@ -88,7 +88,7 @@ TEST_CASE("Detect invalid version in CHIRP message", "[chirp][chirp::message]") 
 }
 
 TEST_CASE("Detect invalid message type in CHIRP message", "[chirp][chirp::message]") {
-    auto msg = CHIRPMessage(static_cast<MessageType>(255), "group", "host", DATA, 0);
+    const auto msg = CHIRPMessage(static_cast<MessageType>(255), "group", "host", DATA, 0);
     auto asm_msg = msg.assemble();
 
     REQUIRE_THROWS_MATCHES(CHIRPMessage::disassemble(asm_msg),
@@ -97,7 +97,7 @@ TEST_CASE("Detect invalid message type in CHIRP message", "[chirp][chirp::messag
 }
 
 TEST_CASE("Detect invalid service identifier in CHIRP message", "[chirp][chirp::message]") {
-    auto msg = CHIRPMessage(OFFER, "group", "host", static_cast<ServiceIdentifier>(255), 12345);
+    const auto msg = CHIRPMessage(OFFER, "group", "host", static_cast<ServiceIdentifier>(255), 12345);
     auto asm_msg = msg.assemble();
 
     REQUIRE_THROWS_MATCHES(CHIRPMessage::disassemble(asm_msg),

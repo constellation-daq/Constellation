@@ -25,7 +25,7 @@ TEST_CASE("Delayed first message", "[logging]") {
     // First message is delayed by 500ms, so call this here for better timing analysis
     ManagerLocator::getSinkManager().updateCMDPLevels(TRACE);
     ManagerLocator::getSinkManager().setConsoleLevels(OFF);
-    auto logger = Logger("DelayedFirstMessage");
+    const auto logger = Logger("DelayedFirstMessage");
     LOG(logger, TRACE) << "";
     ManagerLocator::getSinkManager().updateCMDPLevels(OFF);
 }
@@ -38,7 +38,7 @@ TEST_CASE("Default logger", "[logging]") {
 }
 
 TEST_CASE("Basic logging", "[logging]") {
-    auto logger = Logger("BasicLogging");
+    const auto logger = Logger("BasicLogging");
 
     ManagerLocator::getSinkManager().setConsoleLevels(TRACE);
     REQUIRE(logger.shouldLog(TRACE));
@@ -79,7 +79,7 @@ TEST_CASE("Logging from const function", "[logging]") {
 }
 
 TEST_CASE("Logging macros", "[logging]") {
-    auto logger = Logger("LoggingMacros");
+    const auto logger = Logger("LoggingMacros");
 
     ManagerLocator::getSinkManager().setConsoleLevels(TRACE);
 
@@ -127,7 +127,7 @@ TEST_CASE("Logging macros with default logger", "[logging]") {
 }
 
 TEST_CASE("Log levels", "[logging]") {
-    auto logger = Logger("LogLevels");
+    const auto logger = Logger("LogLevels");
 
     ManagerLocator::getSinkManager().setConsoleLevels(STATUS);
     ManagerLocator::getSinkManager().updateCMDPLevels(STATUS);
@@ -169,7 +169,7 @@ TEST_CASE("Log levels", "[logging]") {
 
 TEST_CASE("Ephemeral CMDP port", "[logging]") {
     // Port number of ephemeral port should always be >=1024 on all OSes
-    auto port_number = ManagerLocator::getSinkManager().getCMDPPort();
+    const auto port_number = ManagerLocator::getSinkManager().getCMDPPort();
     REQUIRE(port_number >= 1024);
 }
 

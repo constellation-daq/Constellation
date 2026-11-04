@@ -100,16 +100,16 @@ void MetricsManager::registerTimedMetric(std::shared_ptr<TimedMetric> metric) {
 
 void MetricsManager::unregisterMetric(std::string_view name) {
     std::unique_lock metrics_lock {metrics_mutex_};
-    auto it = metrics_.find(name);
-    if(it != metrics_.end()) {
+    const auto it = metrics_.find(name);
+    if(it != metrics_.cend()) {
         metrics_.erase(it);
     }
     metrics_lock.unlock();
     ManagerLocator::getSinkManager().sendMetricNotification();
 
     std::unique_lock timed_metrics_lock {timed_metrics_mutex_};
-    auto it_timed = timed_metrics_.find(name);
-    if(it_timed != timed_metrics_.end()) {
+    const auto it_timed = timed_metrics_.find(name);
+    if(it_timed != timed_metrics_.cend()) {
         timed_metrics_.erase(it_timed);
     }
     timed_metrics_lock.unlock();
@@ -152,8 +152,8 @@ void MetricsManager::run(const std::stop_token& stop_token) {
             triggered_queue_.pop();
             LOG(logger_, TRACE) << "Looking for queued metric " << name;
             const std::scoped_lock metrics_lock {metrics_mutex_};
-            auto metric_it = metrics_.find(name);
-            if(metric_it != metrics_.end()) {
+            const auto metric_it = metrics_.find(name);
+            if(metric_it != metrics_.cend()) {
                 LOG(logger_, TRACE) << "Sending metric " << name << ": " << value.to_string() << " ["
                                     << metric_it->second->unit() << "]";
                 ManagerLocator::getSinkManager().sendCMDPMetric({metric_it->second, std::move(value)});

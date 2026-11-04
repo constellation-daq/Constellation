@@ -49,7 +49,7 @@ using namespace std::string_literals;
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
 TEST_CASE("Basic Header Functions", "[core][core::message]") {
-    auto tp = std::chrono::system_clock::now();
+    const auto tp = std::chrono::system_clock::now();
 
     const CSCP1Message::Header cscp1_header {"senderCSCP", tp};
 
@@ -84,7 +84,7 @@ TEST_CASE("Header String Output", "[core][core::message]") {
 }
 
 TEST_CASE("Header Packing / Unpacking", "[core][core::message]") {
-    auto tp = std::chrono::system_clock::now();
+    const auto tp = std::chrono::system_clock::now();
 
     CSCP1Message::Header cscp1_header {"senderCSCP", tp};
 
@@ -166,7 +166,7 @@ TEST_CASE("Message Assembly / Disassembly (CMDP1)", "[core][core::message]") {
     CMDP1LogMessage dl_log_msg {Level::STATUS, "", {"senderCMDP"}, "log message"};
     auto dl_log_frames = dl_log_msg.assemble();
 
-    auto dl_log_msg2 = CMDP1LogMessage::disassemble(dl_log_frames);
+    const auto dl_log_msg2 = CMDP1LogMessage::disassemble(dl_log_frames);
     REQUIRE_THAT(to_string(dl_log_msg2.getLogTopic()), Equals(""));
 }
 
@@ -210,7 +210,7 @@ TEST_CASE("Message Assembly / Disassembly (CMDP1, invalid log level)", "[core][c
 }
 
 TEST_CASE("Message Assembly / Disassembly (CSCP1)", "[core][core::message]") {
-    auto tp = std::chrono::system_clock::now();
+    const auto tp = std::chrono::system_clock::now();
 
     CSCP1Message cscp1_msg {{"senderCSCP", tp}, {CSCP1Message::Type::SUCCESS, ""}};
     auto frames = cscp1_msg.assemble();
@@ -222,7 +222,7 @@ TEST_CASE("Message Assembly / Disassembly (CSCP1)", "[core][core::message]") {
 }
 
 TEST_CASE("Incorrect message type (CMDP1)", "[core][core::message]") {
-    auto tp = std::chrono::system_clock::now();
+    const auto tp = std::chrono::system_clock::now();
 
     // Create state message
     CMDP1StatMessage log_msg {{"senderCMDP", tp}, {std::make_shared<Metric>("name", "unit"), {}}};
@@ -234,7 +234,7 @@ TEST_CASE("Incorrect message type (CMDP1)", "[core][core::message]") {
 }
 
 TEST_CASE("Message Payload (CSCP1)", "[core][core::message]") {
-    auto tp = std::chrono::system_clock::now();
+    const auto tp = std::chrono::system_clock::now();
 
     CSCP1Message cscp1_msg {{"senderCSCP", tp}, {CSCP1Message::Type::SUCCESS, ""}};
     REQUIRE(cscp1_msg.getPayload().empty());
@@ -255,7 +255,7 @@ TEST_CASE("Message Payload (CSCP1)", "[core][core::message]") {
 }
 
 TEST_CASE("Message Payload (CSCP1, too many frames)", "[core][core::message]") {
-    auto tp = std::chrono::system_clock::now();
+    const auto tp = std::chrono::system_clock::now();
 
     CSCP1Message cscp1_message {{"senderCSCP", tp}, {CSCP1Message::Type::SUCCESS, ""}};
     auto frames = cscp1_message.assemble();

@@ -158,7 +158,7 @@ TEST_CASE("React via CSCP", "[satellite][satellite::fsm][cscp]") {
     auto& fsm = satellite.getFSM();
     using constellation::message::CSCP1Message;
 
-    auto payload_frame = Dictionary().assemble();
+    const auto payload_frame = Dictionary().assemble();
     auto ret = std::pair<constellation::message::CSCP1Message::Type, std::string>();
 
     // Initialize requires frame
@@ -600,7 +600,7 @@ TEST_CASE("Conditional transitions", "[satellite][satellite::fsm]") {
 
 TEST_CASE("Conditional transitions (invalid configuration)", "[satellite][satellite::fsm]") {
     DummySatellite satellite {};
-    auto& fsm = satellite.getFSM();
+    const auto& fsm = satellite.getFSM();
 
     // Initialization failure due to invalid canonical name
     Dictionary config1 {};

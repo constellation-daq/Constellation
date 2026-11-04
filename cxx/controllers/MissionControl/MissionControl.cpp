@@ -277,7 +277,7 @@ void MissionControl::on_btnInit_clicked() {
 
     LOG(user_logger_, INFO) << "Sending transition command " << "initialize"_quote
                             << ", configuration file: " << txtConfigFileName->text().toStdString();
-    for(auto& response : runcontrol_.sendQCommands("initialize", configs.value())) {
+    for(const auto& response : runcontrol_.sendQCommands("initialize", configs.value())) {
         LOG(logger_, DEBUG) << "Initialize: " << response.first << ": " << response.second.getVerb().first;
     }
 }
@@ -299,7 +299,7 @@ void MissionControl::on_btnShutdown_clicked() {
         LOG(logger_, DEBUG) << "Aborted satellite shutdown";
     } else {
         LOG(user_logger_, INFO) << "Sending command " << "shutdown"_quote;
-        for(auto& response : runcontrol_.sendQCommands("shutdown")) {
+        for(const auto& response : runcontrol_.sendQCommands("shutdown")) {
             LOG(logger_, DEBUG) << "Shutdown: " << response.first << ": " << response.second.getVerb().first;
         }
     }
@@ -307,14 +307,14 @@ void MissionControl::on_btnShutdown_clicked() {
 
 void MissionControl::on_btnConfig_clicked() {
     LOG(user_logger_, INFO) << "Sending transition command " << "launch"_quote;
-    for(auto& response : runcontrol_.sendQCommands("launch")) {
+    for(const auto& response : runcontrol_.sendQCommands("launch")) {
         LOG(logger_, DEBUG) << "Launch: " << response.first << ": " << response.second.getVerb().first;
     }
 }
 
 void MissionControl::on_btnLand_clicked() {
     LOG(user_logger_, INFO) << "Sending transition command " << "land"_quote;
-    for(auto& response : runcontrol_.sendQCommands("land")) {
+    for(const auto& response : runcontrol_.sendQCommands("land")) {
         LOG(logger_, DEBUG) << "Land: " << response.first << ": " << response.second.getVerb().first;
     }
 }
@@ -322,14 +322,14 @@ void MissionControl::on_btnLand_clicked() {
 void MissionControl::on_btnStart_clicked() {
     LOG(user_logger_, INFO) << "Sending transition command " << "start"_quote
                             << ", run identifier: " << current_run_.toStdString();
-    for(auto& response : runcontrol_.sendQCommands("start", current_run_.toStdString())) {
+    for(const auto& response : runcontrol_.sendQCommands("start", current_run_.toStdString())) {
         LOG(logger_, DEBUG) << "Start: " << response.first << ": " << response.second.getVerb().first;
     }
 }
 
 void MissionControl::on_btnStop_clicked() {
     LOG(user_logger_, INFO) << "Sending transition command " << "stop"_quote;
-    for(auto& response : runcontrol_.sendQCommands("stop")) {
+    for(const auto& response : runcontrol_.sendQCommands("stop")) {
         LOG(logger_, DEBUG) << "Stop: " << response.first << ": " << response.second.getVerb().first;
     }
 }
@@ -440,7 +440,7 @@ void MissionControl::update_run_infos() {
 
     // Update run timer:
     if(runcontrol_.getLowestState() == CSCP::State::RUN) {
-        auto duration = duration_string(std::chrono::seconds(run_start_time_.secsTo(QDateTime::currentDateTime())));
+        const auto duration = duration_string(std::chrono::seconds(run_start_time_.secsTo(QDateTime::currentDateTime())));
         runDuration->setStyleSheet("QLabel { font-weight: bold; }");
         runDuration->setText(duration);
         runID->setText("<b>" + current_run_ + "</b>");
@@ -526,7 +526,7 @@ void MissionControl::custom_context_menu(const QPoint& point) {
 
     // Add standard commands
     for(const auto command : enum_names<CSCP::StandardCommand>()) {
-        if(command == "shutdown" || command.starts_with("_")) {
+        if(command == "shutdown" || command.starts_with('_')) {
             // Already added above || hidden command
             continue;
         }
@@ -546,7 +546,7 @@ void MissionControl::custom_context_menu(const QPoint& point) {
     contextMenu.addSeparator();
 
     // Request possible commands from remote:
-    auto dict = runcontrol_.getQCommands(index);
+    const auto dict = runcontrol_.getQCommands(index);
     for(const auto& [key, value] : dict) {
         // Filter out transition and standard commands to not list them twice
         if(enum_cast<CSCP::TransitionCommand>(key).has_value() || enum_cast<CSCP::StandardCommand>(key).has_value()) {

@@ -82,10 +82,8 @@ QVariant QController::get_data(std::map<std::string, Connection, std::less<>>::c
         return get_response_icon(conn.last_cmd_type);
     }
 
-    if(role == Qt::ForegroundRole) {
-        if(idx == 2) {
-            return get_state_color(conn.state);
-        }
+    if(role == Qt::ForegroundRole && idx == 2) {
+        return get_state_color(conn.state);
     }
 
     if(role == Qt::BackgroundRole) {

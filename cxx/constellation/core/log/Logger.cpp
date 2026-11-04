@@ -31,7 +31,7 @@ Logger::~Logger() {
 }
 
 void Logger::flush() {
-    for(auto& sink : spdlog_logger_->sinks()) {
+    for(const auto& sink : spdlog_logger_->sinks()) {
         sink->flush();
     }
     // Wait a bit to ensure console output is actually flushed
