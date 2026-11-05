@@ -9,6 +9,7 @@ from datetime import datetime
 from threading import Lock
 from typing import Any
 
+from influxdb_client.client.exceptions import InfluxDBError
 from influxdb_client.client.influxdb_client import InfluxDBClient
 from influxdb_client.client.write.point import Point
 from influxdb_client.client.write_api import WriteOptions
@@ -22,6 +23,7 @@ from constellation.core.satellite import Satellite
 class Influx(Satellite, MonitoringListener):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         self._influxdb_connected = False
         self._influxdb_lock = Lock()
 
@@ -34,15 +36,25 @@ class Influx(Satellite, MonitoringListener):
             org = config.get_str("org")
             self.bucket = config.get_str("bucket", "constellation")
             interval = int(config.get_num("flush_interval", 2.5, min_val=1) * 1000)
+            batch_size = config.get_int("batch_size", 1000, min_val=1)
 
             self.client = InfluxDBClient(url=url, token=token, org=org)
-            self.write_api = self.client.write_api(write_options=WriteOptions(flush_interval=interval))
+            self.write_api = self.client.write_api(
+                write_options=WriteOptions(
+                    flush_interval=interval, batch_size=batch_size, max_close_wait=1000, max_retry_time=15000
+                ),
+                error_callback=self._write_error,
+            )
 
             # Test connection
             self.log.debug('Connecting to InfluxDB with org "%s" at %s', org, url)
             try:
                 query_api = self.client.query_api()
                 query_api.query(org=org, query="buckets()")
+                query_api.query(org=org, query=f'from(bucket: "{self.bucket}") |> range(start: -1s) |> limit(n: 1)')
+            except InfluxDBError as e:
+                err_msg = f" {e.response.status} {e.response.reason}" if e.response else ""
+                raise ConnectionError(f"InfluxDB error{err_msg}: {e.message}") from e
             except Exception as e:
                 raise ConnectionError("Could not connect to InfluxDB") from e
 
@@ -65,6 +77,21 @@ class Influx(Satellite, MonitoringListener):
                     self.write_api.write(bucket=self.bucket, record=record)
                 else:
                     self.log.debug(f"Metric of type {type(value).__name__} cannot be written to InfluxDB")
+
+    def _write_error(self, conf: Any, data: Any, exception: Exception) -> None:
+        """Called on write failure by the InfluxDB client from batching thread"""
+        status = None
+        reason = ""
+        if isinstance(exception, InfluxDBError) and exception.response is not None:
+            status = exception.response.status
+            reason = exception.response.reason
+
+        message = getattr(exception, "message", str(exception))
+
+        if status in (400, 413, 422):
+            self.log.warning(f"InfluxDB rejected batch, {status} {reason}, {message}")
+        else:
+            self.failure(f"InfluxDB error {status} {reason}: {message}")
 
     def reentry(self) -> None:
         # Close InfluxDB client
