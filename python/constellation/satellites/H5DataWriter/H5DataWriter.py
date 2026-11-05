@@ -7,8 +7,6 @@ Provides the class for the H5DataWriter satellite
 
 import datetime
 import json
-import os
-import pathlib
 from typing import Any
 
 import h5py  # type: ignore[import-untyped]
@@ -27,7 +25,7 @@ class H5DataWriter(ReceiverSatellite):
 
     def do_initializing(self, config: Configuration) -> str:
         """Initialize and configure the satellite."""
-        self.output_directory = config.get_path("output_directory")
+        self.output_directory = self.validate_output_directory(config.get_path("output_directory"))
         self.flush_interval: float = config.get_num("flush_interval", 10.0)
         self.swmr_mode: bool = config.get("allow_concurrent_reading", False, return_type=bool)
         if self.swmr_mode and self.data_transmitters is None:
@@ -204,24 +202,13 @@ class H5DataWriter(ReceiverSatellite):
         h5file = None
         self.log.info("Creating file %s", filename)
 
-        # Create directory path
-        directory = pathlib.Path(self.output_directory)
-        try:
-            os.makedirs(directory)
-        except (FileExistsError, FileNotFoundError):
-            self.log.info("Directory %s already exists", directory)
-        except Exception as exception:
-            raise RuntimeError(f"unable to create directory {directory}: {type(exception)} {str(exception)}") from exception
-
         # Create output file
-        if os.path.isfile(directory / filename):
-            self.log.critical("file already exists: %s", filename)
-            raise RuntimeError(f"file already exists: {filename}")
+        file = self.validate_output_file(self.output_directory, filename)
         try:
-            h5file = h5py.File(directory / filename, "w", libver="v110")
+            h5file = h5py.File(file, "w", libver="v110")
         except Exception as exception:
-            self.log.critical("Unable to open %s: %s", filename, str(exception))
-            raise RuntimeError(f"Unable to open {filename}: {str(exception)}") from exception
+            self.log.critical("Unable to open %s: %s", file, str(exception))
+            raise RuntimeError(f"Unable to open {file}: {str(exception)}") from exception
         self._add_metadata(h5file)
         return h5file
 

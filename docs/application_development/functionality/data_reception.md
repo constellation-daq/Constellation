@@ -1,15 +1,18 @@
-# Receiving Data in C++
+# Receiving Data
 
 This how-to guide describes the concepts of receiving data from other satellites.
-It is recommended to read through the [implementation tutorial](../tutorials/satellite_cxx.md) of satellites in C++
-to get a good understanding of implementing a basic satellite.
+It is recommended to read through the implementation tutorial of satellites in [C++](../tutorials/satellite_cxx.md) or
+[Python](../tutorials/satellite_py.md) to get a good understanding of implementing a basic satellite.
 
 ```{seealso}
 For the basic concepts behind data transmission and processing in Constellation
 check the [chapter in the operator’s guide](../../operator_guide/concepts/data.md).
 ```
 
-Receiving data with a satellite written in C++ entails inheriting from the `ReceiverSatellite` class.
+Receiving data with a satellite entails inheriting from the
+{cpp:class}`ReceiverSatellite <constellation::satellite::ReceiverSatellite>` /
+{py:class}`ReceiverSatellite <core.receiver_satellite.ReceiverSatellite>` class instead of the regular
+{cpp:class}`Satellite <constellation::satellite::Satellite>` / {py:class}`Satellite <core.satellite.Satellite>` class.
 This class provides all features necessary for an efficient reception and treatment of data.
 The following sections details its functions and provide guidance in implementing data handling methods.
 
@@ -19,14 +22,18 @@ In many cases, the receiving satellite will store data to a file on disk.
 The `ReceiverSatellite` class provides a few convenience methods which ease this task and provide additional functionality
 to the user:
 
-The `validate_output_directory` should be called in the {bdg-secondary}`initializing` method of the receiver satellite.
-It will check for the existence and accessibility of the selected storage directory. A `SatelliteError` exception is thrown
-upon any issue detected. In addition, this method will register the `DISKSPACE_FREE` metric for the selected storage
-location, which will regularly broadcast the available space on the target storage device. In addition, log messages are
-emitted on `WARNING` level when the available storage falls below 10 GB, and on `CRITICAL` level when the available disk
-space is less than 3 GB.
+The `validate_output_directory` method should be called in the {bdg-secondary}`initializing` method of the receiver
+satellite. It will check for the existence and accessibility of the selected storage directory. An exception is thrown upon
+any issue detected. In addition, this method will register the `DISKSPACE_FREE` metric for the selected storage location,
+which will regularly broadcast the available space on the target storage device. In addition, log messages are emitted on
+`WARNING` level when the available storage falls below 10 GB, and on `CRITICAL` level when the available disk space is less
+than 3 GB.
 
 An example for using the method is given below:
+
+::::{tab-set}
+:::{tab-item} C++
+:sync: cxx
 
 ```cpp
 void MyWriterSatellite::initializing(Configuration& config) {
@@ -35,13 +42,31 @@ void MyWriterSatellite::initializing(Configuration& config) {
 }
 ```
 
+:::
+:::{tab-item} Python
+:sync: python
+
+```python
+def do_initializing(self, config: Configuration) -> str:
+    self.base_path = self.validate_output_directory(config.get_path("output_directory"))
+    return "Initialized"
+```
+
+:::
+::::
+
 During the {bdg-secondary}`starting` transition, also the final file name is known, which likely uses the current run
 identifier as part of the file name. In order to ensure that the file can be created properly, no other data is overwritten,
-and the storage is writable, the `validate_output_file` should be used. It takes the base path, a file name and an extension
-as arguments, making it convenient for assembling the final storage path. The function returns the validated canonical path
-to the target file.
+and the storage is writable, the `validate_output_file` method should be used. It takes the base path, a file name and an
+extension as arguments, making it convenient for assembling the final storage path. The function returns the validated
+canonical path to the target file. Existing files are handled according to the `_data.file_conflict_strategy` parameter
+described in the [operator's guide](../../operator_guide/concepts/data.md#file-name-conflict-strategies).
 
 A possible application could be the following, where the output file path is validated and a binary file stream is opened:
+
+::::{tab-set}
+:::{tab-item} C++
+:sync: cxx
 
 ```cpp
 void MyWriterSatellite::starting(std::string_view run_identifier) {
@@ -51,9 +76,28 @@ void MyWriterSatellite::starting(std::string_view run_identifier) {
 }
 ```
 
+:::
+:::{tab-item} Python
+:sync: python
+
+```python
+def do_starting(self, run_identifier: str) -> str:
+    # Open target file
+    file_path = self.validate_output_file(self.base_path, f"data_{run_identifier}", "raw")
+    self.file = open(file_path, "wb")
+    return f"Started run {run_identifier}"
+```
+
+:::
+::::
+
 Alternatively, the `create_output_file` function can be used to validate the target file in the same manner, but directly
-create the output file stream and return it. The additional function argument allows selecting whether the file is opened in
-binary mode or not. This would reduce the above example to:
+create the output file and return it opened for writing. The additional function argument allows selecting whether the file is
+opened in binary mode or not. This would reduce the above example to:
+
+::::{tab-set}
+:::{tab-item} C++
+:sync: cxx
 
 ```cpp
 void MyWriterSatellite::starting(std::string_view run_identifier) {
@@ -61,6 +105,21 @@ void MyWriterSatellite::starting(std::string_view run_identifier) {
     file_stream_ = create_output_file(base_path_, "data_" + std::string(run_identifier), "raw", true);
 }
 ```
+
+:::
+:::{tab-item} Python
+:sync: python
+
+```python
+def do_starting(self, run_identifier: str) -> str:
+    # Open target file
+    self.file = self.create_output_file(self.base_path, f"data_{run_identifier}", "raw", True)
+    return f"Started run {run_identifier}"
+```
+
+:::
+::::
+
 
 Both functions will also update the registered metric `DISKSPACE_FREE` to the latest target storage.
 
@@ -81,6 +140,10 @@ The information provided to the callbacks differs:
 A simplified example implementation of these callbacks can be found below. Here, the callbacks are merely logging information
 taken from the received messages, and discard the data.
 
+::::{tab-set}
+:::{tab-item} C++
+:sync: cxx
+
 ```cpp
 void MyWriterSatellite::receive_bor(std::string_view sender, const Dictionary& user_tags, const Dictionary& config) {
     LOG(INFO) << "Received BOR from " << sender << " with config" << config.to_string();
@@ -94,6 +157,26 @@ void MyWriterSatellite::receive_eor(std::string_view sender, const Dictionary& u
     LOG(INFO) << "Received EOR from " << sender << " with metadata" << run_metadata.to_string();
 }
 ```
+
+:::
+:::{tab-item} Python
+:sync: python
+
+```python
+def receive_bor(self, sender: str, user_tags: dict[str, Any], configuration: dict[str, Any]) -> None:
+    self.log.info("Received BOR from %s with config %s", sender, configuration)
+
+
+def receive_data(self, sender: str, data_record: DataRecord) -> None:
+    self.log.debug("Received data record from %s with %s blocks", sender, len(data_record.blocks))
+
+
+def receive_eor(self, sender: str, user_tags: dict[str, Any], run_metadata: dict[str, Any]) -> None:
+    self.log.info("Received EOR from %s with metadata %s", sender, run_metadata)
+```
+
+:::
+::::
 
 ## Dealing with Data Records
 
@@ -109,6 +192,9 @@ components:
 | `countBlocks()`       | `std::size_t`                       | Number of data blocks attached to the data record    |
 | `getBlocks()`         | `const std::vector<PayloadBuffer>&` | Data blocks attached to the data record              |
 | `countPayloadBytes()` | `std::size_t`                       | Combined size of all data blocks in bytes            |
+
+In Python, the sequence number, tags and data blocks are accessible via the `sequence_number`, `tags` and `blocks`
+properties of the {py:class}`DataRecord <core.message.cdtp2.DataRecord>` class.
 
 ```{seealso}
 A full description of all classes and methods is provided in the C++ API reference of the

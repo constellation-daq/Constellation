@@ -3,6 +3,7 @@ SPDX-FileCopyrightText: 2025 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
 """
 
+import pathlib
 import threading
 import time
 from typing import Any
@@ -25,7 +26,7 @@ from constellation.core.logging import ConstellationLogger
 from constellation.core.message.cdtp2 import DataRecord
 from constellation.core.network import get_loopback_interface_name
 from constellation.core.protocol.cscp1 import SatelliteState
-from constellation.core.receiver_satellite import ReceiverSatellite
+from constellation.core.receiver_satellite import FileConflictStrategy, ReceiverSatellite
 from constellation.core.transmitter_satellite import TransmitterSatellite
 
 from .conftest import DATA_PORT, wait_for_state
@@ -675,3 +676,42 @@ def test_data_satellites_transmitter_disabled_transmission(
     # Land
     cmd_tx.request_get_response("land")
     wait_for_state(transmitter.fsm, "INIT")
+
+
+def test_receiver_output_file(receiver_satellite: DummyReceiverSatellite, tmp_path):
+    receiver = receiver_satellite
+
+    # Output directory is created, disk space metric registered
+    directory = receiver.validate_output_directory(tmp_path / "out")
+    assert directory.is_dir()
+    assert "DISKSPACE_FREE" in receiver._metrics
+
+    # Validated output file is removed after check
+    file = receiver.validate_output_file(directory, "data_run", "h5")
+    assert file == directory / "data_run.h5"
+    assert not file.exists()
+
+    # Created output file is opened
+    with receiver.create_output_file(directory, "data_run", "h5") as f:
+        f.write(b"data")
+    assert file.read_bytes() == b"data"
+
+    # Existing file receives a different name by default
+    with receiver.create_output_file(directory, "data_run", "h5") as f:
+        file_renamed = pathlib.Path(f.name)
+    assert file_renamed != file
+    assert file_renamed.name.startswith("data_run_")
+    assert file_renamed.suffix == ".h5"
+
+    # Existing file is overwritten
+    receiver._file_conflict_strategy = FileConflictStrategy.OVERWRITE
+    with receiver.create_output_file(directory, "data_run", "h5", binary=False) as f:
+        assert pathlib.Path(f.name) == file
+    assert file.read_text() == ""
+
+    # Existing file is refused
+    receiver._file_conflict_strategy = FileConflictStrategy.ERROR
+    with pytest.raises(RuntimeError, match="Overwriting of existing file"):
+        receiver.validate_output_file(directory, "data_run", "h5")
+    with pytest.raises(RuntimeError, match="Overwriting of existing file"):
+        receiver.create_output_file(directory, "data_run", "h5")

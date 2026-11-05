@@ -137,17 +137,17 @@ std::filesystem::path ReceiverSatellite::validate_output_file(const std::filesys
             }
         }
 
-        // Open the file to check if it can be accessed
-        const auto file_stream = std::ofstream(file);
-        if(!file_stream.good()) {
+        // Create the file to check if it can be accessed
+        if(!std::ofstream(file).good()) {
             throw SatelliteError("File " + file.string() + " not accessible");
         }
 
-        // Convert the file to an absolute path
+        // Convert the file to an absolute path and remove it again
         file = std::filesystem::canonical(file);
+        std::filesystem::remove(file);
 
         // Register or update disk space metrics:
-        register_diskspace_metric(file);
+        register_diskspace_metric(file.parent_path());
 
     } catch(std::filesystem::filesystem_error& e) {
         const auto msg = std::string("Issue with output path: ") + e.what();
