@@ -100,3 +100,5 @@ void QConnectionDialog::show_commands(const Dictionary& dict) {
         std::advance(it, 1);
     }
 }
+
+#include "QConnectionDialog.moc"

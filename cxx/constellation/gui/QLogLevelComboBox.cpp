@@ -116,3 +116,5 @@ void QLogLevelComboBox::addNeutralElement(std::string neutral) {
     neutral_ = std::move(neutral);
     fill_items();
 }
+
+#include "QLogLevelComboBox.moc"

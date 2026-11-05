@@ -10,10 +10,6 @@ qt = import(qt_version)
 qt_raw_dep = dependency(qt_version, include_type: 'system', modules: ['Core', 'Gui', 'Widgets', 'Svg'])
 qt_args = []
 
-# Workaround for GCC 16 with Qt using incomplete classes
-if cpp.get_id() == 'gcc' and cpp.version().version_compare('>=16')
-  qt_args += cpp.get_supported_arguments('-Wno-sfinae-incomplete')
-endif
 # Workaround for clang with Qt using C++26 extensions exposed by clang even when using pre-C++26
 if cpp.get_id() == 'clang' and qt_raw_dep.version().version_compare('>=6.10')
   constellation_private_args += cpp.get_supported_arguments('-Wno-c++26-extensions')
@@ -25,7 +21,7 @@ qt_dep = declare_dependency(
 )
 
 ui_files = qt.compile_ui(sources: ['QConnectionDialog.ui', 'QCommandDialog.ui', 'QResponseDialog.ui', 'QLogMessageDialog.ui'])
-moc_files = qt.compile_moc(headers: ['QController.hpp', 'QConnectionDialog.hpp', 'QCommandDialog.hpp', 'QResponseDialog.hpp', 'QLogLevelComboBox.hpp', 'QLogMessageDialog.hpp'])
+moc_files = qt.compile_moc(sources: ['QController.hpp', 'QConnectionDialog.hpp', 'QCommandDialog.hpp', 'QResponseDialog.hpp', 'QLogLevelComboBox.hpp', 'QLogMessageDialog.hpp'])
 qrc_files = qt.compile_resources(sources: 'Constellation.qrc')
 
 gui_src = files(

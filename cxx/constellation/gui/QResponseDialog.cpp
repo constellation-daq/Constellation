@@ -149,3 +149,5 @@ void QResponseDialog::populate_tree_item_list(QTreeWidgetItem* parent, const Com
     }
 }
 // NOLINTEND(misc-no-recursion)
+
+#include "QResponseDialog.moc"
