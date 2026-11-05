@@ -246,7 +246,7 @@ TEST_CASE("Message Payload (CSCP1)", "[core][core::message]") {
 
     // Assemble and disassemble message
     auto frames = cscp1_msg.assemble();
-    auto cscp1_msg2 = CSCP1Message::disassemble(frames);
+    const auto cscp1_msg2 = CSCP1Message::disassemble(frames);
 
     // Retrieve payload
     const auto& data = cscp1_msg2.getPayload();

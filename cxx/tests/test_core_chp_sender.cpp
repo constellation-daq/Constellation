@@ -18,7 +18,6 @@
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
-#include "constellation/core/utils/timers.hpp"
 
 #include "chirp_mock.hpp"
 #include "chp_mock.hpp"
