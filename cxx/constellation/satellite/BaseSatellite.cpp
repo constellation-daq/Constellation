@@ -222,14 +222,15 @@ BaseSatellite::handle_standard_command(std::string_view command) {
     case get_commands: {
         auto command_dict = Dictionary();
         // FSM commands
-        command_dict["initialize"] = "Initialize satellite (payload: config as flat MessagePack dict with strings as keys)";
+        command_dict["initialize"] =
+            "Initialize satellite (payload: configuration as MessagePack dict with strings as keys)";
         command_dict["launch"] = "Launch satellite";
         command_dict["land"] = "Land satellite";
         if(support_reconfigure_) {
             command_dict["reconfigure"] =
-                "Reconfigure satellite (payload: partial config as flat MessagePack dict with strings as keys)";
+                "Reconfigure satellite (payload: partial configuration as MessagePack dict with strings as keys)";
         }
-        command_dict["start"] = "Start new run (payload: run number as MessagePack integer)";
+        command_dict["start"] = "Start new run (payload: run identifier as MessagePack string)";
         command_dict["stop"] = "Stop run";
         command_dict["shutdown"] = "Shutdown satellite";
         // Get commands
@@ -242,7 +243,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         command_dict["get_role"] = "Get role of satellite";
         command_dict["get_status"] = "Get status of satellite";
         command_dict["get_config"] =
-            "Get config of satellite (returned in payload as flat MessagePack dict with strings as keys)";
+            "Get configuration of satellite (returned in payload as MessagePack dict with strings as keys)";
         command_dict["get_run_id"] = "Current or last run identifier";
 
         // Append user commands
