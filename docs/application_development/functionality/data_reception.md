@@ -91,9 +91,13 @@ def do_starting(self, run_identifier: str) -> str:
 :::
 ::::
 
-In C++, alternatively the `create_output_file` function can be used to validate the target file in the same manner, but directly
-create the output file stream and return it. The additional function argument allows selecting whether the file is opened in
-binary mode or not. This would reduce the above example to:
+Alternatively, the `create_output_file` function can be used to validate the target file in the same manner, but directly
+create the output file and return it opened for writing. The additional function argument allows selecting whether the file is
+opened in binary mode or not. This would reduce the above example to:
+
+::::{tab-set}
+:::{tab-item} C++
+:sync: cxx
 
 ```cpp
 void MyWriterSatellite::starting(std::string_view run_identifier) {
@@ -101,6 +105,21 @@ void MyWriterSatellite::starting(std::string_view run_identifier) {
     file_stream_ = create_output_file(base_path_, "data_" + std::string(run_identifier), "raw", true);
 }
 ```
+
+:::
+:::{tab-item} Python
+:sync: python
+
+```python
+def do_starting(self, run_identifier: str) -> str:
+    # Open target file
+    self.file = self.create_output_file(self.base_path, f"data_{run_identifier}", "raw", True)
+    return f"Started run {run_identifier}"
+```
+
+:::
+::::
+
 
 Both functions will also update the registered metric `DISKSPACE_FREE` to the latest target storage.
 
