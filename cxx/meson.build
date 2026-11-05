@@ -71,7 +71,7 @@ spdlog_dep = dependency('spdlog', include_type: 'system', default_options: ['tes
 # Controller dependencies:
 if get_option('build_controller_lib')
   # TOML++
-  tomlplusplus_dep = dependency('tomlplusplus', include_type: 'system', default_options: ['default_library=static'])
+  tomlplusplus_dep = dependency('tomlplusplus', include_type: 'system', default_options: ['default_library=static', 'werror=false'])
   # yaml-cpp
   yamlcpp_dep = dependency('yaml-cpp', include_type: 'system', default_options: ['tools=false', 'tests=disabled', 'default_library=static'])
 endif
