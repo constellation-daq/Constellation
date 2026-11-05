@@ -309,3 +309,5 @@ bool QControllerSortProxy::lessThan(const QModelIndex& left, const QModelIndex& 
     const QString rightString = rightData.toString();
     return QString::localeAwareCompare(leftString, rightString) < 0;
 }
+
+#include "QController.moc"

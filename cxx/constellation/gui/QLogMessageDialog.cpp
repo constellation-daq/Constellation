@@ -44,3 +44,5 @@ QLogMessageDialog::QLogMessageDialog(QWidget* parent, const QLogMessage& msg)
 
     show();
 }
+
+#include "QLogMessageDialog.moc"

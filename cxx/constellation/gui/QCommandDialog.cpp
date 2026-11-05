@@ -112,3 +112,5 @@ void QCommandDialog::on_btnAddParameter_clicked() {
         ui_->checkBoxParam->setCheckState(Qt::Unchecked);
     }
 }
+
+#include "QCommandDialog.moc"
