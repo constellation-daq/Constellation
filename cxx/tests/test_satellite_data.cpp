@@ -5,6 +5,7 @@
  */
 
 #include <cstddef>
+#include <filesystem>
 #include <map>
 #include <mutex>
 #include <set>
@@ -74,6 +75,9 @@ namespace {
         }
 
     public:
+        using ReceiverSatellite::create_output_file;
+        using ReceiverSatellite::validate_output_file;
+
         void awaitBOR() {
             while(!bor_received_.load()) {
                 std::this_thread::yield();
@@ -199,6 +203,26 @@ TEST_CASE("Receiver / Invalid transmitter name", "[satellite]") {
     receiver.reactFSM(FSM::Transition::initialize, std::move(config3));
     REQUIRE(receiver.getState() == FSM::State::ERROR);
 
+    receiver.exit();
+}
+
+TEST_CASE("Receiver / Output file", "[satellite]") {
+    auto receiver = Receiver();
+    const auto dir = std::filesystem::temp_directory_path() / "constellation_test_output_file";
+    std::filesystem::remove_all(dir);
+
+    // Validated output file is removed again
+    const auto file = receiver.validate_output_file(dir, "data", "raw");
+    REQUIRE(file == std::filesystem::canonical(dir) / "data.raw");
+    REQUIRE_FALSE(std::filesystem::exists(file));
+
+    // Created output file is opened
+    auto stream = receiver.create_output_file(dir, "data", "raw");
+    REQUIRE(stream.good());
+    REQUIRE(std::filesystem::exists(file));
+    stream.close();
+
+    std::filesystem::remove_all(dir);
     receiver.exit();
 }
 
