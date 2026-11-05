@@ -11,7 +11,7 @@ import shutil
 import string
 import time
 from enum import Enum
-from typing import Any
+from typing import IO, Any
 
 from .cdtp import DataReceiver, RecvTimeoutError
 from .chirp import CHIRPServiceIdentifier, get_uuid
@@ -173,6 +173,16 @@ class ReceiverSatellite(Satellite):
             raise RuntimeError(f"Requested output directory {directory} is not a directory")
         self._register_diskspace_metric(directory)
         return directory
+
+    def create_output_file(
+        self, path: pathlib.Path | str, file_name: str, ext: None | str = None, binary: bool = True
+    ) -> IO[Any]:
+        """Create the output file
+
+        Create the final output file from output directory, file name and extension. Returns the file opened for writing.
+        """
+        file_path = self.validate_output_file(path, file_name, ext)
+        return open(file_path, "xb" if binary else "x")
 
     def validate_output_file(self, path: pathlib.Path | str, file_name: str, ext: None | str = None) -> pathlib.Path:
         """Create the output file path
