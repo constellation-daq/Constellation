@@ -26,7 +26,6 @@ class Influx(Satellite, MonitoringListener):
 
         self._influxdb_connected = False
         self._influxdb_lock = Lock()
-        self._write_failures = 0
 
     def do_initializing(self, config: Configuration) -> None:
         with self._influxdb_lock:
@@ -41,7 +40,6 @@ class Influx(Satellite, MonitoringListener):
             self.client = InfluxDBClient(url=url, token=token, org=org)
             self.write_api = self.client.write_api(
                 write_options=WriteOptions(flush_interval=interval),
-                success_callback=self._write_success,
                 error_callback=self._write_error,
             )
 
@@ -77,10 +75,6 @@ class Influx(Satellite, MonitoringListener):
                 else:
                     self.log.debug(f"Metric of type {type(value).__name__} cannot be written to InfluxDB")
 
-    def _write_success(self, conf: Any, data: Any) -> None:
-        """Called on write success by the InfluxDB client from batching"""
-        self._write_failures = 0
-
     def _write_error(self, conf: Any, data: Any, exception: Exception) -> None:
         """Called on write failure by the InfluxDB client from batching thread"""
         status = None
@@ -91,16 +85,10 @@ class Influx(Satellite, MonitoringListener):
 
         message = getattr(exception, "message", str(exception))
 
-        if status in (401, 403, 404):
-            self.failure(f"InfluxDB error {status} {reason}: {message}")
-        elif status in (400, 413, 422):
+        if status in (400, 413, 422):
             self.log.warning(f"InfluxDB rejected batch, {status} {reason}, {message}")
         else:
-            # Server overloaded or unreachable even after retries
-            self._write_failures += 1
-            self.log.warning(f"Failed writing ({self._write_failures}x) to InfluxDB, {status} {reason}, {message}")
-            if self._write_failures >= 3:
-                self.failure(f"InfluxDB unreachable: {message}")
+            self.failure(f"InfluxDB error {status} {reason}: {message}")
 
     def reentry(self) -> None:
         # Close InfluxDB client
