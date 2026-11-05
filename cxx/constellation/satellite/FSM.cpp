@@ -315,6 +315,10 @@ void FSM::join_failure_thread() {
 template <typename Func, typename... Args> bool FSM::call_satellite_function(Func func, Args&&... args) {
     std::string error_message {};
 
+    // Wait until the reacting thread has set the transitional state, since conditions apply to this state
+    std::unique_lock transition_lock {transition_mutex_};
+    const auto current_state = state_.load();
+
     // Check if transition conditions are satisfied:
     if(remote_callback_ && !remote_conditions_.empty()) {
         LOG(logger_, INFO) << "Checking remote conditions...";
@@ -327,7 +331,7 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
             bool satisfied = true;
             for(const auto& condition : remote_conditions_) {
                 // Check if this condition applies to current state:
-                if(condition.applies(state_.load())) {
+                if(condition.applies(current_state)) {
                     // Get remote state:
                     const auto remote_state = remote_callback_(condition.getRemote());
 
@@ -383,6 +387,9 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
             std::this_thread::sleep_for(10ms);
         }
     }
+
+    // Unlock transition lock to call satellite transition function
+    transition_lock.unlock();
 
     try {
         // Call function of satellite
