@@ -163,6 +163,8 @@ namespace constellation::gui {
         QMap<QString, QVariant> getQDetails(const QModelIndex& index) const;
 
     signals:
+        // NOLINTBEGIN(readability-inconsistent-declaration-parameter-name)
+
         /**
          * @brief Signal emitted whenever a connection changed
          * @param connections Number of currently held connections
@@ -186,6 +188,8 @@ namespace constellation::gui {
          * @param global Boolean indicating whether this was a global or a lowest state
          */
         void leavingState(protocol::CSCP::State state, bool global);
+
+        // NOLINTEND(readability-inconsistent-declaration-parameter-name)
 
     protected:
         /**

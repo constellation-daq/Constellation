@@ -29,7 +29,7 @@ Checks: [
 ]
 WarningsAsErrors: '*'
 HeaderFileExtensions: ['', 'h', 'hpp', 'ipp']
-ExcludeHeaderFilterRegex: '.*/external/md5\.h|.*/ui_.*\.h'
+ExcludeHeaderFilterRegex: '.*/external/md5\.h|.*/ui_.*\.h|Q*.moc'
 CheckOptions:
   misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: true
   misc-include-cleaner.IgnoreHeaders: 'bits/.*;asio.*;msgpack.*;spdlog.*;toml\+\+.*;yaml-cpp.*;q[^\/]+\.h;cpr.*'
