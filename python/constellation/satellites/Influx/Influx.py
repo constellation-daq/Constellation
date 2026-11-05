@@ -36,10 +36,13 @@ class Influx(Satellite, MonitoringListener):
             org = config.get_str("org")
             self.bucket = config.get_str("bucket", "constellation")
             interval = int(config.get_num("flush_interval", 2.5, min_val=1) * 1000)
+            batch_size = config.get_num("batch_size", 1000, min_val=1)
 
             self.client = InfluxDBClient(url=url, token=token, org=org)
             self.write_api = self.client.write_api(
-                write_options=WriteOptions(flush_interval=interval),
+                write_options=WriteOptions(
+                    flush_interval=interval, batch_size=batch_size, max_close_wait=1000, max_retry_time=15000
+                ),
                 error_callback=self._write_error,
             )
 
