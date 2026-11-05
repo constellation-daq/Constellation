@@ -180,42 +180,43 @@ class ReceiverSatellite(Satellite):
         Create the final output file path from output directory, file name and extension and validates access. Returns the
         absolute path to the file.
         """
-        file = pathlib.Path(path) / file_name
+        file_path = pathlib.Path(path) / file_name
         try:
             # Replace extension if desired
             if ext:
-                file = file.with_suffix("." + ext.removeprefix("."))
+                file_path = file_path.with_suffix("." + ext.removeprefix("."))
 
             # Create all the required directories
-            file.parent.mkdir(parents=True, exist_ok=True)
+            file_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Handle file name conflicts
-            if file.exists():
+            if file_path.exists():
                 if self._file_conflict_strategy == FileConflictStrategy.ERROR:
-                    raise RuntimeError(f"Overwriting of existing file {file} denied")
+                    raise RuntimeError(f"Overwriting of existing file {file_path} denied")
                 elif self._file_conflict_strategy == FileConflictStrategy.RENAME:
                     suffix = "".join(random.choices(string.digits + string.ascii_lowercase, k=8))
-                    file = file.with_name(f"{file.stem}_{suffix}{file.suffix}")
-                    self.log_cdtp.warning("Target file exists, redirecting output to file %s", file)
+                    file_path = file_path.with_name(f"{file_path.stem}_{suffix}{file_path.suffix}")
+                    self.log_cdtp.warning(f"Target file exists, redirecting output to file {file_path}")
                 else:
-                    self.log_cdtp.warning("File %s exists and will be overwritten", file)
-                    file.unlink()
+                    self.log_cdtp.warning(f"File {file_path} exists and will be overwritten")
+                    file_path.unlink()
 
             # Create the file exclusively to check if it can be accessed
-            with open(file, "x"):
-                pass
-            file = file.resolve()
+            file = open(file_path, "x")
+            file_path = file_path.resolve()
         except FileExistsError as e:
-            raise RuntimeError(f"Overwriting of existing file {file} denied") from e
+            raise RuntimeError(f"Overwriting of existing file {file_path} denied") from e
         except OSError as e:
             raise RuntimeError(f"Issue with output path: {e}") from e
 
-        self._register_diskspace_metric(file)
+        self._register_diskspace_metric(file_path.parent)
 
         # Send metric with new output file path
-        self.stat("OUTPUT_FILE", str(file))
+        self.stat("OUTPUT_FILE", str(file_path))
 
-        return file
+        file.close()
+        file_path.unlink()
+        return file_path
 
     def _register_diskspace_metric(self, path: pathlib.Path) -> None:
         """Register or update the disk space metric for the given path"""
