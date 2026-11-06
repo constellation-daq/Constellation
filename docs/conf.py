@@ -206,7 +206,7 @@ for path in satellite_files:
     satellites.setdefault(satellite_category, []).append(f"{satellite_type} <{slugify(satellite_type, lowercase=False)}>")
 
 # Do not parse external satellites when requested via env variable
-document_ext_satellites = os.getenv("DOC_EXTERNAL_SATELLITES", "true").lower() == "true"
+document_ext_satellites = os.getenv("DOC_EXTERNAL_SATELLITES", "false").lower() == "true"
 if not document_ext_satellites:
     logger.info("Building documentation without external satellites", color="yellow")
 else:
