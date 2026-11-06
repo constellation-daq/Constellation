@@ -398,6 +398,14 @@ TEST_CASE("CDTP2 Invalid Number of Data Records", "[core][core::message]") {
         Message("Error decoding CDTP2 EOR message: Wrong number of data records, exactly two data records expected"));
 }
 
+TEST_CASE("CDTP2 No Data Records", "[core][core::message]") {
+    auto msg = CDTP2Message("sender", CDTP2Message::Type::DATA, 0);
+    auto zmq_mpm = msg.assemble();
+    const auto msg2 = CDTP2Message::disassemble(zmq_mpm);
+    REQUIRE(msg2.getType() == CDTP2Message::Type::DATA);
+    REQUIRE(msg2.getDataRecords().empty());
+}
+
 TEST_CASE("CDTP2 Invalid Data Records", "[core][core::message]") {
     msgpack::sbuffer sbuf {};
     msgpack_pack(sbuf, get_protocol_identifier(Protocol::CDTP2));
