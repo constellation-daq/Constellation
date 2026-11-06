@@ -18,12 +18,13 @@ from constellation.core.cdtp import (
     RecvTimeoutError,
     RunCondition,
     TransmitterState,
+    TransmitterStateSeq,
 )
 from constellation.core.chirp import CHIRPServiceIdentifier, get_uuid
 from constellation.core.chirpmanager import DiscoveredService
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.logging import ConstellationLogger
-from constellation.core.message.cdtp2 import DataRecord
+from constellation.core.message.cdtp2 import CDTP2Message, DataRecord
 from constellation.core.network import get_loopback_interface_name
 from constellation.core.protocol.cscp1 import SatelliteState
 from constellation.core.receiver_satellite import FileConflictStrategy, ReceiverSatellite
@@ -205,6 +206,15 @@ def test_datareceiver_cov(mock_data_receiver: DataReceiver):
     tx_service = DiscoveredService(get_uuid("mock_transmitter"), CHIRPServiceIdentifier.DATA, "127.0.0.1", DATA_PORT)
     receiver.add_sender(tx_service)
     receiver.remove_sender(tx_service)
+
+
+def test_data_message_without_records(mock_data_receiver: MockDataReceiver):
+    receiver = mock_data_receiver
+    msg = CDTP2Message.disassemble(CDTP2Message("mock_transmitter", CDTP2Message.Type.DATA).assemble().frames)
+    assert msg.data_records == []
+    receiver._data_transmitter_states["mock_transmitter"] = TransmitterStateSeq(TransmitterState.BOR_RECEIVED, 0, 0)
+    receiver._handle_data_message(msg)
+    assert receiver.last_data_records == []
 
 
 def test_data_transmission(mock_data_transmitter: DataTransmitter, mock_data_receiver: MockDataReceiver):
