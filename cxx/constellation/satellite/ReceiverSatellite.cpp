@@ -413,6 +413,9 @@ void ReceiverSatellite::stopping_receiver() {
     // Stop BasePool thread and disconnect all connected sockets
     stopPool();
 
+    // Propagate exceptions thrown while handling EOR messages
+    checkPoolException();
+
     // Emit final number of bytes received
     STAT("RX_BYTES", bytes_received_.load());
 }
