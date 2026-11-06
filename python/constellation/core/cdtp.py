@@ -582,12 +582,15 @@ class DataReceiver:
         self._receive_bor(msg.sender, msg.user_tags, msg.configuration)
 
     def _handle_data_message(self, msg: CDTP2Message) -> None:
-        self.log_cdtp.trace(
-            "Received data message from %s with data records from %s to %s",
-            msg.sender,
-            msg.data_records[0].sequence_number,
-            msg.data_records[-1].sequence_number,
-        )
+        if msg.data_records:
+            self.log_cdtp.trace(
+                "Received data message from %s with data records from %s to %s",
+                msg.sender,
+                msg.data_records[0].sequence_number,
+                msg.data_records[-1].sequence_number,
+            )
+        else:
+            self.log_cdtp.trace("Received data message from %s without data records", msg.sender)
 
         # Check that BOR was received
         self._check_bor_received(CDTP2Message.Type.DATA, msg.sender)
