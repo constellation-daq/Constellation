@@ -399,7 +399,7 @@ TEST_CASE("CDTP2 Invalid Number of Data Records", "[core][core::message]") {
 }
 
 TEST_CASE("CDTP2 No Data Records", "[core][core::message]") {
-    auto msg = CDTP2Message("sender", CDTP2Message::Type::DATA, 0);
+    const auto msg = CDTP2Message("sender", CDTP2Message::Type::DATA, 0);
     auto zmq_mpm = msg.assemble();
     const auto msg2 = CDTP2Message::disassemble(zmq_mpm);
     REQUIRE(msg2.getType() == CDTP2Message::Type::DATA);
