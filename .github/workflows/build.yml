@@ -82,6 +82,47 @@ jobs:
             build/meson-logs/testlog.txt
             build/meson-logs/testlog.junit.xml
 
+  build-test-macos:
+    name: C++ Build & Test (macOS)
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [xcode-27, macos-26, macos-15]
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Ignore git ownership warnings
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
+      - name: Install dependencies
+        run: |
+          brew install meson qt
+
+      - name: Configure
+        run: |
+          meson setup build -Dcxx_tests=enabled -Dbuildtype=debug -Dcpp_args=-fexperimental-library
+
+      - name: Build
+        run: |
+          meson compile -C build
+
+      - name: Test
+        run: |
+          meson test -C build --print-errorlogs
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cpp-macos-test-logs
+          path: |
+            build/meson-logs/testlog.txt
+            build/meson-logs/testlog.junit.xml
+
   build-test-python:
     name: Python Build & Test
     runs-on: ubuntu-latest
