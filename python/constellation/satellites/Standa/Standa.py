@@ -57,19 +57,7 @@ class Standa(Satellite):
 
         return f"Connected to axes {', '.join(self.motors.axes)} with Standa models {', '.join(self._models)}"
 
-    def do_starting(self, run_identifier: str) -> str:
-        self.log.info(f"Started run {run_identifier}")
-        return "Started run"
-
-    def do_launching(self) -> str | None:
-        if self.calibrate_on_launch:
-            self.motors.calibrate()
-        else:
-            # Move motors to specified config position
-            self.do_reconfigure(self._config)
-        return "Launched!"
-
-    def do_reconfigure(self, config: Configuration) -> str | None:
+    def _move(self, config: Configuration) -> str:
         if "axes" not in config:
             return "Reconfigured without axes"
 
@@ -87,6 +75,21 @@ class Standa(Satellite):
         self.log.info(f"Moved to {position}")
         return "Moved stages"
 
+    def do_starting(self, run_identifier: str) -> str:
+        self.log.info(f"Started run {run_identifier}")
+        return "Started run"
+
+    def do_launching(self) -> str | None:
+        if self.calibrate_on_launch:
+            self.motors.calibrate()
+        else:
+            # Move motors to specified config position
+            self._move(self._config)
+        return "Launched!"
+
+    def do_reconfigure(self, config: Configuration) -> str | None:
+        return self._move(config)
+
     def reentry(self) -> None:
         if self._motors is not None:
             self._motors.close()
@@ -96,7 +99,7 @@ class Standa(Satellite):
         self.log.info("Stopping the run")
         return "Stopped run"
 
-    @cscp_requestable([SatelliteState.INIT, SatelliteState.ORBIT])
+    @cscp_requestable([SatelliteState.INIT])
     def home(self) -> tuple[str, Any, dict[str, Any]]:
         """Move all axes to their low limit switch and define zero there, leaving the stage at zero"""
         self.motors.calibrate()
