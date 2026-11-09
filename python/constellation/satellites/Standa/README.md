@@ -93,7 +93,7 @@ Positions outside the travel range of the stage are rejected rather than clipped
 
 | Command | Description | Arguments | Return Value | Allowed States |
 |---------|-------------|-----------|--------------|----------------|
-| `home` | Move all axes to their low limit switch and define zero there. The stage is left at zero. | - | Position of each axis (Section) | `INIT`, `ORBIT` |
+| `home` | Move all axes to their low limit switch and define zero there. The stage is left at zero. | - | Position of each axis (Section) | `INIT` |
 
 ## Taking data at several positions
 
