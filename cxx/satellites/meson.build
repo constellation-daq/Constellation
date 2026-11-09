@@ -43,7 +43,7 @@ foreach satellite : satellites_to_build
   # Create satellite library
   satellite_lib = shared_library(
     satellite_type,
-    sources: [satellite_generator, satellite_sources, build_hpp],
+    sources: [satellite_generator, satellite_sources, build_hpp, build_vcs_hpp],
     dependencies: [core_dep, satellite_dep] + satellite_dependencies,
     gnu_symbol_visibility: 'hidden',
     cpp_args: constellation_private_args,
@@ -54,7 +54,7 @@ foreach satellite : satellites_to_build
   set_variable('satellite_'+satellite_type.to_lower()+'_lib', satellite_lib)
   # Create satellite executable
   executable('Satellite' + satellite_type,
-    sources: [satellite_main],
+    sources: [satellite_main, build_vcs_hpp],
     dependencies: [exec_dep],
     install: true,
     install_rpath: constellation_rpath,
