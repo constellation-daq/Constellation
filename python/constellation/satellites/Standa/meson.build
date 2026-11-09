@@ -6,7 +6,6 @@ standa_sat_files = files(
   '__main__.py',
   'Standa.py',
   'motor_controller.py',
-  'stage_config.py',
 )
 
 py.install_sources(standa_sat_files,

@@ -6,7 +6,6 @@ Provides the satellite implementation for a Standa motor controller setup
 Constellation interface
 """
 
-import time
 from typing import Any
 
 from constellation.core.commandmanager import cscp_requestable
@@ -16,19 +15,19 @@ from constellation.core.protocol.cscp1 import SatelliteState
 from constellation.core.satellite import Satellite
 
 from .motor_controller import Motors
-from .stage_config import Standa_8MT30_50
 
-_SUPPORTED_DEVICES = {
-    "8MT30_50": Standa_8MT30_50,
-}
+_SUPPORTED_DEVICES = ["8MT30_50"]
 
 
 class Standa(Satellite):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
 
         super().__init__(*args, **kwargs)
-        self.start_time = time.time()
         self._motors: Motors | None = None
+        self._config: Configuration
+        self._serials: dict[str, int] = {}
+        self._models: dict[str, str] = {}
+        self._initpos: dict[str, float] = {}
 
     @property
     def motors(self) -> Motors:
@@ -38,43 +37,46 @@ class Standa(Satellite):
 
     def do_initializing(self, config: Configuration) -> str | None:
         self.log.info("Received configuration with parameters: %s", ", ".join(config.get_keys()))
+        self._config = config
 
-        device_model = config.get_str("model")
-        if device_model not in _SUPPORTED_DEVICES.keys():
-            raise ValueError(f"Device model {device_model} not supported")
+        axes_conf = config.get_section("axes")
+        for axis in axes_conf.get_keys():
+            axis_conf = axes_conf.get_section(axis)
 
-        self.profile = _SUPPORTED_DEVICES[device_model]
+            self._models[axis] = axis_conf.get_str("model")
+            if self._models[axis] not in _SUPPORTED_DEVICES:
+                raise ValueError(f"Device model {self._models[axis]} not supported")
 
-        # Serial number of the controller of every axis
-        serials_section = config.get_section("axis_serials")
-        serials = {axis: serials_section.get_int(axis) for axis in serials_section.get_keys()}
+            self._serials[axis] = axis_conf.get_int("serial")
+            self._initpos[axis] = axis_conf.get_float("position")
 
         if self._motors is None:
-            self._motors = Motors(serials, profile=self.profile, logger=self.log)
+            self._motors = Motors(self._serials, logger=self.log)
 
         self.calibrate_on_launch = config.get_bool("calibrate_on_launch", False)
 
-        position_section = config.get_section("position")
-        self.position = {axis: position_section.get_float(axis) for axis in position_section.get_keys()}
-
-        return f"Connected to axes {', '.join(self.motors.ids)} of a Standa {device_model} stage"
+        return f"Connected to axes {', '.join(self.motors.axes)} with Standa models {', '.join(self._models)}"
 
     def do_starting(self, run_identifier: str) -> str:
-        self.start_time = time.time()
         self.log.info(f"Started run {run_identifier}")
         return "Started run"
 
     def do_launching(self) -> str | None:
         if self.calibrate_on_launch:
             self.motors.calibrate()
+        else:
+            # Move motors to specified config position
+            self.do_reconfigure(self._config)
         return "Launched!"
 
     def do_reconfigure(self, config: Configuration) -> str | None:
-        if "position" not in config:
-            return "Reconfigured without position"
+        if "axes" not in config:
+            return "Reconfigured without axes"
 
-        position_section = config.get_section("position")
-        position = {axis: position_section.get_float(axis) for axis in position_section.get_keys()}
+        axes_conf = config.get_section("axes")
+        position = {axis: axes_conf.get_section(axis).get_float("position") for axis in axes_conf.get_keys()}
+        if not position:
+            return "Reconfigured without position"
 
         for axis, mm in position.items():
             self.motors.move_abs(axis, mm)
@@ -91,15 +93,14 @@ class Standa(Satellite):
         super().reentry()
 
     def do_stopping(self) -> str:
-        run_duration = time.time() - self.start_time
-        self.log.info(f"Stopping the run after {run_duration} s")
+        self.log.info("Stopping the run")
         return "Stopped run"
 
     @cscp_requestable([SatelliteState.INIT, SatelliteState.ORBIT])
     def home(self) -> tuple[str, Any, dict[str, Any]]:
         """Move all axes to their low limit switch and define zero there, leaving the stage at zero"""
         self.motors.calibrate()
-        position = {axis: self.motors.get_position(axis) for axis in self.motors.ids}
+        position = {axis: self.motors.get_position(axis) for axis in self.motors.axes}
         return f"Homed, stage at {position}", position, {}
 
     @schedule_metric("mm", 5)
@@ -120,7 +121,7 @@ class Standa(Satellite):
     def _position(self, axis: str) -> float | None:
         """Position of an axis, or None while the stage is not connected"""
         motors = self._motors
-        if motors is None or axis not in motors.ids:
+        if motors is None or axis not in motors.axes:
             return None
         return motors.get_position(axis)
 

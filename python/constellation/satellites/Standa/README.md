@@ -40,7 +40,7 @@ pip install --no-build-isolation -e ".[standa]"
 
 ## Supported devices
 
-The stage model is selected with the `model` configuration parameter. It determines the profile of controller settings (feedback, home, motion and limit switch settings) which is applied to every controller after connecting to it. The following models are currently supported:
+The stage model is selected with the `model` configuration parameter. It determines the step size for each stage. Other Standa models might be compatible if the step size matches.
 
 ### `8MT30_50`
 
@@ -57,20 +57,26 @@ The `8MT30-50` is a motorized linear stage with 50 mm of travel and a step size 
 
 The axes are named by the keys of the `axis_serials` section, and the same names have to be used in the `position` section. The `position` section has to be present even when the stage is positioned from a controller, since only parameters which exist in the configuration can be changed with {bdg-secondary}`reconfigure`.
 
+The serial number can be found in `/dev/serial/by-id/` on Linux.
+
 ```toml
 [Standa._default]
-model = "8MT30_50"
 calibrate_on_launch = false
 
-[Standa._default.axis_serials]
-x = 31015
-y = 31016
-z = 30954
+[Standa._default.axes.x]
+serial = 31015
+model = "8MT30_50"
+position = 0.0
 
-[Standa._default.position]
-x = 0.0
-y = 0.0
-z = 0.0
+[Standa._default.axes.y]
+serial = 31016
+model = "8MT30_50"
+position = 0.0
+
+[Standa._default.axes.my_crazy_axis] # subsection is just a name with no further meaning
+serial = 30954
+model = "8MT173"
+position = 0.0
 ```
 
 Positions outside the travel range of the stage are rejected rather than clipped, so that data can never be recorded at a position other than the configured one.
