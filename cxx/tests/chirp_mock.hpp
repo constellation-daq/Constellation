@@ -42,7 +42,12 @@ inline constellation::chirp::Manager* create_chirp_manager() {
         manager->start();
         constellation::utils::ManagerLocator::setDefaultCHIRPManager(std::move(manager));
     });
-    return constellation::utils::ManagerLocator::getCHIRPManager();
+    // Reset CHIRP manager state before returning
+    auto* chirp_manager = constellation::utils::ManagerLocator::getCHIRPManager();
+    chirp_manager->unregisterDiscoverCallbacks();
+    chirp_manager->unregisterServices();
+    chirp_manager->forgetDiscoveredServices();
+    return chirp_manager;
 }
 
 inline void chirp_mock_service(std::string_view name,
