@@ -108,10 +108,6 @@ class Standa(Satellite):
             motor.close()
         super().reentry()
 
-    def do_stopping(self) -> str:
-        self.log.info("Stopping the run")
-        return "Stopped run"
-
     @cscp_requestable([SatelliteState.INIT])
     def home(self) -> tuple[str, Any, dict[str, Any]]:
         """Move all axes to their low limit switch and define zero there, leaving the stage at zero"""
