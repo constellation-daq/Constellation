@@ -9,7 +9,28 @@ category: "Uncategorized"
 ## Description
 
 This satellite controls lasers from Particulars, turnig it on and off, as well as setting DAC and frequency. Original code written by Matias Senger, as part of his [PyticularsTCT](https://github.com/SengerM/PyticularsTCT) project. He based his code on the original C++ source code `USBM3.cxx` from Particulars. The current version of the code translates Matias's version into Constellation, with plans to implement further features from the original source code.
+## Requirements
 
+The Particulars Laser Controller satellite requires the `[particulars]` component, which can be installed with:
+
+::::{tab-set}
+:::{tab-item} PyPI
+:sync: pypi
+
+```sh
+pip install "ConstellationDAQ[particulars]"
+```
+
+:::
+:::{tab-item} Source
+:sync: source
+
+```sh
+pip install --no-build-isolation -e ".[particulars]"
+```
+
+:::
+::::
 ## Parameters
 
 | Parameter   | Description           | Type  | Allowed range  |
