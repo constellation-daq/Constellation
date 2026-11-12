@@ -48,12 +48,21 @@ class ParticularsLaserController(Satellite):
 
     def do_launching(self):
         self._turn_on()
-        self.log.info(f"Laser at {self.frequency}Hz, {self.DAC} DAC.")
+        self._turn_off()
+        return f"Laser at {self.frequency}Hz, {self.dac} DAC. Laser off."
 
     def do_landing(self):
         self._turn_off()
         self.log.info("Laser is turned off.")
         return "Laser is turned off."
+
+    def do_starting(self, run_identifier: str):
+        self._turn_on()
+        return "Laser on at {self.frequency}Hz, {self.dac} DAC. Run ID: {run_identifier}"
+
+    def do_stopping(self):
+        self._turn_off()
+        return "Laser off."
 
     def do_reconfigure(self, partial_config: Configuration) -> str:
         config_keys = partial_config.get_keys()
@@ -70,13 +79,13 @@ class ParticularsLaserController(Satellite):
 
     def _send_packet(self, packet):
         """Send a packet of bytes from the computer to the laser controller.
-                Sending function parameters established empirically, do not change!
+                        Sending function parameters established empirically, do not change!
         Parameters
         ----------
         packet: array of int between 0 and 255
-                An array of bytes, i.e. an array of integer numbers each
-                in 0, 1, ..., 255, to be sent to the laser controller.
-                Example `packet = [0,4,200]`.
+                        An array of bytes, i.e. an array of integer numbers each
+                        in 0, 1, ..., 255, to be sent to the laser controller.
+                        Example `packet = [0,4,200]`.
         """
         if (
             not hasattr(packet, "__iter__")
