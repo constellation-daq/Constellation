@@ -12,7 +12,6 @@ This satellite controls [lasers from Particulars](https://particulars.si/product
 
 Original code written by Matias Senger, as part of his [PyticularsTCT](https://github.com/SengerM/PyticularsTCT) project. He based his code on the original C++ source code `USBM3.cxx` from Particulars. The current version of the code translates Matias's version into Constellation, with plans to implement further features from the original source code.
 
-
 ## Requirements
 
 The Particulars Laser Controller satellite requires the `[particulars]` component, which can be installed with:
