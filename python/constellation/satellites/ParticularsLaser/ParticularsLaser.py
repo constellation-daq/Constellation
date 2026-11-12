@@ -43,7 +43,6 @@ class ParticularsLaserController(Satellite):
         self.dac = config.get_int("dac", min_val=0, max_val=1023)
 
         current_status = self.status
-        self._turn_on()  # This updates the real frequency and DAC.
         if current_status == "off":
             self._turn_off()
 
