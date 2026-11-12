@@ -23,9 +23,7 @@ def mm_to_steps_8MT30_50(mm):
     return mm // 256, mm % 256
 
 
-MODEL_STEPS = {
-    "8MT30_50": (steps_to_mm_8MT30_50, mm_to_steps_8MT30_50)
-}
+MODEL_STEPS = {"8MT30_50": (steps_to_mm_8MT30_50, mm_to_steps_8MT30_50)}
 
 
 class Motor:
