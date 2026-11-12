@@ -40,7 +40,7 @@ class Motor:
         if not port:
             raise RuntimeError(f"Missing controller for axis {axis_id} (S/N {self._serial})")
 
-        self.axis = ximc.Axis("xi-com://" + port) # Linux implementation
+        self.axis = ximc.Axis("xi-com://" + port)  # Linux implementation
         self.axis.open_device()
         self.log.info(f"Connected {port}, S/N {self._serial}")
 

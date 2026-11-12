@@ -53,7 +53,7 @@ class Standa(Satellite):
             self._initpos[axis] = axis_conf.get_float("position")
 
         self.calibrate_on_launch = config.get_bool("calibrate_on_launch", False)
-        
+
         self.reset_metrics()
         # Register scheduled metrics of positions
         for axis, motor in self._motors.items():
@@ -92,18 +92,18 @@ class Standa(Satellite):
                 motor.calibrate()
         # Move motors to specified config position
         self._move(self._initpos)
-        
+
         return "Launched!"
 
     def do_reconfigure(self, config: Configuration) -> str | None:
         if "axes" not in config:
             return "Reconfigured without axes"
-        
+
         axes_conf = config.get_section("axes")
         position = {axis: axes_conf.get_section(axis).get_float("position") for axis in axes_conf.get_keys()}
         if not position:
             return "Reconfigured without position"
-        
+
         return self._move(position)
 
     def reentry(self) -> None:
@@ -132,4 +132,3 @@ class Standa(Satellite):
             raise ValueError(f"Axis '{axis}' is not a registered stage")
         pos = self.motors[axis].get_position()
         return f"Axis {axis} is at {pos}", pos, {}
-
