@@ -141,8 +141,6 @@ class ParticularsLaserController(Satellite):
 
     def _set_frequency(self, Hz: float):
         """Set the frequency of the laser."""
-        if not 50 <= Hz <= 100e3:
-            raise ValueError(f"`Hz` must be within 50 and 100e3, received {Hz} Hz.")
         Hz = int((500000000 / Hz - 440) / 180)  # Taken from the C++ code.
         cmd = [99, int_to_char_cpp_style(Hz), int_to_char_cpp_style(Hz >> 8)]  # Taken from the C++ code.
         self._send_packet(cmd)
