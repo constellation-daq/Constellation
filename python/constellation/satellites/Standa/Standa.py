@@ -98,9 +98,6 @@ class Standa(Satellite):
 
         axes_conf = config.get_section("axes")
         position = {axis: axes_conf.get_section(axis).get_float("position") for axis in axes_conf.get_keys()}
-        if not position:
-            return "Reconfigured without position"
-
         return self._move(position)
 
     def reentry(self) -> None:
