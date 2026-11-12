@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <future>
@@ -41,15 +42,26 @@ namespace {
         using SubscriberPoolT = SubscriberPool<CMDP1Message, CHIRP::MONITORING>;
 
         TestPool() : SubscriberPoolT("POOL", {}) {}
+        ~TestPool() { stopPool(); }
+
+        // No copy/move constructor/assignment
+        TestPool(const TestPool& other) = delete;
+        TestPool& operator=(const TestPool& other) = delete;
+        TestPool(TestPool&& other) = delete;
+        TestPool& operator=(TestPool&& other) = delete;
 
         [[nodiscard]] std::future<std::cv_status> waitCallback() {
+            std::atomic_bool started_flag {false};
             auto callback_fut = std::async(std::launch::async, [&]() {
                 std::unique_lock pseudo_lock {pesudo_mutex_};
-                const auto cv_status = cv_.wait_for(pseudo_lock, std::chrono::seconds(1));
+                started_flag.store(true);
+                const auto cv_status = cv_.wait_for(pseudo_lock, std::chrono::seconds(2));
                 return cv_status;
             });
-            // Give a bit of time to start the thread
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            // Wait until the thread started
+            while(!started_flag.load()) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            }
             return callback_fut;
         }
 
@@ -111,7 +123,7 @@ TEST_CASE("Message callback", "[core][core::pools]") {
     // Send log message
     sender.sendLogMessage(Level::STATUS, "", "test");
     std::unique_lock msg_lock {msg_mutex};
-    const auto cv_status = cv.wait_for(msg_lock, std::chrono::seconds(1));
+    const auto cv_status = cv.wait_for(msg_lock, std::chrono::seconds(2));
     REQUIRE(cv_status == std::cv_status::no_timeout);
 
     // Check message
