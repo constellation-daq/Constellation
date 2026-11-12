@@ -44,7 +44,7 @@ The stage model is selected with the `model` configuration parameter. It determi
 
 ### `8MT30_50`
 
-The `8MT30-50` is a motorized linear stage with 50 mm of travel and a step size of 1.25 um.
+The `8MT30-50` is a motorized linear stage with 50 mm of travel and a step size of 1.25 um. The position is given in millimeters.
 
 ## Parameters
 
