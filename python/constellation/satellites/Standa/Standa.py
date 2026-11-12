@@ -13,7 +13,7 @@ from constellation.core.configuration import Configuration
 from constellation.core.protocol.cscp1 import SatelliteState
 from constellation.core.satellite import Satellite
 
-from .motor_controller import Motor, MODEL_STEPS
+from .motor_controller import MODEL_STEPS, Motor
 
 
 class Standa(Satellite):
