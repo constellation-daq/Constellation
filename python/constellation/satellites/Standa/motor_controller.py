@@ -33,25 +33,31 @@ class Motor:
         self._axis_id = axis_id
         self._model = model
         self._serial = f"{serial:08X}" if isinstance(serial, int) else str(serial).strip().upper()
-        self.axis: ximc.Axis = None
+        self._axis: ximc.Axis | None = None
 
         # The by-id name contains the serial in hex
         port = next((p for p in glob.glob("/dev/serial/by-id/usb-XIMC*") if self._serial in p.upper()), None)
         if not port:
             raise RuntimeError(f"Missing controller for axis {axis_id} (S/N {self._serial})")
 
-        self.axis = ximc.Axis("xi-com://" + port)  # Linux implementation
-        self.axis.open_device()
+        axis = ximc.Axis("xi-com://" + port)  # Linux implementation
+        axis.open_device()
+        self._axis = axis
         self.log.info(f"Connected {port}, S/N {self._serial}")
 
     def __del__(self):
         self.close()
 
+    @property
+    def axis(self) -> ximc.Axis:
+        if self._axis is None:
+            raise RuntimeError(f"Axis '{self._axis_id}' is not connected")
+        return self._axis
+
     def close(self):
-        if self.axis is not None:
-            self.axis.close_device()
-            self.axis.clear()
-            self.axis = None
+        if self._axis is not None:
+            self._axis.close_device()
+            self._axis = None
 
     def calibrate(self):
         self.log.info(f"Calibrating axis {self._axis_id}...")
