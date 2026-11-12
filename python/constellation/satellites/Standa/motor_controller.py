@@ -63,9 +63,7 @@ class Motor:
         return self._axis
 
     def close(self):
-        if self._axis is not None:
-            self._axis.close_device()
-            self._axis = None
+        self._axis.close_device()
 
     def calibrate(self):
         self.log.info(f"Calibrating axis {self._axis_id}...")
