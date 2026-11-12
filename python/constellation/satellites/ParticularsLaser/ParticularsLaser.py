@@ -68,7 +68,7 @@ class ParticularsLaserController(Satellite):
             self._set_DAC(DAC=self.dac)
 
         if "frequency" in config_keys:
-            self.frequency = partial_config.get_float("frequency", min_val=50.0)
+            self.frequency = partial_config.get_float("frequency", min_val=50.0, max_val=100e3)
             self._set_frequency(Hz=self.frequency)
 
         self.log.info(f"Laser reconfigured at {self.frequency} Hz, {self.DAC} DAC.")
