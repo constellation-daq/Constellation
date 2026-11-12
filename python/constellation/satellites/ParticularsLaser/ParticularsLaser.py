@@ -55,10 +55,6 @@ class ParticularsLaserController(Satellite):
         self.log.info("Laser is turned off.")
         return "Laser is turned off."
 
-    def do_interrupting(self):
-        self._turn_off()
-        self.log.info("Laser is turned off.")
-
     def do_reconfigure(self, partial_config: Configuration) -> str:
         config_keys = partial_config.get_keys()
 
@@ -115,17 +111,6 @@ class ParticularsLaserController(Satellite):
             return "off"
         else:
             raise RuntimeError("Cannot understand response from laser controller, dont know if the laser is on or off.")
-
-    @status.setter
-    def status(self, status: str):
-        """Set the laser 'on' or 'off'."""
-        if status not in {"on", "off"}:
-            raise ValueError(f'`status` must be either "on" or "off", received {repr(status)}.')
-        if status == "on":
-            self.on()
-        else:
-            self.off()
-
 
     def _turn_on(self):
         """Turn on the laser at the configured frequency and DAC values."""
