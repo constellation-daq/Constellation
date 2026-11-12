@@ -24,11 +24,12 @@ This may be easier to read with a few keys, but additional subsections can quick
 
 A comparison of a short configuration snippet in either syntax is provided below:
 
-::::{grid} 1 1 2 2
+:::::{grid} 1 1 2 2
 
-:::{grid-item-card}
+::::{grid-item-card}
+:::{card-header}
 YAML syntax example
-^^^^^^^^^^^^
+:::
 
 ```yaml
 Sputnik:
@@ -38,12 +39,12 @@ Sputnik:
     interval: 500
 ```
 
-:::
+::::
 
-:::{grid-item-card}
+::::{grid-item-card}
+:::{card-header}
 TOML syntax example
-^^^^^^^^^^^^
-
+:::
 
 ```toml
 [Sputnik.One]
@@ -53,8 +54,8 @@ interval = 1500
 interval = 500
 ```
 
-:::
 ::::
+:::::
 
 There are multiple online tools available which convert TOML into YAML and vice versa.
 
