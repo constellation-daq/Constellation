@@ -54,7 +54,7 @@ class ParticularsLaserController(Satellite):
     def do_landing(self):
         self._turn_off()
         self.log.info("Laser is turned off.")
-        # return "Laser is turned off."
+        return "Laser is turned off."
 
     def do_interrupting(self):
         self._turn_off()
