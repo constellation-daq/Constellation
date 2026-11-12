@@ -22,12 +22,6 @@ def int_to_char_cpp_style(i: int):
 
 
 class ParticularsLaserController(Satellite):
-    """This class allows to control the laser from the Particulars TCT
-    setup. It is based in the C++ source code `USBM3.cxx` that Particulars
-    sent to me after request. I did not
-    implemented every feature, only what I need.
-    """
-
     def do_initializing(self, config: Configuration):
         device = usb.core.find(idVendor=0xC251, idProduct=0x2201)  # ID c251:2201 Keil Software, Inc. LASER Driver IJS
         if device is None:
@@ -46,7 +40,7 @@ class ParticularsLaserController(Satellite):
         self.endpoint = device[0].interfaces()[0].endpoints()[0]
 
         self.frequency = config["frequency"]
-        self.DAC = config["DAC"]  # Initialize.
+        self.dac = config["dac"]  # Initialize.
 
         current_status = self.status
         self._turn_on()  # This updates the real frequency and DAC.
@@ -55,7 +49,7 @@ class ParticularsLaserController(Satellite):
 
     def do_launching(self):
         self._turn_on()
-        return f"Laser at {self.frequency}Hz, {self.DAC} DAC."
+        return f"Laser at {self.frequency}Hz, {self.dac} DAC."
 
     def do_landing(self):
         self._turn_off()
@@ -68,24 +62,19 @@ class ParticularsLaserController(Satellite):
     def do_reconfigure(self, partial_config: Configuration) -> str:
         config_keys = partial_config.get_keys()
 
-        if "device" in config_keys:
-            raise ValueError("Reconfiguring device is not possible")
-        if "port" in config_keys:
-            raise ValueError("Reconfiguring port is not possible")
-
-        if "DAC" in config_keys:
-            self.DAC = partial_config.get_int("DAC", min_val=0)
-            self._set_DAC(DAC=self.DAC)
+        if "dac" in config_keys:
+            self.dac = partial_config.get_int("dac", min_val=0)
+            self._set_DAC(DAC=self.dac)
 
         if "frequency" in config_keys:
             self.frequency = partial_config.get_float("frequency", min_val=50.0)
             self._set_frequency(Hz=self.frequency)
 
-        return f"Laser reconfigured at {self.frequency} Hz, {self.DAC} DAC."
+        return f"Laser reconfigured at {self.frequency} Hz, {self.dac} DAC."
 
     def _send_packet(self, packet):
         """Send a packet of bytes from the computer to the laser controller.
-
+                Sending function parameters established empirically, do not change!
         Parameters
         ----------
         packet: array of int between 0 and 255
@@ -93,12 +82,6 @@ class ParticularsLaserController(Satellite):
                 in 0, 1, ..., 255, to be sent to the laser controller.
                 Example `packet = [0,4,200]`.
         """
-        # ~ I converged into this function after spending a lot of time reading
-        # ~ from here and from there. I left below some references that were
-        # ~ useful to me:
-        # ~ - https://stackoverflow.com/questions/37943825/send-hid-report-with-pyusb/52368526#52368526
-        # ~ - https://stackoverflow.com/a/52368526/8849755
-        # ~ - https://github.com/pyusb/pyusb/blob/629943a1d73aeb912222c7dc6eaaea0d64a94a08/usb/core.py#L1043
         if (
             not hasattr(packet, "__iter__")
             or not all([isinstance(byte, int) for byte in packet])
@@ -107,10 +90,10 @@ class ParticularsLaserController(Satellite):
             raise ValueError(f"`packet` must be an array of integers each between 0 and 255. Received {repr(packet)}.")
         packet = packet + (64 - len(packet)) * [0]
         number_of_bytes_sent = self.device.ctrl_transfer(
-            bmRequestType=0x21,  # I have no idea why this number...
-            bRequest=9,  # I have no idea why this number...
-            wValue=0x200,  # I have no idea why this number...
-            wIndex=0,  # I have no idea why this number...
+            bmRequestType=0x21,
+            bRequest=9,
+            wValue=0x200,
+            wIndex=0,
             data_or_wLength=packet,
         )
         if number_of_bytes_sent != len(packet):
@@ -121,7 +104,6 @@ class ParticularsLaserController(Satellite):
     @property
     def status(self):
         """Returns either 'on' or 'off'."""
-        # Tutorial for reading from USB: https://www.youtube.com/watch?v=xfhzbw93rzw
         for _k in [1, 2]:  # Read twice because otherwise it tends to fail in the first one, don't ask me why...
             data = self.endpoint.read(
                 size_or_buffer=64
@@ -157,7 +139,7 @@ class ParticularsLaserController(Satellite):
     def _turn_on(self):
         """Turn on the laser at the configured frequency and DAC values."""
         self._set_frequency(Hz=self.frequency)
-        self._set_DAC(DAC=self.DAC)
+        self._set_DAC(DAC=self.dac)
         self._hardware_sequence_enable()
 
     def _turn_off(self):

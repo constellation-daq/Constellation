@@ -1,5 +1,5 @@
 """
-SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+SPDX-FileCopyrightText: 2026 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
 
 Provides the entry point for the Mariner example satellite
@@ -13,7 +13,7 @@ from .ParticularsLaser import ParticularsLaserController
 
 
 def main(args=None):
-    """Demonstrator satellite serving as prototype for new satellites"""
+    """Satellite to control Particulars Lasers"""
 
     # Get a dict of the parsed arguments
     parser = SatelliteArgumentParser(description=main.__doc__, version=__version__)
