@@ -11,7 +11,7 @@ category: "Test stand motor controllers"
 
 This satellite uses the [libximc](https://pypi.org/project/libximc/) library to control the Standa motor controllers of a multi-axis translation stage, as used for example to position a sample in a Transient Current Technique (TCT) setup.
 
-Each axis is driven by its own controller and is addressed by a name such as `x`, `y` or `z`. The mapping from name to controller is given by the serial number of the controller, so that an axis always keeps its name independent of the order in which the devices are enumerated. The serial number can be found in /dev/serial/by-id/ (on Linux) and are the numbers before "-ifXX", and are written in hexadecimal.
+Each axis is driven by its own controller and is addressed by a name such as `x`, `y` or `z`. The mapping from name to controller is given by the serial number of the controller, so that an axis always keeps its name independent of the order in which the devices are enumerated. The serial number can be found in `/dev/serial/by-id/` (on Linux) as the number before `-ifXX`, and is written in hexadecimal.
 
 The position of the stage is a configuration parameter and is changed with the `reconfigure` transition. This makes a position scan a sequence of runs, each taken at a fixed position, see [below](#taking-data-at-several-positions).
 
