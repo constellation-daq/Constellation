@@ -13,9 +13,7 @@ from constellation.core.configuration import Configuration
 from constellation.core.protocol.cscp1 import SatelliteState
 from constellation.core.satellite import Satellite
 
-from .motor_controller import Motor
-
-_SUPPORTED_DEVICES = ["8MT30_50"]
+from .motor_controller import Motor, MODEL_STEPS
 
 
 class Standa(Satellite):
@@ -43,7 +41,7 @@ class Standa(Satellite):
             axis_conf = axes_conf.get_section(axis)
 
             model = axis_conf.get_str("model")
-            if model not in _SUPPORTED_DEVICES:
+            if model not in MODEL_STEPS:
                 raise ValueError(f"Device model {model} not supported")
 
             serial = axis_conf["serial"]
