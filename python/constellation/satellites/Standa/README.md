@@ -11,7 +11,7 @@ category: "Test stand motor controllers"
 
 This satellite uses the [libximc](https://pypi.org/project/libximc/) library to control the Standa motor controllers of a multi-axis translation stage, as used for example to position a sample in a Transient Current Technique (TCT) setup.
 
-Each axis is driven by its own controller and is addressed by a name such as `x`, `y` or `z`. The mapping from name to controller is given by the serial number of the controller, so that an axis always keeps its name independent of the order in which the devices are enumerated.
+Each axis is driven by its own controller and is addressed by a name such as `x`, `y` or `z`. The mapping from name to controller is given by the serial number of the controller, so that an axis always keeps its name independent of the order in which the devices are enumerated. The serial number can be found in /dev/serial/by-id/ (on Linux) and are the numbers before "-ifXX", and are written in hexadecimal.
 
 The position of the stage is a configuration parameter and is changed with the `reconfigure` transition. This makes a position scan a sequence of runs, each taken at a fixed position, see [below](#taking-data-at-several-positions).
 
@@ -57,19 +57,21 @@ The `8MT30-50` is a motorized linear stage with 50 mm of travel and a step size 
 
 The axes are named by the keys of the `axis_serials` section, and the same names have to be used in the `position` section. The `position` section has to be present even when the stage is positioned from a controller, since only parameters which exist in the configuration can be changed with {bdg-secondary}`reconfigure`.
 
-The serial number can be found in `/dev/serial/by-id/` on Linux.
+The serial number can be found in `/dev/serial/by-id/` on Linux in hexadecimal. In the configuration file you can supply both the hexadecimal number or as an integer.
 
 ```toml
 [Standa._default]
 calibrate_on_launch = false
 
+# Serial as int
 [Standa._default.axes.x]
 serial = 31015
 model = "8MT30_50"
 position = 0.0
 
+# Serial as hex
 [Standa._default.axes.y]
-serial = 31016
+serial = 0x7928
 model = "8MT30_50"
 position = 0.0
 

@@ -9,6 +9,7 @@ Original code by Daniil D.Rastorguev.
 import glob
 import logging
 import time
+from typing import Any
 
 import libximc.highlevel as ximc
 
@@ -22,83 +23,72 @@ def mm_to_steps(mm):
     return mm // 256, mm % 256
 
 
-class Motors:
+class Motor:
     """
-    Connection to the ximc controllers of a multi-axis stage.
+    Connection to one ximc controller.
     """
 
-    def __init__(self, serials, logger=None):
+    def __init__(self, axis_id: str, model: str, serial: Any, logger=None):
         self.log = logger if logger is not None else logging.getLogger(__name__)
-        self.axes = {}
-        sn_to_axis = {str(serial): axis for axis, serial in serials.items()}
+        self._axis_id = axis_id
+        self._model = model
+        self._serial = f"{serial:08X}" if isinstance(serial, int) else str(serial).strip().upper()
+        self.axis: ximc.Axis = None
 
-        for port in sorted(glob.glob("/dev/ttyACM*")):
-            axis = ximc.Axis("xi-com://" + port)  # Linux impl
-            try:
-                axis.open_device()
-                serial = str(axis.get_serial_number())
-            except Exception as e:
-                self.log.warning(f"Could not open {port}: {e}")
-                continue
+        # The by-id name contains the serial in hex
+        port = next((p for p in glob.glob("/dev/serial/by-id/usb-XIMC*") if self._serial in p.upper()), None)
+        if not port:
+            raise RuntimeError(f"Missing controller for axis {axis_id} (S/N {self._serial})")
 
-            if serial in sn_to_axis:
-                self.axes[sn_to_axis[serial]] = axis
-                self.log.info(f"Connected {port}, S/N {serial}")
-            else:
-                axis.close_device()
-
-        missing = set(serials) - set(self.axes)
-        if missing:
-            raise Exception(f"Missing controllers for axes: {sorted(missing)}")
+        self.axis = ximc.Axis("xi-com://" + port) # Linux implementation
+        self.axis.open_device()
+        self.log.info(f"Connected {port}, S/N {self._serial}")
 
     def __del__(self):
         self.close()
 
     def close(self):
-        for axis in self.axes.values():
-            axis.close_device()
-        self.axes.clear()
+        if self.axis is not None:
+            self.axis.close_device()
+            self.axis.clear()
+            self.axis = None
 
     def calibrate(self):
-        self.log.info("Calibrating motors...")
-        for axis in self.axes.values():
-            axis.command_home()
-        for axis in self.axes.values():
-            axis.command_wait_for_stop(10)
+        self.log.info(f"Calibrating axis {self._axis_id}...")
+        self.axis.command_home()
+        self.axis.command_wait_for_stop(10)
 
         time.sleep(1)
 
-        for axis in self.axes.values():
-            axis.command_zero()
+        self.axis.command_zero()
         self.log.info("Motor calibration finished")
 
-    def get_position(self, axis):
-        pos = self.axes[axis].get_position()
+    def get_position(self):
+        pos = self.axis.get_position()
         steps, usteps = pos.Position, pos.uPosition
         return steps_to_mm(steps, usteps)
 
-    def is_moving(self, axis):
-        status = self.axes[axis].get_status()
+    def is_moving(self):
+        status = self.axis.get_status()
         return bool(status.MvCmdSts & ximc.MvcmdStatus.MVCMD_RUNNING)
 
-    def move_abs(self, axis, mm):
+    def move_abs(self, mm):
         if not 0.0 <= mm <= 50.0:
-            raise ValueError(f"Target {mm} mm of axis '{axis}' is outside the travel range 0mm - 50mm")
+            raise ValueError(f"Target {mm} mm of axis '{self._axis_id}' is outside the travel range 0mm - 50mm")
         steps, usteps = mm_to_steps(mm)
-        self.axes[axis].command_move(steps, usteps)
+        self.axis.command_move(steps, usteps)
 
-    def move_rel(self, axis, mm):
-        destination = mm + self.get_position(axis)
-        self.move_abs(axis, destination)
+    def move_rel(self, mm):
+        destination = mm + self.get_position()
+        self.move_abs(destination)
 
     def wait_for_stop(self):
-        for axis in self.axes.values():
-            axis.command_wait_for_stop(50)
+        self.axis.command_wait_for_stop(50)
 
     def wait_until_idle(self, timeout=30.0, poll_interval=0.05):
         time.sleep(poll_interval)
         deadline = time.monotonic() + timeout
-        while any(self.is_moving(axis) for axis in self.axes):
+        while self.is_moving():
             if time.monotonic() > deadline:
                 return False
             time.sleep(poll_interval)

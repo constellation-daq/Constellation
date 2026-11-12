@@ -14,65 +14,71 @@ from constellation.core.monitoring import schedule_metric
 from constellation.core.protocol.cscp1 import SatelliteState
 from constellation.core.satellite import Satellite
 
-from .motor_controller import Motors
+from .motor_controller_copy import Motor
 
 _SUPPORTED_DEVICES = ["8MT30_50"]
 
 
 class Standa(Satellite):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-
         super().__init__(*args, **kwargs)
-        self._motors: Motors | None = None
-        self._config: Configuration
-        self._serials: dict[str, int] = {}
-        self._models: dict[str, str] = {}
+        self._motors: dict[str, Motor] = {}
         self._initpos: dict[str, float] = {}
 
     @property
-    def motors(self) -> Motors:
-        if self._motors is None:
+    def motors(self) -> dict[str, Motor]:
+        if not self._motors:
             raise RuntimeError("Stage is not connected")
         return self._motors
 
     def do_initializing(self, config: Configuration) -> str | None:
         self.log.info("Received configuration with parameters: %s", ", ".join(config.get_keys()))
-        self._config = config
+        self.reset_metrics()
+        self._initpos.clear()
+        if self._motors:
+            for motor in self._motors.values():
+                motor.close()
+            self._motors.clear()
 
         axes_conf = config.get_section("axes")
         for axis in axes_conf.get_keys():
             axis_conf = axes_conf.get_section(axis)
 
-            self._models[axis] = axis_conf.get_str("model")
-            if self._models[axis] not in _SUPPORTED_DEVICES:
-                raise ValueError(f"Device model {self._models[axis]} not supported")
+            model = axis_conf.get_str("model")
+            if model not in _SUPPORTED_DEVICES:
+                raise ValueError(f"Device model {model} not supported")
 
-            self._serials[axis] = axis_conf.get_int("serial")
+            serial = axis_conf["serial"]
+            self._motors[axis] = Motor(axis, model, serial, logger=self.log)
+
             self._initpos[axis] = axis_conf.get_float("position")
-
-        if self._motors is None:
-            self._motors = Motors(self._serials, logger=self.log)
 
         self.calibrate_on_launch = config.get_bool("calibrate_on_launch", False)
 
-        return f"Connected to axes {', '.join(self.motors.axes)} with Standa models {', '.join(self._models)}"
+        # Register scheduled metrics of positions
+        for axis, motor in self.motors.items():
+            self.register_scheduled_metric(
+                f"POS_{axis.upper()}",
+                "mm",
+                f"Current position of axis {axis}",
+                5,
+                motor.get_position,
+                [SatelliteState.INIT, SatelliteState.ORBIT],
+            )
 
-    def _move(self, config: Configuration) -> str:
-        if "axes" not in config:
-            return "Reconfigured without axes"
+        return f"Connected to {len(axes_conf)} axes!"
 
-        axes_conf = config.get_section("axes")
-        position = {axis: axes_conf.get_section(axis).get_float("position") for axis in axes_conf.get_keys()}
-        if not position:
-            return "Reconfigured without position"
-
+    def _move(self, position: dict[str, float]) -> str:
         for axis, mm in position.items():
-            self.motors.move_abs(axis, mm)
+            if axis not in self.motors:
+                raise ValueError("Given axis is not a registered stage")
+            self.motors[axis].move_abs(mm)
 
-        if not self.motors.wait_until_idle():
-            raise RuntimeError(f"Stage did not reach {position} within the timeout")
+        for axis, motor in ((a, self.motors[a]) for a in position):
+            if not motor.wait_until_idle():
+                raise RuntimeError(f"Axis {axis} did not reach {position[axis]} mm within the timeout")
 
-        self.log.info(f"Moved to {position}")
+        self.log.info(f"Moved to {position} mm")
         return "Moved stages"
 
     def do_starting(self, run_identifier: str) -> str:
@@ -80,19 +86,29 @@ class Standa(Satellite):
         return "Started run"
 
     def do_launching(self) -> str | None:
+        """Optionally calibrate and move stages to config position"""
         if self.calibrate_on_launch:
-            self.motors.calibrate()
-        else:
-            # Move motors to specified config position
-            self._move(self._config)
+            for motor in self.motors.values():
+                motor.calibrate()
+        # Move motors to specified config position
+        self._move(self._initpos)
+        
         return "Launched!"
 
     def do_reconfigure(self, config: Configuration) -> str | None:
-        return self._move(config)
+        if "axes" not in config:
+            return "Reconfigured without axes"
+        
+        axes_conf = config.get_section("axes")
+        position = {axis: axes_conf.get_section(axis).get_float("position") for axis in axes_conf.get_keys()}
+        if not position:
+            return "Reconfigured without position"
+        
+        return self._move(position)
 
     def reentry(self) -> None:
-        if self._motors is not None:
-            self._motors.close()
+        for motor in self._motors.values():
+            motor.close()
         super().reentry()
 
     def do_stopping(self) -> str:
@@ -102,46 +118,18 @@ class Standa(Satellite):
     @cscp_requestable([SatelliteState.INIT])
     def home(self) -> tuple[str, Any, dict[str, Any]]:
         """Move all axes to their low limit switch and define zero there, leaving the stage at zero"""
-        self.motors.calibrate()
-        position = {axis: self.motors.get_position(axis) for axis in self.motors.axes}
+        position = {}
+        for axis, motor in self.motors.items():
+            motor.calibrate()
+            position[axis] = motor.get_position()
+
         return f"Homed, stage at {position}", position, {}
 
-    @schedule_metric("mm", 5)
-    def POS_X(self) -> float | None:
-        """Current position of the x axis"""
-        return self._position("x")
-
-    @schedule_metric("mm", 5)
-    def POS_Y(self) -> float | None:
-        """Current position of the y axis"""
-        return self._position("y")
-
-    @schedule_metric("mm", 5)
-    def POS_Z(self) -> float | None:
-        """Current position of the z axis"""
-        return self._position("z")
-
-    def _position(self, axis: str) -> float | None:
-        """Position of an axis, or None while the stage is not connected"""
-        motors = self._motors
-        if motors is None or axis not in motors.axes:
-            return None
-        return motors.get_position(axis)
-
     @cscp_requestable([SatelliteState.INIT, SatelliteState.ORBIT])
-    def position_x(self) -> tuple[str, float | None, dict[str, int]]:
-        "Returns the current x position of the stage"
-        pos_x = self._position("x")
-        return f"Stage x is at {pos_x}", pos_x, {}
+    def get_position(self, axis: str) -> tuple[str, float | None, dict[str, int]]:
+        "Returns the current position of given axis"
+        if axis not in self.motors:
+            raise ValueError(f"Axis '{axis}' is not a registered stage")
+        pos = self.motors[axis].get_position()
+        return f"Axis {axis} is at {pos}", pos, {}
 
-    @cscp_requestable([SatelliteState.INIT, SatelliteState.ORBIT])
-    def position_y(self) -> tuple[str, float | None, dict[str, int]]:
-        "Returns the current y position of the stage"
-        pos_y = self._position("y")
-        return f"Stage y is at {pos_y}", pos_y, {}
-
-    @cscp_requestable([SatelliteState.INIT, SatelliteState.ORBIT])
-    def position_z(self) -> tuple[str, float | None, dict[str, int]]:
-        "Returns the current z position of the stage"
-        pos_z = self._position("z")
-        return f"Stage z is at {pos_z}", pos_z, {}
