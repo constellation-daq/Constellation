@@ -14,7 +14,7 @@ from constellation.core.monitoring import schedule_metric
 from constellation.core.protocol.cscp1 import SatelliteState
 from constellation.core.satellite import Satellite
 
-from .motor_controller_copy import Motor
+from .motor_controller import Motor
 
 _SUPPORTED_DEVICES = ["8MT30_50"]
 
