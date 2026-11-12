@@ -34,6 +34,7 @@ pip install --no-build-isolation -e ".[particulars]"
 
 :::
 ::::
+
 ## Parameters
 
 | Parameter   | Description           | Type  | Allowed range  |
