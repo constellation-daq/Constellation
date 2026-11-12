@@ -64,7 +64,7 @@ class ParticularsLaserController(Satellite):
         config_keys = partial_config.get_keys()
 
         if "dac" in config_keys:
-            self.dac = partial_config.get_int("dac", min_val=0)
+            self.dac = partial_config.get_int("dac", min_val=0, max_val=1023)
             self._set_DAC(DAC=self.dac)
 
         if "frequency" in config_keys:
