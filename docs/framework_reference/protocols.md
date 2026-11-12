@@ -32,11 +32,12 @@ Be low are two sequence diagrams illustrating the heartbeat exchange, once for t
 and once for the heartbeat exchange between two satellites. Extrasystole messages that are sent at state changes are indicated in red, the activation
 bars indicate times of active heartbeat monitoring of the remote satellite.
 
-::::{grid} 1 1 2 2
+:::::{grid} 1 1 2 2
 
-:::{grid-item-card}
+::::{grid-item-card}
+:::{card-header}
 **Heartbeats with Controller & Satellite**
-^^^^^^^^^^^^
+:::
 
 ```plantuml
 @startuml
@@ -55,11 +56,12 @@ deactivate "Controller"
 @enduml
 ```
 
-:::
+::::
 
-:::{grid-item-card}
+::::{grid-item-card}
+:::{card-header}
 **Heartbeats between Satellites**
-^^^^^^^^^^^^
+:::
 
 ```plantuml
 @startuml
@@ -82,9 +84,9 @@ deactivate "Satellite A"
 @enduml
 ```
 
-:::
-
 ::::
+
+:::::
 
 
 ## Command & Controlling
@@ -93,11 +95,12 @@ Commands from controller instances to satellites are transmitted via the Constel
 resembles a client-server architecture with the typical request-reply pattern. Here, the satellite acts as the server while
 the controller assumes the role of the client.
 
-::::{grid}
+:::::{grid}
 
-:::{grid-item-card}
+::::{grid-item-card}
+:::{card-header}
 **Command Communication between Controller & Satellite**
-^^^^^^^^^^^^
+:::
 
 ```plantuml
 @startuml
@@ -116,9 +119,9 @@ skinparam ParticipantPadding 50
 @enduml
 ```
 
-:::
-
 ::::
+
+:::::
 
 
 ## Data Transmission
@@ -145,11 +148,12 @@ CDTP knows three different message types:
 
 Only `DATA` messages can be transmitted by satellite implementations, both `BOR` and `EOR` messages are handled automatically.
 
-::::{grid}
+:::::{grid}
 
-:::{grid-item-card}
+::::{grid-item-card}
+:::{card-header}
 **Data Transmission Sequence**
-^^^^^^^^^^^^
+:::
 
 ```plantuml
 @startuml
@@ -170,9 +174,9 @@ deactivate "Satellite B"
 @enduml
 ```
 
-:::
-
 ::::
+
+:::::
 
 
 ## Monitoring
@@ -200,11 +204,12 @@ subscribing to the topic `TRACE/NETWORKING`.
 Apart from log messages, CMDP is also used to transmit performance metrics such as the current trigger rate, the number of recorded events, temperature or CPU loads.
 These messages are published under their respective topics and subscribers can choose the variables they want to follow.
 
-::::{grid}
+:::::{grid}
 
-:::{grid-item-card}
+::::{grid-item-card}
+:::{card-header}
 **Subscription to Log Topics**
-^^^^^^^^^^^^
+:::
 
 ```plantuml
 @startuml
@@ -232,9 +237,9 @@ deactivate "Satellite A"
 @enduml
 ```
 
-:::
-
 ::::
+
+:::::
 
 
 ## Network Discovery
@@ -259,11 +264,12 @@ The `REQUEST` beacon allows hosts to join late, i.e. after the initial `OFFER` b
 framework operation, new hosts can join and request information on a particular service from the already running Constellation participants.
 A clean shutdown of services is possible with the `DEPART` beacon which will prompt other hosts to disconnect.
 
-::::{grid}
+:::::{grid}
 
-:::{grid-item-card}
+::::{grid-item-card}
+:::{card-header}
 **Discovery Message Communication**
-^^^^^^^^^^^^
+:::
 
 ```plantuml
 @startuml
@@ -277,6 +283,6 @@ note over "Satellite A" : Satellite departs
 @enduml
 ```
 
-:::
-
 ::::
+
+:::::
