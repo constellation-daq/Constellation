@@ -65,11 +65,11 @@ class Standa(Satellite):
 
         return f"Connected to {len(axes_conf)} axes!"
 
-    def _move(self, position: dict[str, float]) -> str:
-        for axis, mm in position.items():
+    def _move(self, positions: dict[str, float]) -> str:
+        for axis, position in positions.items():
             if axis not in self.motors:
                 raise ValueError("Given axis is not a registered stage")
-            self.motors[axis].move_abs(mm)
+            self.motors[axis].move_abs(position)
 
         for axis, motor in ((a, self.motors[a]) for a in position):
             if not motor.wait_until_idle():
