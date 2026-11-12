@@ -39,8 +39,8 @@ class ParticularsLaserController(Satellite):
         self.device = device
         self.endpoint = device[0].interfaces()[0].endpoints()[0]
 
-        self.frequency = config["frequency"]
-        self.dac = config["dac"]  # Initialize.
+        self.frequency = config.get_float("frequency", min_val=50.0, max_val=100e3)
+        self.dac = config.get_int("dac", min_val=0, max_val=1023)
 
         current_status = self.status
         self._turn_on()  # This updates the real frequency and DAC.
