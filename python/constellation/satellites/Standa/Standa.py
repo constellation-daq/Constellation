@@ -33,7 +33,6 @@ class Standa(Satellite):
 
     def do_initializing(self, config: Configuration) -> str | None:
         self.log.info("Received configuration with parameters: %s", ", ".join(config.get_keys()))
-        self.reset_metrics()
         self._initpos.clear()
         if self._motors:
             for motor in self._motors.values():
@@ -54,9 +53,10 @@ class Standa(Satellite):
             self._initpos[axis] = axis_conf.get_float("position")
 
         self.calibrate_on_launch = config.get_bool("calibrate_on_launch", False)
-
+        
+        self.reset_metrics()
         # Register scheduled metrics of positions
-        for axis, motor in self.motors.items():
+        for axis, motor in self._motors.items():
             self.register_scheduled_metric(
                 f"POS_{axis.upper()}",
                 "mm",
