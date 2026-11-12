@@ -146,10 +146,6 @@ class ParticularsLaserController(Satellite):
         self._send_packet(cmd)
 
     def _set_DAC(self, DAC: int):
-        if not isinstance(DAC, int):
-            raise TypeError(f"`DAC` must be an integer number, received {repr(DAC)}.")
-        if not 0 <= DAC < 1024:
-            raise ValueError("`DAC` must be in [0,1024).")
         self._turn_off()
         self._enable_DAC()
         self._send_packet([94, int_to_char_cpp_style(DAC), int_to_char_cpp_style(DAC >> 8)])  # Taken from the C++ code.
