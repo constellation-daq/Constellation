@@ -76,6 +76,8 @@ class MonitoringSender(BaseSatelliteFrame):
         # Open ZMQ socket using (X)PUB/SUB pattern. XPUB allows us to handle
         # subscription messages directly.
         cmdp_socket = self.context.socket(zmq.XPUB)
+        # Receive every subscription and unsubscription, including duplicate topics from different listeners.
+        cmdp_socket.setsockopt(zmq.XPUB_VERBOSER, True)
         # Set linger period for socket shutdown to avoid long hangs shutting
         # down [ms]
         cmdp_socket.setsockopt(zmq.LINGER, 2000)
