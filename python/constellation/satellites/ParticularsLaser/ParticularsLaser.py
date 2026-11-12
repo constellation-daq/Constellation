@@ -127,15 +127,6 @@ class ParticularsLaserController(Satellite):
         else:
             self.off()
 
-    def on(self):
-        """Turn the laser on."""
-        if self.status == "off":
-            self._turn_on()
-
-    def off(self):
-        """Turn the laser off."""
-        if self.status == "on":
-            self._turn_off()
 
     def _turn_on(self):
         """Turn on the laser at the configured frequency and DAC values."""
