@@ -8,6 +8,7 @@ Adapted from the equivalent class in PyticularsTCT by Matias Senger
 
 import platform
 import time
+from typing import cast
 
 import usb.core
 
@@ -23,28 +24,14 @@ def int_to_char_cpp_style(i: int):
 
 class ParticularsLaserController(Satellite):
     def do_initializing(self, config: Configuration):
-        """
-        device = usb.core.find(idVendor=0xC251, idProduct=0x2201)  # ID c251:2201 Keil Software, Inc. LASER Driver IJS
-        if device is None:
-                raise RuntimeError(
-                        "Cannot find the laser controller within the USB devices. "
-                        "Be sure it is connected and that it is recognized by the computer."
-                )
-        if platform.system() == "Linux":
-                interface = device[0].interfaces()[0]
-                if device.is_kernel_driver_active(
-                        interface.bInterfaceNumber
-                ):  # Not sure why this is needed, but fails without it.
-                        device.detach_kernel_driver(interface.bInterfaceNumber)
 
-        self.device = device
-        self.endpoint = device[0].interfaces()[0].endpoints()[0]
-        """
-
-        device = usb.core.find(
-            idVendor=0xC251,
-            idProduct=0x2201,
-            find_all=False,
+        device = cast(
+            usb.core.Device | None,
+            usb.core.find(
+                idVendor=0xC251,
+                idProduct=0x2201,
+                find_all=False,
+            ),
         )
 
         if device is None:
@@ -57,10 +44,12 @@ class ParticularsLaserController(Satellite):
             raise RuntimeError("Operating system not implemented")
 
         interfaces = list(device[0].interfaces())
-        interface: usb.core.Interface = interfaces[0]
+        interface = interfaces[0]
 
-        if device.is_kernel_driver_active(interface.bInterfaceNumber):
-            device.detach_kernel_driver(interface.bInterfaceNumber)
+        interface_number = int(interface.bInterfaceNumber)
+
+        if device.is_kernel_driver_active(interface_number):
+            device.detach_kernel_driver(interface_number)
 
         self.device = device
 
@@ -107,13 +96,13 @@ class ParticularsLaserController(Satellite):
 
     def _send_packet(self, packet):
         """Send a packet of bytes from the computer to the laser controller.
-                                        Sending function parameters established empirically, do not change!
+        Sending function parameters established empirically, do not change!
         Parameters
         ----------
         packet: array of int between 0 and 255
-                                        An array of bytes, i.e. an array of integer numbers each
-                                        in 0, 1, ..., 255, to be sent to the laser controller.
-                                        Example `packet = [0,4,200]`.
+                An array of bytes, i.e. an array of integer numbers each
+                in 0, 1, ..., 255, to be sent to the laser controller.
+                Example `packet = [0,4,200]`.
         """
         if (
             not hasattr(packet, "__iter__")
