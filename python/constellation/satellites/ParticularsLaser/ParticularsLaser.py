@@ -10,8 +10,6 @@ import platform
 import time
 
 import usb.core
-import usb.util
-from usb.interface import Interface
 
 from constellation.core.configuration import Configuration
 from constellation.core.satellite import Satellite
@@ -58,7 +56,7 @@ class ParticularsLaserController(Satellite):
             raise RuntimeError("Operating system not implemented")
 
         interfaces = list(device[0].interfaces())
-        interface: Interface = interfaces[0]
+        interface: usb.core.Interface = interfaces[0]
 
         if device.is_kernel_driver_active(interface.bInterfaceNumber):
             device.detach_kernel_driver(interface.bInterfaceNumber)
