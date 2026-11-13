@@ -41,9 +41,10 @@ class ParticularsLaserController(Satellite):
         self.endpoint = device[0].interfaces()[0].endpoints()[0]
         """
 
-        device: usb.core.Device | None = usb.core.find(
+        device = usb.core.find(
             idVendor=0xC251,
             idProduct=0x2201,
+            find_all=False,
         )
 
         if device is None:
