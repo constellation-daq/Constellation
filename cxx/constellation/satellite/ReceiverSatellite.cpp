@@ -412,6 +412,9 @@ void ReceiverSatellite::stopping_receiver() {
     // Stop BasePool thread and disconnect all connected sockets
     stopPool();
 
+    // Propagate exceptions thrown while handling EOR messages
+    checkPoolException();
+
     // Emit final number of bytes received
     STAT("RX_BYTES", bytes_received_.load());
 }
@@ -488,9 +491,13 @@ void ReceiverSatellite::handle_bor_message(const CDTP2BORMessage& bor_message) {
 
 void ReceiverSatellite::handle_data_message(const CDTP2Message& data_message) {
     const auto sender = data_message.getSender();
-    LOG(BasePoolT::pool_logger_, TRACE) << "Received data message from " << sender << " with data records from "
-                                        << data_message.getDataRecords().front().getSequenceNumber() << " to "
-                                        << data_message.getDataRecords().back().getSequenceNumber();
+
+    LOG_IF(BasePoolT::pool_logger_, TRACE, !data_message.getDataRecords().empty())
+        << "Received data message from " << sender << " with data records from "
+        << data_message.getDataRecords().front().getSequenceNumber() << " to "
+        << data_message.getDataRecords().back().getSequenceNumber();
+    LOG_IF(BasePoolT::pool_logger_, TRACE, data_message.getDataRecords().empty())
+        << "Received data message from " << sender << " without data records";
 
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
     const auto data_transmitter_it = data_transmitter_states_.find(sender);

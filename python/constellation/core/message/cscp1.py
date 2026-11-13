@@ -143,7 +143,10 @@ class CSCP1Message:
         payload = None
         if len(frames) == 3:
             unpacker.feed(frames[2])
-            payload = unpacker.unpack()
+            try:
+                payload = unpacker.unpack()
+            except (msgpack.UnpackException, ValueError) as e:
+                raise MessageDecodingError("Error unpacking payload") from e
 
         # Assemble and return message
         msg = CSCP1Message(sender, (verb_type, verb_msg), time, tags)

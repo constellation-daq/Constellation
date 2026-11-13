@@ -69,7 +69,7 @@ void SputnikSatellite::launching() {
 
 void SputnikSatellite::running(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
-        const auto time = static_cast<double>((std::chrono::system_clock::now() - launch_time_).count()) * 1e-9;
+        const auto time = std::chrono::duration<double>(std::chrono::system_clock::now() - launch_time_).count();
         // Let's calculate some temperature in space which depends on time (absorption from sun)
         const auto temperature = (std::sin(time / 50.) * 70.) + 20.;
 

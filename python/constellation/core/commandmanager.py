@@ -19,6 +19,7 @@ from statemachine.exceptions import TransitionNotAllowed
 from .base import BaseSatelliteFrame
 from .cscp import CommandTransmitter
 from .message.cscp1 import CSCP1Message
+from .message.exceptions import MessageDecodingError
 from .protocol.cscp1 import SatelliteState
 
 T = TypeVar("T")
@@ -206,6 +207,10 @@ class CommandReceiver(BaseSatelliteFrame):
         while not self._com_thread_evt.is_set():
             try:
                 req = self._cmd_tm.get_message(flags=zmq.NOBLOCK)
+            except MessageDecodingError as e:
+                self.log_cscp.warning("Error decoding message: %s", e)
+                self._cmd_tm.send_reply(str(e), CSCP1Message.Type.ERROR)
+                continue
             except zmq.ZMQError as e:
                 # something wrong with the ZMQ socket, wait a while for recovery
                 self.log_cscp.exception(e)

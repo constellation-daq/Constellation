@@ -7,6 +7,7 @@ Module implementing the Constellation Data Transmission Protocol.
 
 from __future__ import annotations
 
+import os
 import queue
 import threading
 import time
@@ -487,6 +488,7 @@ class DataReceiver:
                     frames = socket.recv_multipart()
                     msg = CDTP2Message.disassemble(frames)
                     self._handle_cdtp_message(msg)
+                os.sched_yield()  # force-release lock
         except Exception as e:
             self._pull_thread_exc = e
 
@@ -580,12 +582,15 @@ class DataReceiver:
         self._receive_bor(msg.sender, msg.user_tags, msg.configuration)
 
     def _handle_data_message(self, msg: CDTP2Message) -> None:
-        self.log_cdtp.trace(
-            "Received data message from %s with data records from %s to %s",
-            msg.sender,
-            msg.data_records[0].sequence_number,
-            msg.data_records[-1].sequence_number,
-        )
+        if msg.data_records:
+            self.log_cdtp.trace(
+                "Received data message from %s with data records from %s to %s",
+                msg.sender,
+                msg.data_records[0].sequence_number,
+                msg.data_records[-1].sequence_number,
+            )
+        else:
+            self.log_cdtp.trace("Received data message from %s without data records", msg.sender)
 
         # Check that BOR was received
         self._check_bor_received(CDTP2Message.Type.DATA, msg.sender)
@@ -623,7 +628,7 @@ class DataReceiver:
         if "data_records" in msg.run_metadata and data_transmitter_it.seq != msg.run_metadata["data_records"]:
             self.log_cdtp.warning(
                 f"Sender reports sequence {msg.run_metadata['data_records']} for last data record,"
-                " but last record received bears sequence {data_transmitter_it.seq}"
+                f" but last record received bears sequence {data_transmitter_it.seq}"
             )
             self._apply_run_condition(msg, RunCondition.INCOMPLETE)
 

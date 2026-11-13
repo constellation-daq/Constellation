@@ -580,6 +580,9 @@ format:markdownlint:
         - docs/satellites/external_satellites.json
       variables:
         DOC_EXTERNAL_SATELLITES: "true"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      variables:
+        DOC_EXTERNAL_SATELLITES: "true"
     - when: always
 
 docs:doxygen:

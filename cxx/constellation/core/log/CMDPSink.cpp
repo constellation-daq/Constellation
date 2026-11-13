@@ -78,9 +78,11 @@ namespace {
 CMDPSink::CMDPSink()
     : global_context_(global_zmq_context()), pub_socket_(*global_context_, zmq::socket_type::xpub),
       port_(bind_ephemeral_port(pub_socket_)) {
-    // Set reception timeout for subscription messages on XPUB socket to zero because we need to mutex-lock the socket
-    // while reading and cannot log at the same time.
     try {
+        // Make sure every subscription and unsubscription, including duplicate topics from different listeners.
+        pub_socket_.set(zmq::sockopt::xpub_verboser, true);
+        // Set reception timeout for subscription messages on XPUB socket to zero because we need to mutex-lock the socket
+        // while reading and cannot log at the same time.
         pub_socket_.set(zmq::sockopt::rcvtimeo, 0);
     } catch(const zmq::error_t& e) {
         throw NetworkError(e.what());

@@ -46,14 +46,16 @@ class BasePool:
             self._poll_thread.start()
             self._polling = True
 
-    def stop_poll_thread(self) -> None:
+    def stop_poll_thread(self, timeout: float = 5.0) -> None:
         """Stop poll thread (if not already stopped)"""
         if self._poll_thread is not None and self._poll_thread.is_alive():
             self._stopevt.set()
-            self._poll_thread.join()
+            self._poll_thread.join(timeout)
+            if self._poll_thread.is_alive():
+                raise RuntimeError(f"Could not stop poll thread within {timeout}s")
             self.reset_sockets()
-            self.check_exception()
             self._polling = False
+            self.check_exception()
 
     def check_exception(self) -> None:
         """Raise any exception encountered in poller"""
