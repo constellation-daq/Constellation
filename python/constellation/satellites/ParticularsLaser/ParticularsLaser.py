@@ -10,6 +10,9 @@ import platform
 import time
 
 import usb.core
+import usb.util
+from usb.core import Device
+from usb.interface import Interface
 
 from constellation.core.configuration import Configuration
 from constellation.core.satellite import Satellite
@@ -23,21 +26,48 @@ def int_to_char_cpp_style(i: int):
 
 class ParticularsLaserController(Satellite):
     def do_initializing(self, config: Configuration):
+        """
         device = usb.core.find(idVendor=0xC251, idProduct=0x2201)  # ID c251:2201 Keil Software, Inc. LASER Driver IJS
+        if device is None:
+                raise RuntimeError(
+                        "Cannot find the laser controller within the USB devices. "
+                        "Be sure it is connected and that it is recognized by the computer."
+                )
+        if platform.system() == "Linux":
+                interface = device[0].interfaces()[0]
+                if device.is_kernel_driver_active(
+                        interface.bInterfaceNumber
+                ):  # Not sure why this is needed, but fails without it.
+                        device.detach_kernel_driver(interface.bInterfaceNumber)
+
+        self.device = device
+        self.endpoint = device[0].interfaces()[0].endpoints()[0]
+        """
+
+        device: Device | None = usb.core.find(
+            idVendor=0xC251,
+            idProduct=0x2201,
+        )
+
         if device is None:
             raise RuntimeError(
                 "Cannot find the laser controller within the USB devices. "
                 "Be sure it is connected and that it is recognized by the computer."
             )
-        if platform.system() == "Linux":
-            interface = device[0].interfaces()[0]
-            if device.is_kernel_driver_active(
-                interface.bInterfaceNumber
-            ):  # Not sure why this is needed, but fails without it.
-                device.detach_kernel_driver(interface.bInterfaceNumber)
+
+        if platform.system() != "Linux":
+            raise RuntimeError("Operating system not implemented")
+
+        interfaces = list(device[0].interfaces())
+        interface: Interface = interfaces[0]
+
+        if device.is_kernel_driver_active(interface.bInterfaceNumber):
+            device.detach_kernel_driver(interface.bInterfaceNumber)
 
         self.device = device
-        self.endpoint = device[0].interfaces()[0].endpoints()[0]
+
+        endpoints = list(device[0].interfaces()[0].endpoints())
+        self.endpoint = endpoints[0]
 
         self.frequency = config.get_float("frequency", min_val=50.0, max_val=100e3)
         self.dac = config.get_int("dac", min_val=0, max_val=1023)
@@ -79,13 +109,13 @@ class ParticularsLaserController(Satellite):
 
     def _send_packet(self, packet):
         """Send a packet of bytes from the computer to the laser controller.
-                        Sending function parameters established empirically, do not change!
+                                        Sending function parameters established empirically, do not change!
         Parameters
         ----------
         packet: array of int between 0 and 255
-                        An array of bytes, i.e. an array of integer numbers each
-                        in 0, 1, ..., 255, to be sent to the laser controller.
-                        Example `packet = [0,4,200]`.
+                                        An array of bytes, i.e. an array of integer numbers each
+                                        in 0, 1, ..., 255, to be sent to the laser controller.
+                                        Example `packet = [0,4,200]`.
         """
         if (
             not hasattr(packet, "__iter__")
