@@ -23,12 +23,12 @@ jobs:
         run: git config --global --add safe.directory $GITHUB_WORKSPACE
 
       - name: Set up Python Venv
-        uses: getsentry/action-setup-venv@v3.2.0
-        with:
-          python-version: "3.11"
-          cache-dependency-path: pyproject.toml
-          install-cmd: |
-            pip install --upgrade pip setuptools meson-python meson ninja
+        run: |
+          python3 -m venv .venv
+          echo "${GITHUB_WORKSPACE}/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Install build tooling
+        run: pip install --upgrade pip setuptools meson-python meson ninja
 
       - name: Install Constellation
         run: pip install --no-build-isolation -e .[docs]
