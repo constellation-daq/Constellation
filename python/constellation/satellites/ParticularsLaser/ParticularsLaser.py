@@ -11,7 +11,6 @@ import time
 
 import usb.core
 import usb.util
-from usb.core import Device
 from usb.interface import Interface
 
 from constellation.core.configuration import Configuration
@@ -44,7 +43,7 @@ class ParticularsLaserController(Satellite):
         self.endpoint = device[0].interfaces()[0].endpoints()[0]
         """
 
-        device: Device | None = usb.core.find(
+        device: usb.core.Device | None = usb.core.find(
             idVendor=0xC251,
             idProduct=0x2201,
         )
