@@ -47,8 +47,7 @@ class ParticularsLaserController(Satellite):
             self._turn_off()
 
     def do_launching(self):
-        self._turn_on()
-        self._turn_off()
+        self._configure_laser()
         return f"Laser at {self.frequency}Hz, {self.dac} DAC. Laser off."
 
     def do_landing(self):
@@ -74,8 +73,9 @@ class ParticularsLaserController(Satellite):
         if "frequency" in config_keys:
             self.frequency = partial_config.get_float("frequency", min_val=50.0, max_val=100e3)
             self._set_frequency(Hz=self.frequency)
-
-        self.log.info(f"Laser reconfigured at {self.frequency} Hz, {self.DAC} DAC.")
+            
+        self._turn_on()
+        return f"Laser reconfigured at {self.frequency} Hz, {self.dac} DAC."
 
     def _send_packet(self, packet):
         """Send a packet of bytes from the computer to the laser controller.
@@ -123,9 +123,11 @@ class ParticularsLaserController(Satellite):
 
     def _turn_on(self):
         """Turn on the laser at the configured frequency and DAC values."""
+        self._hardware_sequence_enable()
+        
+    def _configure_laser(self):
         self._set_frequency(Hz=self.frequency)
         self._set_DAC(DAC=self.dac)
-        self._hardware_sequence_enable()
 
     def _turn_off(self):
         """Turn the laser off."""
@@ -142,7 +144,6 @@ class ParticularsLaserController(Satellite):
         self._turn_off()
         self._enable_DAC()
         self._send_packet([94, int_to_char_cpp_style(DAC), int_to_char_cpp_style(DAC >> 8)])  # Taken from the C++ code.
-        self._hardware_sequence_enable()
 
     def _hardware_sequence_enable(self):
         """Turn the laser on?"""
