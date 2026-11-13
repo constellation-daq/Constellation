@@ -46,7 +46,7 @@ class ParticularsLaserController(Satellite):
         interfaces = list(device[0].interfaces())
         interface = interfaces[0]
 
-        interface_number = int(interface.bInterfaceNumber)
+        interface_number = interface.__dict__["bInterfaceNumber"]
 
         if device.is_kernel_driver_active(interface_number):
             device.detach_kernel_driver(interface_number)
