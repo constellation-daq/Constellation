@@ -574,15 +574,17 @@ format:markdownlint:
   needs: []
   variables:
     DOC_EXTERNAL_SATELLITES: "false"
+    DOC_ENVIRONMENT: "website-preview/$CI_COMMIT_REF_SLUG"
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
         - docs/satellites/external_satellites.json
       variables:
         DOC_EXTERNAL_SATELLITES: "true"
-    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "schedule" || ($CI_PIPELINE_SOURCE == "web" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH)
       variables:
         DOC_EXTERNAL_SATELLITES: "true"
+        DOC_ENVIRONMENT: "website-nightly"
     - when: always
 
 docs:doxygen:
@@ -618,7 +620,7 @@ docs:html:
     reports:
       annotations: "website_preview.json"
   environment:
-    name: website-preview/$CI_COMMIT_REF_SLUG
+    name: $DOC_ENVIRONMENT
     url: "https://$CI_PROJECT_NAMESPACE.$CI_PAGES_DOMAIN/-/$CI_PROJECT_NAME/-/jobs/$CI_JOB_ID/artifacts/html/index.html"
     auto_stop_in: 1 week
 
