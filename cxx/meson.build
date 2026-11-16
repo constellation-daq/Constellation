@@ -60,7 +60,7 @@ dependency('libzmq', include_type: 'system', default_options: libzmq_sp_default_
 cppzmq_dep = dependency('cppzmq', include_type: 'system', default_options: cppzmq_sp_default_options)
 
 # magic_enum
-magic_enum_dep = dependency('magic_enum', include_type: 'system', default_options: ['test=false'])
+magic_enum_dep = dependency('magic_enum', include_type: 'system')
 
 # msgpack-cxx
 msgpack_cxx_dep = dependency('msgpack-cxx', version: '>=7.0.0', include_type: 'system', default_options: ['boost=disabled', 'tests=disabled'])
