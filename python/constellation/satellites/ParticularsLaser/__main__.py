@@ -1,0 +1,31 @@
+"""
+SPDX-FileCopyrightText: 2026 DESY and the Constellation authors
+SPDX-License-Identifier: EUPL-1.2
+
+Provides the entry point for the Mariner example satellite
+"""
+
+from constellation.core import __version__
+from constellation.core.logging import setup_cli_logging
+from constellation.core.satellite import SatelliteArgumentParser
+
+from .ParticularsLaser import ParticularsLaserController
+
+
+def main(args=None):
+    """Satellite to control Particulars Lasers"""
+
+    # Get a dict of the parsed arguments
+    parser = SatelliteArgumentParser(description=main.__doc__, version=__version__)
+    args = vars(parser.parse_args(args))
+
+    # Set up logging
+    setup_cli_logging(args.pop("level"))
+
+    # Start satellite with remaining args
+    s = ParticularsLaserController(**args)
+    s.run_satellite()
+
+
+if __name__ == "__main__":
+    main()
