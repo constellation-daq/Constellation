@@ -47,11 +47,12 @@ namespace constellation::message {
          *
          * @note If T doesn't construct nicely to an `std::any`, one possibility is moving it into an `std::shared_ptr`
          *
-         * @param t L-Value Reference of object T to move into the buffer
+         * @param t R-Value Reference of object T to move into the buffer
          * @param f Function F that takes a reference of T and returns an `std::span<std::byte>`
          */
         template <typename T, typename F>
-            requires std::move_constructible<T> && std::is_invocable_r_v<std::span<std::byte>, F, T&>
+            requires(!std::is_lvalue_reference_v<T> && std::move_constructible<T> &&
+                     std::is_invocable_r_v<std::span<std::byte>, F, T&>)
         PayloadBuffer(T&& t, F f) : any_ptr_(new std::any(std::forward<T>(t))), span_(f(std::any_cast<T&>(*any_ptr_))) {}
 
         /**
