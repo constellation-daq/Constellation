@@ -24,6 +24,8 @@ class ParticularsLaserController(Satellite):
             raise RuntimeError("Operating system not implemented")
 
     def do_initializing(self, config: Configuration) -> None:
+        self._reset_device()
+
         device = cast(
             usb.core.Device | None,
             usb.core.find(
@@ -76,6 +78,16 @@ class ParticularsLaserController(Satellite):
 
         self._configure_laser()
         return f"Laser reconfigured at {self.frequency}Hz, {self.dac} DAC."
+
+    def reentry(self) -> None:
+        self._reset_device()
+        super().reentry()
+
+    def _reset_device(self) -> None:
+        if hasattr(self, "device"):
+            self.device.reset()
+            del self.device
+            del self.endpoint
 
     @staticmethod
     def _int_to_char_cpp_style(i: int) -> int:
