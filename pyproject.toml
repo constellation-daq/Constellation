@@ -94,9 +94,9 @@ cli = ["ipython", "traitlets", "pygments"]
 hdf5 = ["h5py", "numpy"]
 influx = ["influxdb-client"]
 lecroy = ["lecrunch3>=3.0.3", "numpy"]
+particulars = ["pyusb"]
 standa = ["libximc>=3.0.4"]
 visa = ["pyvisa", "pyvisa-py", "pyserial", "zeroconf"]
-particulars = ["pyusb"]
 
 [tool.meson-python.args]
 setup = ["--wrap-mode=forcefallback", "-Dimpl_py=enabled", "-Dimpl_cxx=disabled"]  # disable C++ by default
