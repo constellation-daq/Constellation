@@ -11,7 +11,7 @@ category: "Test stand motor controllers"
 
 This satellite uses the [libximc](https://pypi.org/project/libximc/) library to control the Standa motor controllers of a multi-axis translation stage, as used for example to position a sample in a Transient Current Technique (TCT) setup.
 
-Each axis is driven by its own controller and is addressed by a name such as `x`, `y` or `z`. The mapping from name to controller is given by the serial number of the controller, so that an axis always keeps its name independent of the order in which the devices are enumerated. The serial number can be found in `/dev/serial/by-id/` (on Linux) as the number before `-ifXX`, and is written in hexadecimal with leading zeros. For example, the usb device `usb-XIMC_XIMC_Motor_Controller_00007928-if00` has the hexadecimal number `0x7928` which is `31016` in decimal. 
+Each axis is driven by its own controller and is addressed by a name such as `x`, `y` or `z`. The mapping from name to controller is given by the serial number of the controller, so that an axis always keeps its name independent of the order in which the devices are enumerated. The serial number can be found in `/dev/serial/by-id/` (on Linux) as the number before `-ifXX`, and is written in hexadecimal with leading zeros. For example, the USB device `usb-XIMC_XIMC_Motor_Controller_00007928-if00` has the hexadecimal number `0x7928` which is `31016` in decimal.
 
 The position of the stage is a configuration parameter and is changed with the `reconfigure` transition. This makes a position scan a sequence of runs, each taken at a fixed position, see [below](#taking-data-at-several-positions).
 
@@ -40,7 +40,7 @@ pip install --no-build-isolation -e ".[standa]"
 
 ## Supported devices
 
-The stage model is selected with the `model` configuration parameter. It determines the unit to step-size conversion. Other Standa models might be compatible if the step size matches. 
+The stage model is selected with the `model` configuration parameter. It determines the unit to step-size conversion. Other Standa models might be compatible if the step size matches.
 
 ### `8MT30_50`
 
