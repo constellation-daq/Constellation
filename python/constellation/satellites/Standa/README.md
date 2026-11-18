@@ -4,7 +4,7 @@
 # Influenced by TCT stage controller by Daniil D.Rastorguev
 title: "Standa"
 description: "Satellite controlling a Standa motor controller using the ximc library"
-category: "Test stand motor controllers"
+category: "Actuators"
 ---
 
 ## Description
