@@ -30,10 +30,7 @@ class Standa(Satellite):
 
     def do_initializing(self, config: Configuration) -> str | None:
         self._initpos.clear()
-        if self._motors:
-            for motor in self._motors.values():
-                motor.close()
-            self._motors.clear()
+        self._reset_motors()
 
         axes_conf = config.get_section("axes")
         for axis in axes_conf.get_keys():
@@ -43,7 +40,7 @@ class Standa(Satellite):
             if model not in MODEL_STEPS:
                 raise ValueError(f"Device model {model} not supported")
 
-            serial = axis_conf["serial"]
+            serial = axis_conf.get_int("serial")
             self._motors[axis] = Motor(axis, model, serial, logger=self.log)
 
             self._initpos[axis] = axis_conf.get_float("position")
@@ -53,9 +50,10 @@ class Standa(Satellite):
         self.reset_metrics()
         # Register scheduled metrics of positions
         for axis, motor in self._motors.items():
+            unit = motor.unit
             self.register_scheduled_metric(
                 f"POS_{axis.upper()}",
-                "mm",
+                unit,
                 f"Current position of axis {axis}",
                 5,
                 motor.get_position,
@@ -77,6 +75,12 @@ class Standa(Satellite):
         self.log.info(f"Moved to {position} mm")
         return "Moved stages"
 
+    def _reset_motors(self):
+        if self._motors:
+            for motor in self._motors.values():
+                motor.close()
+            self._motors.clear()
+
     def do_starting(self, run_identifier: str) -> str:
         self.log.info(f"Started run {run_identifier}")
         return "Started run"
@@ -92,16 +96,12 @@ class Standa(Satellite):
         return "Launched!"
 
     def do_reconfigure(self, config: Configuration) -> str | None:
-        if "axes" not in config:
-            return "Reconfigured without axes"
-
         axes_conf = config.get_section("axes")
         position = {axis: axes_conf.get_section(axis).get_float("position") for axis in axes_conf.get_keys()}
         return self._move(position)
 
     def reentry(self) -> None:
-        for motor in self._motors.values():
-            motor.close()
+        self._reset_motors()
         super().reentry()
 
     @cscp_requestable([SatelliteState.INIT])

@@ -24,6 +24,7 @@ def mm_to_steps_8MT30_50(mm):
 
 
 MODEL_STEPS = {"8MT30_50": (steps_to_mm_8MT30_50, mm_to_steps_8MT30_50)}
+MODEL_RANGE = {"8MT30_50": (0.0, 50.0)}
 
 
 class Motor:
@@ -37,11 +38,13 @@ class Motor:
         self._model = model
         self._serial = f"{serial:08X}" if isinstance(serial, int) else str(serial).strip().upper()
         self._axis: ximc.Axis | None = None
+        self._unit: str
 
         if model not in MODEL_STEPS:
             raise ValueError(f"Step conversion missing for model {model}")
-        self.steps_to_mm = MODEL_STEPS[model][0]
-        self.mm_to_steps = MODEL_STEPS[model][1]
+        self.steps_to_unit = MODEL_STEPS[model][0]
+        self.unit_to_steps = MODEL_STEPS[model][1]
+        self.unit_range = MODEL_RANGE[model]
 
         # The by-id name contains the serial in hex
         port = next((p for p in glob.glob("/dev/serial/by-id/usb-XIMC*") if self._serial in p.upper()), None)
@@ -58,9 +61,11 @@ class Motor:
 
     @property
     def axis(self) -> ximc.Axis:
-        if self._axis is None:
-            raise RuntimeError(f"Axis '{self._axis_id}' is not connected")
         return self._axis
+
+    @property
+    def unit(self) -> str:
+        return self._unit
 
     def close(self):
         self._axis.close_device()
@@ -78,20 +83,24 @@ class Motor:
     def get_position(self):
         pos = self.axis.get_position()
         steps, usteps = pos.Position, pos.uPosition
-        return self.steps_to_mm(steps, usteps)
+        return self.steps_to_unit(steps, usteps)
 
     def is_moving(self):
         status = self.axis.get_status()
         return bool(status.MvCmdSts & ximc.MvcmdStatus.MVCMD_RUNNING)
 
-    def move_abs(self, mm):
-        if not 0.0 <= mm <= 50.0:
-            raise ValueError(f"Target {mm} mm of axis '{self._axis_id}' is outside the travel range 0mm - 50mm")
-        steps, usteps = self.mm_to_steps(mm)
+    def move_abs(self, position):
+        self.log.debug(f"Moving stage {self._axis_id} to position {position}{self.unit}")
+        unit_range = self.unit_range
+        if not unit_range[0] <= position <= unit_range[1]:
+            raise ValueError(f"Target {position}{self.unit} of axis '{self._axis_id}'\
+                              is outside the travel range {unit_range[0]} - {unit_range[1]}{self.unit}")
+        steps, usteps = self.unit_to_steps(position)
         self.axis.command_move(steps, usteps)
 
-    def move_rel(self, mm):
-        destination = mm + self.get_position()
+    def move_rel(self, position):
+        self.log.debug(f"Moving stage {self._axis_id} to position {position}{self.unit}")
+        destination = position + self.get_position()
         self.move_abs(destination)
 
     def wait_for_stop(self):
