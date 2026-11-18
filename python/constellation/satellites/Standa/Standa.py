@@ -29,7 +29,6 @@ class Standa(Satellite):
         return self._motors
 
     def do_initializing(self, config: Configuration) -> str | None:
-        self.log.info("Received configuration with parameters: %s", ", ".join(config.get_keys()))
         self._initpos.clear()
         if self._motors:
             for motor in self._motors.values():
