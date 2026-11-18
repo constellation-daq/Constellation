@@ -23,6 +23,7 @@ def mm_to_steps_8MT30_50(mm):
     return mm // 256, mm % 256
 
 
+MODEL_UNIT = {"8MT30_50": "mm"}
 MODEL_STEPS = {"8MT30_50": (steps_to_mm_8MT30_50, mm_to_steps_8MT30_50)}
 MODEL_RANGE = {"8MT30_50": (0.0, 50.0)}
 
@@ -38,13 +39,13 @@ class Motor:
         self._model = model
         self._serial = f"{serial:08X}" if isinstance(serial, int) else str(serial).strip().upper()
         self._axis: ximc.Axis
-        self._unit: str
 
         if model not in MODEL_STEPS:
             raise ValueError(f"Step conversion missing for model {model}")
         self.steps_to_unit = MODEL_STEPS[model][0]
         self.unit_to_steps = MODEL_STEPS[model][1]
         self.unit_range = MODEL_RANGE[model]
+        self._unit = MODEL_UNIT[model]
 
         # The by-id name contains the serial in hex
         port = next((p for p in glob.glob("/dev/serial/by-id/usb-XIMC*") if self._serial in p.upper()), None)
