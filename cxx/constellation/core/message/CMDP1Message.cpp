@@ -25,6 +25,7 @@
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/msgpack.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
@@ -191,7 +192,7 @@ CMDP1Notification::CMDP1Notification(CMDP1Message&& message) : CMDP1Message(std:
 
     try {
         topics_ = Dictionary::disassemble(get_payload());
-    } catch(const std::invalid_argument& e) {
+    } catch(const MsgpackUnpackError& e) {
         throw MessageDecodingError("CMDP1", e.what());
     }
 }
