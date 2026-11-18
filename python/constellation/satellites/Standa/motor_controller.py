@@ -37,7 +37,7 @@ class Motor:
         self._axis_id = axis_id
         self._model = model
         self._serial = f"{serial:08X}" if isinstance(serial, int) else str(serial).strip().upper()
-        self._axis: ximc.Axis | None = None
+        self._axis: ximc.Axis
         self._unit: str
 
         if model not in MODEL_STEPS:
