@@ -50,10 +50,11 @@ The `8MT30-50` is a motorized linear stage with 50 mm of travel and a step size 
 
 | Parameter | Description | Type | Default Value |
 |-----------|-------------|------|---------------|
-| `model` | Stage model, selects the controller profile to apply | String | - |
-| `serial` | Mapping of the axis name to the serial number of its motor | String | - |
-| `position` | Parameter of the chosen axis' position | Float | - |
-| `calibrate_on_launch` | Move all stages to their low limit switch and define zero there when launching | Bool | `false` |
+| `calibrate_on_launch` | Move all stages to their low limit switch and define zero there when launching. | Bool | `false` |
+| `axes` | Section containing the model, serial and position parameters. | Section | - |
+| `model` | Stage model, selects the controller profile to apply. | String | - |
+| `serial` | Mapping of the axis name to the serial number of its motor. | String | - |
+| `position` | Parameter of the chosen axis' position. | Float | - |
 
 The axes are named by the keys of the `axis_serials` section, and the same names have to be used in the `position` section. The `position` section has to be present even when the stage is positioned from a controller, since only parameters which exist in the configuration can be changed with {bdg-secondary}`reconfigure`.
 
@@ -87,13 +88,14 @@ Positions outside the travel range of the stage are rejected rather than clipped
 
 | Metric | Description | Value Type | Interval |
 |--------|-------------|------------|----------|
-| `POS_AXIS` | Current position of the AXIS axis | Float | 5s |
+| `POS_AXIS` | Current position of the AXIS axis. | Float | 5s |
 
 ## Custom Commands
 
 | Command | Description | Arguments | Return Value | Allowed States |
 |---------|-------------|-----------|--------------|----------------|
-| `home` | Move all axes to their low limit switch and define zero there. The stage is left at zero. | - | Position of each axis (Section) | `INIT` |
+| `home` | Move all axes to their low limit switch and define zero there. | - | Position of each axis | `INIT` |
+| `get_position` | Gets the current position of each axis. | - | Position of each axis | `INIT`, `ORBIT` |
 
 ## Taking data at several positions
 
