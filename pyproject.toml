@@ -51,6 +51,7 @@ SatelliteParticularsLaser = "constellation.satellites.ParticularsLaser.__main__:
 SatelliteMariner = "constellation.satellites.Mariner.__main__:main"
 SatellitePyDevNullReceiver = "constellation.satellites.PyDevNullReceiver.__main__:main"
 SatellitePyRandomTransmitter = "constellation.satellites.PyRandomTransmitter.__main__:main"
+SatelliteStanda = "constellation.satellites.Standa.__main__:main"
 
 [project.urls]
 Homepage = "https://constellation.pages.desy.de/"
@@ -93,8 +94,9 @@ cli = ["ipython", "traitlets", "pygments"]
 hdf5 = ["h5py", "numpy"]
 influx = ["influxdb-client"]
 lecroy = ["lecrunch3>=3.0.3", "numpy"]
-visa = ["pyvisa", "pyvisa-py", "pyserial", "zeroconf"]
 particulars = ["pyusb"]
+standa = ["libximc>=3.0.4"]
+visa = ["pyvisa", "pyvisa-py", "pyserial", "zeroconf"]
 
 [tool.meson-python.args]
 setup = ["--wrap-mode=forcefallback", "-Dimpl_py=enabled", "-Dimpl_cxx=disabled"]  # disable C++ by default

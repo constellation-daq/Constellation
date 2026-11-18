@@ -442,7 +442,7 @@ lint:basedpyright:
     - .python-venv
     - .python-3.11
   script:
-    - pip install --no-build-isolation -e .[dev,test,cli,hdf5,influx,lecroy,visa,particulars]
+    - pip install --no-build-isolation -e .[dev,test,cli,hdf5,influx,lecroy,particulars,standa,visa]
     - basedpyright python --gitlabcodequality code-quality-report.json
   artifacts:
     reports:
@@ -544,13 +544,13 @@ format:codespell:
     - codespell
 
 format:proselint:
-    extends:
-      - .format
-      - .python-venv
-      - .python-3.11
-    script:
-      - pip install proselint
-      - find . -name "*md" -not -path "./build/*" -not -path "./venv/*" -not -path "./subprojects/*" -print0 | xargs -0 proselint check --config .proselint.json
+  extends:
+    - .format
+    - .python-venv
+    - .python-3.11
+  script:
+    - pip install proselint
+    - find . -name "*md" -not -path "./build/*" -not -path "./venv/*" -not -path "./subprojects/*" -print0 | xargs -0 proselint check --config .proselint.json
 
 format:markdownlint:
   extends:
