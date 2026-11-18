@@ -68,11 +68,11 @@ class Standa(Satellite):
                 raise ValueError("Given axis is not a registered stage")
             self.motors[axis].move_abs(position)
 
-        for axis, motor in ((a, self.motors[a]) for a in position):
+        for axis, motor in ((a, self.motors[a]) for a in positions):
             if not motor.wait_until_idle():
-                raise RuntimeError(f"Axis {axis} did not reach {position[axis]} mm within the timeout")
+                raise RuntimeError(f"Axis {axis} did not reach {positions[axis]}{motor.unit} within the timeout")
+            self.log.info(f"Moved axis {axis} to {positions[axis]}{motor.unit}")
 
-        self.log.info(f"Moved to {position} mm")
         return "Moved stages"
 
     def _reset_motors(self):
