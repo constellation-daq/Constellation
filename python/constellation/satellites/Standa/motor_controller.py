@@ -93,8 +93,10 @@ class Motor:
         self.log.debug(f"Moving stage {self._axis_id} to position {position}{self.unit}")
         unit_range = self.unit_range
         if not unit_range[0] <= position <= unit_range[1]:
-            raise ValueError(f"Target {position}{self.unit} of axis '{self._axis_id}'\
-                              is outside the travel range {unit_range[0]} - {unit_range[1]}{self.unit}")
+            raise ValueError(
+                f"Target {position}{self.unit} of axis '{self._axis_id}'\
+                              is outside the travel range {unit_range[0]} - {unit_range[1]}{self.unit}"
+            )
         steps, usteps = self.unit_to_steps(position)
         self.axis.command_move(steps, usteps)
 
