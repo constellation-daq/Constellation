@@ -692,11 +692,13 @@ std::optional<std::string> BaseSatellite::stopping_wrapper() {
 std::optional<std::string> BaseSatellite::running_wrapper(const std::stop_token& stop_token) {
     running(stop_token);
 
-    // Reset user status
-    const std::scoped_lock lock {user_status_mutex_};
+    // Return user status (if any)
+    std::unique_lock lock {user_status_mutex_};
+    const auto status = std::move(user_status_);
     user_status_.reset();
+    lock.unlock();
 
-    return std::nullopt;
+    return status;
 }
 
 std::optional<std::string> BaseSatellite::interrupting_wrapper(CSCP::State previous_state, std::string_view reason) {
