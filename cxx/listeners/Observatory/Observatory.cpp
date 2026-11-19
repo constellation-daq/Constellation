@@ -111,6 +111,8 @@ QString LogItemDelegate::displayText(const QVariant& value, const QLocale& local
 Observatory::Observatory(std::string_view group_name) : logger_("UI") {
 
     qRegisterMetaType<QModelIndex>("QModelIndex");
+    qRegisterMetaType<std::size_t>("std::size_t");
+    qRegisterMetaType<Level>("constellation::log::Level");
     setupUi(this);
 
     // Qt UI has to be initialized before we can call this, and it takes ownership of the pointer

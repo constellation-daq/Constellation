@@ -22,6 +22,7 @@
 #include <QCloseEvent>
 #include <QDateTime>
 #include <QList>
+#include <QMetaType>
 #include <QSplitter>
 #include <QString>
 #include <QVariant>
@@ -38,6 +39,8 @@
 using namespace constellation::utils;
 
 TelemetryConsole::TelemetryConsole(std::string_view group_name) {
+
+    qRegisterMetaType<std::size_t>("std::size_t");
 
     setupUi(this);
 
