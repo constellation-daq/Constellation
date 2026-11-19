@@ -8,6 +8,7 @@
 
 #include <array>
 #include <atomic>
+#include <chrono>
 #include <concepts>
 #include <deque>
 #include <stop_token>
@@ -193,14 +194,20 @@ public:
                 throw_running_ = false;
                 throw constellation::utils::Exception("Throwing in running as requested");
             }
-            std::this_thread::yield();
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        if(throw_running_after_stop_) {
+            throw_running_after_stop_ = false;
+            throw constellation::utils::Exception("Throwing in running after stop as requested");
         }
         LOG(TRACE) << "Leaving running function (" << SatelliteT::getCanonicalName() << ")";
         SatelliteT::submit_status("Finished with running function");
     }
 
     void setThrowRunning() { throw_running_ = true; }
+    void setThrowRunningAfterStop() { throw_running_after_stop_ = true; }
 
 private:
     std::atomic_bool throw_running_ {false};
+    std::atomic_bool throw_running_after_stop_ {false};
 };
