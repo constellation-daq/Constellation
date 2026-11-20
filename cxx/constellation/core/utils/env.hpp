@@ -46,8 +46,8 @@ namespace constellation::utils {
      *          looked up as environment variable. A runtime exception is thrown if not found, the match string replaced with
      *          the value otherwise.
      *
-     * @param pattern Input regular expression. The first match group represents the matched prefix, if any, the second the
-     *        environment variable name, and the third an optional default
+     * @param pattern Input regular expression. The first match group represents an optional escape character, the second the
+     *        environment variable name, and the third an optional default. Escaped matches are kept unchanged
      * @param input Input string to resolve matches for
      *
      * @return String with all regular expression matches replaced
@@ -62,9 +62,11 @@ namespace constellation::utils {
         std::string result;
         for(const auto& match : std::ranges::subrange(begin, end)) {
             result += input.substr(last_pos, match.position() - last_pos);
-            // Reinsert matched prefix character
+            last_pos = match.position() + match.length();
+            // Keep escaped match unchanged
             if(match[1].matched) {
-                result += match[1].str();
+                result += match.str();
+                continue;
             }
             // Resolve environment variable or use default if present
             auto env_val = getenv(match[2]);
@@ -75,7 +77,6 @@ namespace constellation::utils {
             } else {
                 throw RuntimeError("Environment variable " + quote(match[2].str()) + " not defined");
             }
-            last_pos = match.position() + match.length();
         }
 
         result += input.substr(last_pos);
@@ -93,7 +94,7 @@ namespace constellation::utils {
      * @throws RuntimeError if an environment variable could not be found
      */
     inline std::string resolve_controller_env(const std::string& config_value) {
-        const std::regex ctrl_pattern(R"((^|[^\\])\$_\{(\w+)(?::-([^}]*))?\})");
+        const std::regex ctrl_pattern(R"((\\)?\$_\{(\w+)(?::-([^}]*))?\})");
 
         // Resolve environment variables
         const auto resolved = resolve_env(ctrl_pattern, config_value);
@@ -112,7 +113,7 @@ namespace constellation::utils {
      * @throws RuntimeError if an environment variable could not be found
      */
     inline std::string resolve_satellite_env(const std::string& config_value) {
-        const std::regex sat_pattern(R"((^|[^\\])\$\{(\w+)(?::-([^}]*))?\})");
+        const std::regex sat_pattern(R"((\\)?\$\{(\w+)(?::-([^}]*))?\})");
 
         // Resolve environment variables
         const auto resolved = resolve_env(sat_pattern, config_value);
