@@ -372,6 +372,19 @@ TEST_CASE("Configuration case-insensitivity", "[core][core::config]") {
     REQUIRE(config.get<std::string>("StRiNg") == string_v);
 }
 
+TEST_CASE("Configuration case-insensitivity with multiple keys", "[core][core::config]") {
+    Dictionary dict {};
+    dict["Alpha"] = 1;
+    dict["Beta"] = 2;
+    dict["Gamma"] = 3;
+    dict["delta"] = 4;
+    const Configuration config {std::move(dict)};
+    REQUIRE(config.get<int>("alpha") == 1);
+    REQUIRE(config.get<int>("beta") == 2);
+    REQUIRE(config.get<int>("gamma") == 3);
+    REQUIRE(config.get<int>("delta") == 4);
+}
+
 TEST_CASE("Configuration case-insensitivity during construction", "[core][core::config]") {
     Dictionary dict {};
     dict["BOOL"] = true;
