@@ -93,6 +93,11 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
 
         metricSender->clear();
         for(const auto& sender : stat_listener_.getAvailableSenders()) {
+            // SKip senders that do not expose metrics
+            if(stat_listener_.getAvailableTopics(sender).empty()) {
+                continue;
+            }
+
             metricSender->addItem(QString::fromStdString(sender));
         }
         metricSender->setCurrentIndex(-1);
