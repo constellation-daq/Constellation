@@ -342,16 +342,17 @@ void Manager::handle_incoming_message(message::CHIRPMessage chirp_msg, const asi
 
 void Manager::main_loop(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
-        // Receive CHIRP message and handle it
-        const auto raw_msg_opt = multicast_socket_->recvMessage(50ms);
-        if(raw_msg_opt.has_value()) {
-            const auto& raw_msg = raw_msg_opt.value();
-            try {
+        try {
+            // Receive CHIRP message and handle it
+            const auto raw_msg_opt = multicast_socket_->recvMessage(50ms);
+            if(raw_msg_opt.has_value()) {
+                const auto& raw_msg = raw_msg_opt.value();
                 handle_incoming_message(CHIRPMessage::disassemble(raw_msg.content), raw_msg.address);
-            } catch(const MessageDecodingError& error) {
-                LOG(logger_, WARNING) << error.what();
-                continue;
             }
+        } catch(const MessageDecodingError& error) {
+            LOG(logger_, WARNING) << error.what();
+        } catch(const NetworkError& error) {
+            LOG(logger_, WARNING) << error.what();
         }
     }
 }
