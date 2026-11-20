@@ -574,6 +574,12 @@ FSM::State FSM::stop(TransitionPayload /* payload */) {
         // First stop RUN thread
         stop_run_thread();
 
+        // Skip stopping if the running function failed
+        if(state_.load() == State::ERROR) {
+            LOG(logger_, INFO) << "Skipping stopping function of satellite due to failure";
+            return;
+        }
+
         LOG(logger_, INFO) << "Calling stopping function of satellite...";
         const auto success = call_satellite_function(&BaseSatellite::stopping_wrapper);
         react(success ? Transition::stopped : Transition::failure);
@@ -598,6 +604,12 @@ FSM::State FSM::interrupt(TransitionPayload payload) {
         // First stop RUN thread if in RUN
         if(previous_state == State::RUN) {
             stop_run_thread();
+        }
+
+        // Skip interrupting if the running function failed
+        if(state_.load() == State::ERROR) {
+            LOG(logger_, INFO) << "Skipping interrupting function of satellite due to failure";
+            return;
         }
 
         LOG(logger_, INFO) << "Calling interrupting function of satellite...";

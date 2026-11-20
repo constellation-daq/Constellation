@@ -122,7 +122,37 @@ TEST_CASE("FSM failure in RUN", "[satellite][satellite::fsm]") {
 
     // Wait for failure
     while(fsm.getState() == State::RUN) {
-        std::this_thread::yield();
+        std::this_thread::sleep_for(10ms);
+    }
+    REQUIRE(fsm.getState() == State::ERROR);
+
+    satellite.exit();
+}
+
+TEST_CASE("FSM failure in RUN after stop requested", "[satellite][satellite::fsm]") {
+    DummySatellite satellite {};
+    auto& fsm = satellite.getFSM();
+
+    // Initialize and launch
+    fsm.react(Transition::initialize, Configuration());
+    satellite.progressFsm();
+    REQUIRE(fsm.getState() == State::INIT);
+    fsm.react(Transition::launch);
+    satellite.progressFsm();
+    REQUIRE(fsm.getState() == State::ORBIT);
+
+    // Start and set to throw
+    fsm.react(Transition::start, "run_0");
+    satellite.progressFsm();
+    REQUIRE(fsm.getState() == State::RUN);
+    satellite.setThrowRunningAfterStop();
+
+    // Stop
+    fsm.react(Transition::stop);
+
+    // Wait for failure
+    while(fsm.getState() == State::stopping) {
+        std::this_thread::sleep_for(10ms);
     }
     REQUIRE(fsm.getState() == State::ERROR);
 
@@ -149,6 +179,36 @@ TEST_CASE("FSM interrupt in RUN", "[satellite][satellite::fsm]") {
     std::this_thread::sleep_for(150ms); // Give some time call stopping and landing
     satellite.progressFsm();
     REQUIRE(fsm.getState() == State::SAFE);
+
+    satellite.exit();
+}
+
+TEST_CASE("FSM failure in RUN after stop requested via interrupt", "[satellite][satellite::fsm]") {
+    DummySatellite satellite {};
+    auto& fsm = satellite.getFSM();
+
+    // Initialize and launch
+    fsm.react(Transition::initialize, Configuration());
+    satellite.progressFsm();
+    REQUIRE(fsm.getState() == State::INIT);
+    fsm.react(Transition::launch);
+    satellite.progressFsm();
+    REQUIRE(fsm.getState() == State::ORBIT);
+
+    // Start and set to throw
+    fsm.react(Transition::start, "run_0");
+    satellite.progressFsm();
+    REQUIRE(fsm.getState() == State::RUN);
+    satellite.setThrowRunningAfterStop();
+
+    // Interrupt
+    fsm.react(Transition::interrupt);
+
+    // Wait for failure
+    while(fsm.getState() == State::interrupting) {
+        std::this_thread::sleep_for(10ms);
+    }
+    REQUIRE(fsm.getState() == State::ERROR);
 
     satellite.exit();
 }
