@@ -50,22 +50,22 @@ void Section::convert_lowercase() {
     // Iterate over nodes
     auto it = dictionary_->begin();
     while(it != dictionary_->end()) {
+        // Advance iterator before the node is extracted to avoid invalidation
+        const auto node_it = it++;
         // Convert key to lowercase and check if different
-        const auto& key = it->first;
+        const auto& key = node_it->first;
         const auto key_lc = transform(key, ::tolower);
         if(key_lc != key) {
-            // Extract node to avoid iterator invalidation
-            auto node = dictionary_->extract(it);
+            // Extract node to modify the key
+            auto node = dictionary_->extract(node_it);
             // Change key to lowercase and insert back into map
             node.key() = key_lc;
             const auto insert_res = dictionary_->insert(std::move(node));
             // Check that node was insert, if not there were duplicate keys
             if(!insert_res.inserted) {
-                throw InvalidKeyError(*this, key, "key defined twice");
+                throw InvalidKeyError(*this, key_lc, "key defined twice");
             }
         }
-        // Advance iterator
-        ++it;
     }
 }
 
