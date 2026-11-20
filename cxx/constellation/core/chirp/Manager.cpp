@@ -35,6 +35,7 @@
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/networking/asio_helpers.hpp"
+#include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/std_future.hpp"
@@ -228,7 +229,11 @@ void Manager::send_message(MessageType type, RegisteredService service) {
     LOG(logger_, DEBUG) << "Sending " << quote(type) << " for " << quote(service.identifier) << " service on port "
                         << service.port;
     const auto asm_msg = CHIRPMessage(type, group_id_, host_id_, service.identifier, service.port).assemble();
-    multicast_socket_->sendMessage(asm_msg);
+    try {
+        multicast_socket_->sendMessage(asm_msg);
+    } catch(const NetworkError& error) {
+        LOG(logger_, WARNING) << error.what();
+    }
 }
 
 void Manager::call_discover_callbacks(const DiscoveredService& discovered_service, ServiceStatus status) {
