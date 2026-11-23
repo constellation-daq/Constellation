@@ -94,6 +94,24 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
         metricSender->setCurrentIndex(-1);
     });
 
+    // When the metrics of a sender change, add or remove it from the satellite list and refresh metrics
+    connect(&stat_listener_, &QStatListener::metricsChanged, this, [&](const QString& sender, const QStringList& metrics) {
+        const auto index = metricSender->findText(sender);
+        if(metrics.isEmpty()) {
+            if(index >= 0) {
+                metricSender->removeItem(index);
+            }
+        } else if(index < 0) {
+            // Unknown sender, add it
+            const auto current_index = metricSender->currentIndex();
+            metricSender->addItem(sender);
+            metricSender->setCurrentIndex(current_index);
+        } else if(index == metricSender->currentIndex()) {
+            // Sender known and selected, update metrics list
+            update_metric_names(sender);
+        }
+    });
+
     // Start the log receiver pool
     stat_listener_.startPool();
 
