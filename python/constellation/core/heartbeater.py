@@ -128,7 +128,7 @@ class HeartbeatSender(SatelliteStateHandler):
                 )
                 prev_status = self.fsm.status
             else:
-                time.sleep(0.1)
+                time.sleep(0.01)
         self.log_chp_s.info("HeartbeatSender thread shutting down.")
         # clean up
         self._hb_tm.close()
