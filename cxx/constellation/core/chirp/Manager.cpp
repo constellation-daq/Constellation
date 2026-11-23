@@ -173,29 +173,47 @@ void Manager::unregisterDiscoverCallbacks() {
 }
 
 void Manager::forgetDiscoveredService(ServiceIdentifier identifier, message::MD5Hash host_id) {
-    const std::scoped_lock discovered_services_lock {discovered_services_mutex_};
+    std::optional<DiscoveredService> forgotten_service {};
+
+    std::unique_lock discovered_services_lock {discovered_services_mutex_};
     const auto service_it = std::ranges::find_if(discovered_services_, [&](const auto& service) {
         return service.host_id == host_id && service.identifier == identifier;
     });
     if(service_it != discovered_services_.end()) {
         LOG(logger_, DEBUG) << "Dropping discovered service " << quote(identifier) << " for host id "
                             << quote(host_id.to_string());
-        call_discover_callbacks(*service_it, ServiceStatus::DEAD);
+        forgotten_service = *service_it;
         discovered_services_.erase(service_it);
+    }
+
+    // Unlock and call discover callbacks
+    discovered_services_lock.unlock();
+    if(forgotten_service.has_value()) {
+        call_discover_callbacks(forgotten_service.value(), ServiceStatus::DEAD);
     }
 }
 
 void Manager::forgetDiscoveredServices(message::MD5Hash host_id) {
-    const std::scoped_lock discovered_services_lock {discovered_services_mutex_};
+    std::vector<DiscoveredService> forgotten_services {};
 
-    const auto count = std::erase_if(discovered_services_, [&](const auto& service) {
-        if(service.host_id == host_id) {
-            call_discover_callbacks(service, ServiceStatus::DEAD);
-            return true;
+    std::unique_lock discovered_services_lock {discovered_services_mutex_};
+    auto service_it = discovered_services_.begin();
+    while(service_it != discovered_services_.end()) {
+        if(service_it->host_id == host_id) {
+            forgotten_services.push_back(*service_it);
+            service_it = discovered_services_.erase(service_it);
+        } else {
+            ++service_it;
         }
-        return false;
-    });
-    LOG(logger_, DEBUG) << "Dropped " << count << " discovered services for host id " << quote(host_id.to_string());
+    }
+    LOG(logger_, DEBUG) << "Dropped " << forgotten_services.size() << " discovered services for host id "
+                        << quote(host_id.to_string());
+
+    // Unlock and call discover callbacks
+    discovered_services_lock.unlock();
+    for(const auto& service : forgotten_services) {
+        call_discover_callbacks(service, ServiceStatus::DEAD);
+    }
 }
 
 void Manager::forgetDiscoveredServices() {
