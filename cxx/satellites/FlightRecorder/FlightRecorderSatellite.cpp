@@ -135,14 +135,6 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
     // Set sink log level to lowest to make sure we log all messages
     sink_->set_level(spdlog::level::trace);
 
-    // Start the log receiver pool
-    startPool();
-
-    // Subscribe for all endpoints to global topic
-    const auto global_level = config.get<Level>("global_recording_level", WARNING);
-    setGlobalLogLevel(global_level);
-    LOG(STATUS) << "Set log level to " << global_level;
-
     // Ignore topics
     ignore_topics_.clear();
     const auto ignore_topics_v = config.getOptionalArray<std::string>("ignore_topics");
@@ -152,6 +144,14 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
             ignore_topics_.emplace(transform(topic, ::toupper));
         }
     }
+
+    // Start the log receiver pool
+    startPool();
+
+    // Subscribe for all endpoints to global topic
+    const auto global_level = config.get<Level>("global_recording_level", WARNING);
+    setGlobalLogLevel(global_level);
+    LOG(STATUS) << "Set log level to " << global_level;
 
     // Subscribe to configured log topics
     auto& topics_section = config.getSection("subscribe_topics", {});
