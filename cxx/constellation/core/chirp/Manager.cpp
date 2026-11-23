@@ -217,8 +217,15 @@ void Manager::forgetDiscoveredServices(message::MD5Hash host_id) {
 }
 
 void Manager::forgetDiscoveredServices() {
-    const std::scoped_lock discovered_services_lock {discovered_services_mutex_};
+    std::unique_lock discovered_services_lock {discovered_services_mutex_};
+    const auto forgotten_services = discovered_services_;
     discovered_services_.clear();
+
+    // Unlock and call discover callbacks
+    discovered_services_lock.unlock();
+    for(const auto& service : forgotten_services) {
+        call_discover_callbacks(service, ServiceStatus::DEAD);
+    }
 }
 
 std::vector<DiscoveredService> Manager::getDiscoveredServices() {
