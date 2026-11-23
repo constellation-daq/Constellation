@@ -64,16 +64,7 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
     connect(restoreButton, &QPushButton::clicked, this, &TelemetryConsole::restore_metrics);
 
     // When selecting new satellite, update available metric list
-    connect(metricSender, &QComboBox::currentTextChanged, this, [&](const QString& text) {
-        metricName->clear();
-        for(const auto& [topic, desc] : stat_listener_.getAvailableTopics(text.toStdString())) {
-            metricName->addItem(QString::fromStdString(topic));
-        }
-
-        if(metricName->count() > 0) {
-            metricName->setEnabled(true);
-        }
-    });
+    connect(metricSender, &QComboBox::currentTextChanged, this, &TelemetryConsole::update_metric_names);
 
     // When selecting a metric, offer the "add" button if it exists already as display
     connect(metricName, &QComboBox::currentTextChanged, this, [&](const QString& text) {
@@ -93,7 +84,7 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
 
         metricSender->clear();
         for(const auto& sender : stat_listener_.getAvailableSenders()) {
-            // SKip senders that do not expose metrics
+            // Skip senders that do not expose metrics
             if(stat_listener_.getAvailableTopics(sender).empty()) {
                 continue;
             }
@@ -171,6 +162,17 @@ void TelemetryConsole::add_metric() {
     metricName->clear();
     metricName->setEnabled(false);
     metricSender->setCurrentIndex(-1);
+}
+
+void TelemetryConsole::update_metric_names(const QString& sender) {
+    metricName->clear();
+    for(const auto& [topic, desc] : stat_listener_.getAvailableTopics(sender.toStdString())) {
+        metricName->addItem(QString::fromStdString(topic));
+    }
+
+    if(metricName->count() > 0) {
+        metricName->setEnabled(true);
+    }
 }
 
 void TelemetryConsole::create_metric() {

@@ -123,6 +123,13 @@ private:
      */
     void add_metric_sender(const QString& name, const QString& sender);
 
+    /**
+     * @brief Helper to fill the metric list with the metrics of a sender
+     *
+     * @param sender Name of the sender
+     */
+    void update_metric_names(const QString& sender);
+
     // Vector of all metric widgets
     QVector<QMetricDisplay*> metric_widgets_;
     std::mutex metric_widgets_mutex_;
