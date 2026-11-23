@@ -14,12 +14,15 @@
 #include <cstddef>
 #include <optional>
 #include <span>
+#include <string>
 #include <utility>
 #include <vector>
 
 #include <asio.hpp>
+#include <asio/ip/udp.hpp>
 
 #include "constellation/core/networking/asio_helpers.hpp"
+#include "constellation/core/networking/exceptions.hpp"
 
 using namespace constellation::chirp;
 using namespace constellation::networking;
@@ -80,9 +83,19 @@ MulticastSocket::MulticastSocket(const std::vector<Interface>& interfaces,
 }
 
 void MulticastSocket::sendMessage(std::span<const std::byte> message) {
+    // Send on all interfaces even if sending fails on one of them
+    asio::ip::udp::socket::message_flags flags {};
+    asio::error_code send_error {};
     std::ranges::for_each(send_sockets_, [&](auto& socket) {
-        socket.send_to(asio::const_buffer(message.data(), message.size()), multicast_endpoint_);
+        asio::error_code error {};
+        socket.send_to(asio::const_buffer(message.data(), message.size()), multicast_endpoint_, flags, error);
+        if(error) [[unlikely]] {
+            send_error = error;
+        }
     });
+    if(send_error) [[unlikely]] {
+        throw NetworkError("Failed to send multicast message: " + send_error.message());
+    }
 }
 
 std::optional<MulticastMessage> MulticastSocket::recvMessage(std::chrono::steady_clock::duration timeout) {
@@ -105,6 +118,10 @@ std::optional<MulticastMessage> MulticastSocket::recvMessage(std::chrono::steady
     }
 
     message.address = sender_endpoint.address().to_v4();
-    message.content.resize(length_future.get());
+    try {
+        message.content.resize(length_future.get());
+    } catch(const asio::system_error& error) {
+        throw NetworkError("Failed to receive multicast message: " + std::string(error.what()));
+    }
     return message;
 }

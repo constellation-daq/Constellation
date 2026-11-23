@@ -50,6 +50,7 @@ namespace constellation::chirp {
          * Send multicast message to all interfaces
          *
          * @param message Message in bytes
+         * @throws networking::NetworkError if sending failed on any interface
          */
         CNSTLN_API void sendMessage(std::span<const std::byte> message);
 
@@ -58,6 +59,7 @@ namespace constellation::chirp {
          *
          * @param timeout Duration for which to block function call
          * @return Multicast message if received
+         * @throws networking::NetworkError if the message could not be received
          */
         CNSTLN_API std::optional<MulticastMessage> recvMessage(std::chrono::steady_clock::duration timeout);
 
