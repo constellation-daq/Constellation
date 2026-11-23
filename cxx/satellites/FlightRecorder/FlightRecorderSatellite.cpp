@@ -122,6 +122,7 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
         default: std::unreachable();
         }
 
+        spdlog::register_logger(sink_);
         spdlog::flush_every(config.get<std::chrono::seconds>("flush_period", 10s));
     } catch(const spdlog::spdlog_ex& ex) {
         throw SatelliteError(ex.what());
@@ -211,6 +212,7 @@ void FlightRecorderSatellite::starting(std::string_view run_identifier) {
             // Create new logger with new file path
             sink_ = spdlog::basic_logger_mt(getCanonicalName(), path.string());
             sink_->set_pattern("[%Y-%m-%d %H:%M:%S.%e] %v");
+            spdlog::register_logger(sink_);
         } catch(const spdlog::spdlog_ex& ex) {
             throw SatelliteError(ex.what());
         }

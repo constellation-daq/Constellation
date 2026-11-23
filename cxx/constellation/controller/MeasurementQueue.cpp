@@ -249,16 +249,16 @@ void MeasurementQueue::cache_original_values(Measurement& measurement) {
         }
 
         // Add all original values which are not part of the measurement anymore and drop them from the cache
-        for(const auto& [key, value] : value_cache) {
-            if(measurement_dict.contains(key)) {
-                continue;
-            }
+        for(auto it = value_cache.begin(); it != value_cache.end();) {
+            const auto& [key, value] = *it;
 
             // Insert the key if it has not been registered yet:
-            const auto& [it, inserted] = measurement_dict.try_emplace(key, value);
+            const auto& [_, inserted] = measurement_dict.try_emplace(key, value);
             if(inserted) {
                 LOG(logger_, INFO) << "Resetting original value of key " << quote(key) << " from satellite " << satellite;
-                value_cache.erase(key);
+                it = value_cache.erase(it);
+            } else {
+                ++it;
             }
         }
     }

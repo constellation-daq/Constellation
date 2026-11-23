@@ -113,7 +113,7 @@ void NextcloudTalkSatellite::failure(State /*previous_state*/, std::string_view 
 
 void NextcloudTalkSatellite::log_callback(CMDP1LogMessage msg) {
     // Skip if only_in_run setting enabled but not in RUN or SAFE
-    if(only_in_run_ && run_interrupting_safe.contains(getState())) {
+    if(only_in_run_ && !run_interrupting_safe.contains(getState())) {
         return;
     }
     // Skip if ignored topic

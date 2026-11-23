@@ -22,6 +22,7 @@
 #include <QCloseEvent>
 #include <QDateTime>
 #include <QList>
+#include <QMetaType>
 #include <QSplitter>
 #include <QString>
 #include <QVariant>
@@ -38,6 +39,8 @@
 using namespace constellation::utils;
 
 TelemetryConsole::TelemetryConsole(std::string_view group_name) {
+
+    qRegisterMetaType<std::size_t>("std::size_t");
 
     setupUi(this);
 
@@ -90,6 +93,11 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
 
         metricSender->clear();
         for(const auto& sender : stat_listener_.getAvailableSenders()) {
+            // SKip senders that do not expose metrics
+            if(stat_listener_.getAvailableTopics(sender).empty()) {
+                continue;
+            }
+
             metricSender->addItem(QString::fromStdString(sender));
         }
         metricSender->setCurrentIndex(-1);
