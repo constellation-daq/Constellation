@@ -47,8 +47,14 @@ namespace constellation::utils {
         // If unscoped enum and no value, try cast as flag
         if constexpr(magic_enum::is_unscoped_enum_v<E>) {
             if(!retval.has_value()) {
+#if MAGIC_ENUM_VERSION_MAJOR > 0 || MAGIC_ENUM_VERSION_MINOR > 9 || MAGIC_ENUM_VERSION_PATCH >= 8
+                // magic_enum 0.9.8 added a separator parameter before the binary predicate
+                retval = case_insensitive ? magic_enum::enum_flags_cast<E>(value, '|', magic_enum::case_insensitive)
+                                          : magic_enum::enum_flags_cast<E>(value);
+#else
                 retval = case_insensitive ? magic_enum::enum_flags_cast<E>(value, magic_enum::case_insensitive)
                                           : magic_enum::enum_flags_cast<E>(value);
+#endif
             }
         }
         return retval;
