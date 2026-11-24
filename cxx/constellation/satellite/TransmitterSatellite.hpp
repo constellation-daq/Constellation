@@ -121,7 +121,7 @@ namespace constellation::satellite {
          *
          * Reads the following config parameters:
          * * `_data.bor_timeout`
-         * * `_data.eor_timeout
+         * * `_data.eor_timeout`
          * * `_data.data_timeout`
          * * `_data.payload_threshold`
          * * `_data.queue_size`
