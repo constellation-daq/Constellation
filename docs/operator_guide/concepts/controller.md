@@ -84,6 +84,86 @@ ctrl.await_state(SatelliteState.ORBIT)
 The [IPython Controller tutorial](../tutorials/ipython_controller.md) describes the use of the interactive command line controller and the How-To section provides a guide on [Parameter Scans with Python](../howtos/scanning_python.md).
 ```
 
+### Scripting Helper Methods
+
+The `ScriptableController` class provides a set of helper methods to simplify interacting with the asynchronous finite state
+machine. Sending `initialize()` or `start()` returns directly once the command has been accepted by the satellites, but the
+transition itself might take longer. A script that proceeds immediately to the next command will likely act on satellites
+that are still progressing through the transition.
+
+The helper methods below let a script block until a known condition is met, instead of relying on polling loops or fixed
+`time.sleep()` calls.
+
+#### `await_state(target, timeout=60)`
+
+Blocks until every satellite known to the controller reports the given FSM `target` state, then returns. If either any
+satellite reports `ERROR` while waiting, or the timeout elapses, an exception is raised and the wait is aborted.
+
+```python
+from constellation.core.protocol.cscp1 import SatelliteState
+
+constellation.initialize(cfg)
+ctrl.await_state(SatelliteState.INIT)
+
+constellation.launch()
+ctrl.await_state(SatelliteState.ORBIT)
+```
+
+This helper is the direct counterpart to every transition command. First, the command is sent, then `await_state` is used to
+wait for its completion across the Constellation before the script proceeds.
+
+```{note}
+`await_state` first waits until every satellite has sent at least one heartbeat *after* the command was issued, before
+checking that the target state has been reached. This avoids race conditions where a *previous* state is still read and
+ensures that a state change has indeed taken place for every satellite, even for a quick {bdg-secondary}`ORBIT` -
+{bdg-secondary}`reconfiguring` - {bdg-secondary}`ORBIT` sequence.
+```
+
+#### `await_satellites(satellites, timeout=60)`
+
+Blocks until every canonical name in the `satellites` list has been discovered by the controller. This avoids the start-up
+race condition where a script begins issuing commands before all expected satellites have joined the group.
+
+```python
+ctrl.await_satellites(["Sputnik.One", "Sputnik.Two"])
+constellation.initialize(cfg)
+ctrl.await_state(SatelliteState.INIT)
+```
+
+If the timeout elapses before all of them are found, the exception message lists which satellites are still missing.
+
+#### `await_n_satellites(satellites, timeout=60)`
+
+Blocks until exactly `satellites` satellites are connected, regardless of which ones.
+
+```python
+ctrl.await_n_satellites(4)
+```
+
+This helper is a useful shorthand for the more explicit `await_satellites` since it avoids having to list all canonical
+names, but is less safe because any combination of satellites satisfies the condition.
+
+#### `state` and `status`
+
+These two read-only properties provide a summary of the state of the Constellation without having to inspect every satellite
+individually:
+
+```python
+ctrl.state
+# <ControllerState.ORBIT: 48>
+```
+
+`state` returns a single global state value summarizing the entire Constellation. It is `ERROR` if any satellite is in
+`ERROR` or `SAFE`, it is `TRANSITIONING` while any satellite is in a transitional state, and otherwise it is the lowest
+steady state shared across all satellites. The value printed after the state name corresponds to the state code.
+
+```python
+ctrl.status
+# '4 connected: All 4 Satellites are in ORBIT'
+```
+
+`status` returns a human-readable one-line summary, grouping satellites by their current state.
+
 ## Measurement Queues
 
 Measurement queues are a sequence of runs which are processed one after the other, either with the same or altered parameters
