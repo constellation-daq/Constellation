@@ -135,14 +135,6 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
     // Set sink log level to lowest to make sure we log all messages
     sink_->set_level(spdlog::level::trace);
 
-    // Start the log receiver pool
-    startPool();
-
-    // Subscribe for all endpoints to global topic
-    const auto global_level = config.get<Level>("global_recording_level", WARNING);
-    setGlobalLogLevel(global_level);
-    LOG(STATUS) << "Set log level to " << global_level;
-
     // Ignore topics
     ignore_topics_.clear();
     const auto ignore_topics_v = config.getOptionalArray<std::string>("ignore_topics");
@@ -152,6 +144,14 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
             ignore_topics_.emplace(transform(topic, ::toupper));
         }
     }
+
+    // Start the log receiver pool
+    startPool();
+
+    // Subscribe for all endpoints to global topic
+    const auto global_level = config.get<Level>("global_recording_level", WARNING);
+    setGlobalLogLevel(global_level);
+    LOG(STATUS) << "Set log level to " << global_level;
 
     // Subscribe to configured log topics
     auto& topics_section = config.getSection("subscribe_topics", {});
@@ -200,23 +200,23 @@ void FlightRecorderSatellite::landing() {
 void FlightRecorderSatellite::starting(std::string_view run_identifier) {
     // For method RUN set a new log file
     if(method_ == LogMethod::RUN) {
+        // Append run identifier to the end of the file name while keeping the extension
+        const auto path = validate_file_path(
+            path_.parent_path() / (path_.stem().string() + "_" + std::string(run_identifier) + path_.extension().string()));
+
         try {
-            // Drop existing logger
-            reset_sink();
-
-            // Append run identifier to the end of the file name while keeping the extension
-            const auto path =
-                validate_file_path(path_.parent_path() /
-                                   (path_.stem().string() + "_" + std::string(run_identifier) + path_.extension().string()));
-
             // Create new logger with new file path
             sink_ = spdlog::basic_logger_mt(getCanonicalName(), path.string());
             sink_->set_pattern("[%Y-%m-%d %H:%M:%S.%e] %v");
+            sink_->set_level(spdlog::level::trace);
+
+            // Replace logger in the spdlog registry
+            spdlog::drop(getCanonicalName());
             spdlog::register_logger(sink_);
         } catch(const spdlog::spdlog_ex& ex) {
             throw SatelliteError(ex.what());
         }
-        LOG(INFO) << "Switched to new log file " << path_;
+        LOG(INFO) << "Switched to new log file " << path;
     }
 
     // Reset run message count
