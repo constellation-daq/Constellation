@@ -140,7 +140,7 @@ namespace constellation::satellite {
          * * `_data.data_timeout`
          * * `_data.payload_threshold`
          * * `_data.queue_size`
-         * * `_data.data_license`
+         * * `_data.license`
          *
          * @param partial_config Changes to the configuration of the satellite
          */
